@@ -34,6 +34,9 @@ pub enum TokenKind {
 
     /// `null`
     Null,
+
+    /// Invalid character
+    Invalid,
 }
 
 /// Represents a token.
