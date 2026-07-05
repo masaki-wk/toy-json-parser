@@ -1,4 +1,3 @@
-use std::iter::Peekable;
 use std::ops::Range;
 
 use crate::{CodePos, Token, TokenKind};
@@ -9,7 +8,7 @@ pub struct Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    chars: Peekable<T>,
+    chars: T,
     pos: CodePos,
 }
 
@@ -20,7 +19,7 @@ where
     /// Creates a new lexer.
     pub fn new(chars: T) -> Self {
         Self {
-            chars: chars.peekable(),
+            chars,
             pos: CodePos { line: 1, column: 1 },
         }
     }
@@ -34,23 +33,6 @@ where
     // Advances columns.
     fn advance_column(&mut self, n: usize) {
         self.pos.column += n;
-    }
-
-    // Skips whitespace.
-    fn skip_whitespace(&mut self) {
-        while let Some(c) = self.chars.peek() {
-            match c {
-                ' ' | '\t' | '\r' => {
-                    self.chars.next();
-                    self.advance_column(1);
-                }
-                '\n' => {
-                    self.chars.next();
-                    self.advance_line();
-                }
-                _ => break,
-            }
-        }
     }
 
     // Reads a string token.
@@ -76,9 +58,6 @@ where
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.skip_whitespace();
-        let start = self.pos;
-        let c = self.chars.next()?;
         enum TokenCategory {
             SingleChar(TokenKind),
             FixedString(TokenKind, &'static str),
@@ -86,20 +65,38 @@ where
             Number,
             Invalid,
         }
-        let category = match c {
-            '[' => TokenCategory::SingleChar(TokenKind::LeftSquareBracket),
-            ']' => TokenCategory::SingleChar(TokenKind::RightSquareBracket),
-            '{' => TokenCategory::SingleChar(TokenKind::LeftCurlyBracket),
-            '}' => TokenCategory::SingleChar(TokenKind::RightCurlyBracket),
-            ':' => TokenCategory::SingleChar(TokenKind::Colon),
-            ',' => TokenCategory::SingleChar(TokenKind::Comma),
-            't' => TokenCategory::FixedString(TokenKind::Boolean(true), "true"),
-            'f' => TokenCategory::FixedString(TokenKind::Boolean(false), "false"),
-            'n' => TokenCategory::FixedString(TokenKind::Null, "null"),
-            '"' => TokenCategory::String,
-            '-' => TokenCategory::Number,
-            digit if digit.is_ascii_digit() => TokenCategory::Number,
-            _ => TokenCategory::Invalid,
+        let (start, category) = loop {
+            enum CharCategory {
+                WhitespaceColumn,
+                WhitespaceLine,
+                FirstCharOfToken(TokenCategory),
+            }
+            let start = self.pos;
+            let c = self.chars.next()?;
+            let char_category = match c {
+                ' ' | '\t' | '\r' => CharCategory::WhitespaceColumn,
+                '\n' => CharCategory::WhitespaceLine,
+                '[' => CharCategory::FirstCharOfToken(TokenCategory::SingleChar(TokenKind::LeftSquareBracket)),
+                ']' => CharCategory::FirstCharOfToken(TokenCategory::SingleChar(TokenKind::RightSquareBracket)),
+                '{' => CharCategory::FirstCharOfToken(TokenCategory::SingleChar(TokenKind::LeftCurlyBracket)),
+                '}' => CharCategory::FirstCharOfToken(TokenCategory::SingleChar(TokenKind::RightCurlyBracket)),
+                ':' => CharCategory::FirstCharOfToken(TokenCategory::SingleChar(TokenKind::Colon)),
+                ',' => CharCategory::FirstCharOfToken(TokenCategory::SingleChar(TokenKind::Comma)),
+                't' => CharCategory::FirstCharOfToken(TokenCategory::FixedString(TokenKind::Boolean(true), "true")),
+                'f' => CharCategory::FirstCharOfToken(TokenCategory::FixedString(TokenKind::Boolean(false), "false")),
+                'n' => CharCategory::FirstCharOfToken(TokenCategory::FixedString(TokenKind::Null, "null")),
+                '"' => CharCategory::FirstCharOfToken(TokenCategory::String),
+                '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                digit if digit.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
+            };
+            match char_category {
+                CharCategory::WhitespaceColumn => self.advance_column(1),
+                CharCategory::WhitespaceLine => self.advance_line(),
+                CharCategory::FirstCharOfToken(token_category) => {
+                    break (start, token_category);
+                }
+            }
         };
         let kind = match category {
             TokenCategory::SingleChar(kind) => {
