@@ -16,7 +16,12 @@ mod app {
         code: String,
     }
 
-    pub fn run(_args: Args) -> Result<()> {
-        todo!()
+    pub fn run(args: Args) -> Result<()> {
+        use toy_json_parser::Lexer;
+        let lexer = Lexer::new(args.code.chars());
+        for token in lexer {
+            println!("{:?}", token)
+        }
+        Ok(())
     }
 }
