@@ -3,3 +3,7 @@ name = "toy-json-parser"
 version = "0.0.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.6", features = ["derive"] }
