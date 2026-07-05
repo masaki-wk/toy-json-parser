@@ -24,17 +24,6 @@ where
         }
     }
 
-    // Advances a line.
-    fn advance_line(&mut self) {
-        self.pos.line += 1;
-        self.pos.column = 1;
-    }
-
-    // Advances columns.
-    fn advance_column(&mut self, n: usize) {
-        self.pos.column += n;
-    }
-
     // Reads a string token.
     fn read_string(&mut self) -> TokenKind {
         todo!()
@@ -91,8 +80,8 @@ where
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
             match char_category {
-                CharCategory::WhitespaceColumn => self.advance_column(1),
-                CharCategory::WhitespaceLine => self.advance_line(),
+                CharCategory::WhitespaceColumn => self.pos.advance_column(1),
+                CharCategory::WhitespaceLine => self.pos.advance_line(),
                 CharCategory::FirstCharOfToken(token_category) => {
                     break (start, token_category);
                 }
@@ -100,14 +89,14 @@ where
         };
         let kind = match category {
             TokenCategory::SingleChar(kind) => {
-                self.advance_column(1);
+                self.pos.advance_column(1);
                 kind
             }
             TokenCategory::FixedString(kind, s) => self.read_fixed(s, kind),
             TokenCategory::String => self.read_string(),
             TokenCategory::Number => self.read_number(),
             TokenCategory::Invalid => {
-                self.advance_column(1);
+                self.pos.advance_column(1);
                 TokenKind::Invalid
             }
         };
