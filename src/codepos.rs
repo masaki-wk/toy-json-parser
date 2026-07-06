@@ -13,7 +13,7 @@ impl CodePos {
     }
 
     /// Advances columns.
-    pub fn advance_column(&mut self, n: usize) {
-        self.column += n;
+    pub fn advance_column(&mut self) {
+        self.column += 1;
     }
 }

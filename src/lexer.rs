@@ -31,7 +31,7 @@ where
         while let Some(c) = self.chars.peek().copied() {
             if c.is_ascii_alphanumeric() || c == '_' {
                 self.chars.next();
-                self.pos.advance_column(1);
+                self.pos.advance_column();
                 s.push(c);
             } else {
                 break;
@@ -104,14 +104,14 @@ where
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
             match ch_category {
-                CharCategory::WhitespaceColumn => self.pos.advance_column(1),
+                CharCategory::WhitespaceColumn => self.pos.advance_column(),
                 CharCategory::WhitespaceLine => self.pos.advance_line(),
                 CharCategory::FirstCharOfToken(token_category) => {
                     break (start, token_category, ch);
                 }
             }
         };
-        self.pos.advance_column(1);
+        self.pos.advance_column();
         let kind = match category {
             TokenCategory::SingleChar(kind) => kind,
             TokenCategory::KnownRawString(kind, s) => self.read_raw_string_known(kind, s, firstchar),
