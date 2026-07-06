@@ -1,3 +1,4 @@
+use std::iter::Peekable;
 use std::ops::Range;
 
 use crate::{CodePos, Token, TokenKind};
@@ -8,7 +9,7 @@ pub struct Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    chars: T,
+    chars: Peekable<T>,
     pos: CodePos,
 }
 
@@ -19,7 +20,7 @@ where
     /// Creates a new lexer.
     pub fn new(chars: T) -> Self {
         Self {
-            chars,
+            chars: chars.peekable(),
             pos: CodePos { line: 1, column: 1 },
         }
     }
