@@ -6,16 +6,16 @@ use crate::CodePos;
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenKind {
     /// `[`
-    LeftSquareBracket,
+    LeftBracket,
 
     /// `]`
-    RightSquareBracket,
+    RightBracket,
 
     /// `{`
-    LeftCurlyBracket,
+    LeftBrace,
 
     /// `}`
-    RightCurlyBracket,
+    RightBrace,
 
     /// `:`
     Colon,
