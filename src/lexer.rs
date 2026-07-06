@@ -107,11 +107,11 @@ where
                 CharCategory::WhitespaceColumn => self.pos.advance_column(),
                 CharCategory::WhitespaceLine => self.pos.advance_line(),
                 CharCategory::FirstCharOfToken(token_category) => {
+                    self.pos.advance_column();
                     break (start, token_category, ch);
                 }
             }
         };
-        self.pos.advance_column();
         let kind = match category {
             TokenCategory::SingleChar(kind) => kind,
             TokenCategory::KnownRawString(kind, s) => self.read_raw_string_known(kind, s, firstchar),
