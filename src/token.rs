@@ -36,7 +36,7 @@ pub enum TokenKind {
     Null,
 
     /// Invalid character
-    Invalid,
+    Invalid(std::string::String),
 }
 
 /// Represents a token.
