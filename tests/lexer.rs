@@ -85,3 +85,15 @@ fn skip_line_feed() -> Result<()> {
 fn skip_carrige_return() -> Result<()> {
     do_tokenize_single("\r:", TokenKind::Colon, 1, 2)
 }
+
+#[test]
+fn tokenize_invalid_char() -> Result<()> {
+    let s = ".";
+    do_tokenize_single(s, TokenKind::Invalid(s.to_string()), 1, 1)
+}
+
+#[test]
+fn tokenize_invalid_raw_string() -> Result<()> {
+    let s = "invalid";
+    do_tokenize_single(s, TokenKind::Invalid(s.to_string()), 1, 1)
+}
