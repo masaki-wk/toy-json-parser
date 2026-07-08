@@ -62,6 +62,7 @@ where
         let mut failed = false;
         loop {
             if let Some(c) = self.chars.next() {
+                self.pos.advance_column();
                 match c {
                     '"' => {
                         break;
@@ -69,12 +70,14 @@ where
                     '\\' => {
                         s.push(c);
                         if let Some(c) = self.chars.next() {
+                            self.pos.advance_column();
                             s.push(c);
                             match c {
                                 '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                                 'u' => {
                                     for _ in 0..4 {
                                         if let Some(c) = self.chars.next() {
+                                            self.pos.advance_column();
                                             s.push(c);
                                             if !c.is_ascii_hexdigit() {
                                                 failed = true;
