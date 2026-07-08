@@ -58,7 +58,60 @@ where
 
     // Reads a quoted string token.
     fn read_quoted_string(&mut self) -> TokenKind {
-        todo!()
+        let mut s = String::new();
+        let mut failed = false;
+        loop {
+            if let Some(c) = self.chars.next() {
+                match c {
+                    '"' => {
+                        break;
+                    }
+                    '\\' => {
+                        s.push(c);
+                        if let Some(c) = self.chars.next() {
+                            s.push(c);
+                            match c {
+                                '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
+                                'u' => {
+                                    for _ in 0..4 {
+                                        if let Some(c) = self.chars.next() {
+                                            s.push(c);
+                                            if !c.is_ascii_hexdigit() {
+                                                failed = true;
+                                            }
+                                        } else {
+                                            failed = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    failed = true;
+                                }
+                            }
+                        } else {
+                            failed = true;
+                            break;
+                        }
+                    }
+                    '\0'..'\x1f' => {
+                        s.push(c);
+                        failed = true;
+                    }
+                    _ => {
+                        s.push(c);
+                    }
+                }
+            } else {
+                failed = true;
+                break;
+            }
+        }
+        if !failed {
+            TokenKind::String(s)
+        } else {
+            TokenKind::Invalid(format!("\"{s}\""))
+        }
     }
 }
 

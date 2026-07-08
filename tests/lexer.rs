@@ -67,6 +67,24 @@ fn tokenize_null() -> Result<()> {
 }
 
 #[test]
+fn tokenize_string_without_escaped() -> Result<()> {
+    let s = "foo";
+    do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()), 1, 1)
+}
+
+#[test]
+fn tokenize_string_containing_escaped_char() -> Result<()> {
+    let s = "\\\" \\\\ \\/ \\b \\f \\n \\r \\t";
+    do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()), 1, 1)
+}
+
+#[test]
+fn tokenize_string_containing_escaped_unicode() -> Result<()> {
+    let s = "\\u048c";
+    do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()), 1, 1)
+}
+
+#[test]
 fn skip_space() -> Result<()> {
     do_tokenize_single_token(" :", TokenKind::Colon, 1, 2)
 }
