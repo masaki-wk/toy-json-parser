@@ -4,3 +4,6 @@ pub use codepos::CodePos;
 mod token;
 pub use token::Token;
 pub use token::TokenKind;
+
+mod lexer;
+pub use lexer::Lexer;

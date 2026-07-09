@@ -4,3 +4,16 @@ pub struct CodePos {
     pub line: usize,
     pub column: usize,
 }
+
+impl CodePos {
+    /// Advances a line.
+    pub fn advance_line(&mut self) {
+        self.line += 1;
+        self.column = 1;
+    }
+
+    /// Advances columns.
+    pub fn advance_column(&mut self) {
+        self.column += 1;
+    }
+}
