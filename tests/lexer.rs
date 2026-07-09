@@ -133,3 +133,15 @@ fn tokenize_invalid_raw_string() -> Result<()> {
     let s = "invalid";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
 }
+
+#[test]
+fn tokenize_invalid_quoted_string_containing_escaped_char() -> Result<()> {
+    let s = "\"\\c\"";
+    do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+}
+
+#[test]
+fn tokenize_invalid_quoted_string_containing_escaped_unicode() -> Result<()> {
+    let s = "\"\\u000x\"";
+    do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+}
