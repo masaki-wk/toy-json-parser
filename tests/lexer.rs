@@ -91,13 +91,13 @@ fn tokenize_string_without_escaped() -> Result<()> {
 }
 
 #[test]
-fn tokenize_string_containing_escaped_char() -> Result<()> {
+fn tokenize_string_with_escaped_char() -> Result<()> {
     let s = "\\\" \\\\ \\/ \\b \\f \\n \\r \\t";
     do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()))
 }
 
 #[test]
-fn tokenize_string_containing_escaped_unicode() -> Result<()> {
+fn tokenize_string_with_escaped_unicode() -> Result<()> {
     let s = "\\u048c";
     do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()))
 }
@@ -135,13 +135,13 @@ fn tokenize_invalid_raw_string() -> Result<()> {
 }
 
 #[test]
-fn tokenize_invalid_quoted_string_containing_escaped_char() -> Result<()> {
+fn tokenize_invalid_quoted_string_with_escaped_char() -> Result<()> {
     let s = "\"\\c\"";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
 }
 
 #[test]
-fn tokenize_invalid_quoted_string_containing_escaped_unicode() -> Result<()> {
+fn tokenize_invalid_quoted_string_with_escaped_unicode() -> Result<()> {
     let s = "\"\\u000x\"";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
 }
