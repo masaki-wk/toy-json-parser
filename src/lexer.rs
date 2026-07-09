@@ -4,6 +4,21 @@ use std::ops::Range;
 use crate::{CodePos, Token, TokenKind};
 
 /// Represents a lexer.
+///
+/// # Examples
+///
+/// ```
+/// # use toy_json_parser::{Lexer, TokenKind};
+/// # fn test() -> Option<()> {
+/// let mut lexer = Lexer::new("[]".chars());
+/// let token1 = lexer.next()?;
+/// assert_eq!(token1.kind, TokenKind::LeftBrace);
+/// let token2 = lexer.next()?;
+/// assert_eq!(token2.kind, TokenKind::RightBrace);
+/// # Some(())
+/// # }
+/// ```
+///
 #[derive(Debug, Clone)]
 pub struct Lexer<T>
 where
