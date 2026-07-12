@@ -11,7 +11,7 @@ fn new() -> Result<()> {
     Ok(())
 }
 
-fn do_parse_single_token(input: &str, expected_kind: ValueKind) -> Result<()> {
+fn do_parse_tokens(input: &str, expected_kind: ValueKind) -> Result<()> {
     let lexer = Lexer::new(input.chars());
     let mut parser = Parser::new(lexer);
     let value = parser.parse().unwrap();
@@ -22,27 +22,27 @@ fn do_parse_single_token(input: &str, expected_kind: ValueKind) -> Result<()> {
 #[test]
 fn parse_number() -> Result<()> {
     let s = "123";
-    do_parse_single_token(s, ValueKind::Number(s.to_string()))
+    do_parse_tokens(s, ValueKind::Number(s.to_string()))
 }
 
 #[test]
 fn parse_string() -> Result<()> {
     let s = "foo";
     let code = format!("\"{s}\"");
-    do_parse_single_token(&code, ValueKind::String(s.to_string()))
+    do_parse_tokens(&code, ValueKind::String(s.to_string()))
 }
 
 #[test]
 fn parse_true() -> Result<()> {
-    do_parse_single_token("true", ValueKind::Boolean(true))
+    do_parse_tokens("true", ValueKind::Boolean(true))
 }
 
 #[test]
 fn parse_false() -> Result<()> {
-    do_parse_single_token("false", ValueKind::Boolean(false))
+    do_parse_tokens("false", ValueKind::Boolean(false))
 }
 
 #[test]
 fn parse_null() -> Result<()> {
-    do_parse_single_token("null", ValueKind::Null)
+    do_parse_tokens("null", ValueKind::Null)
 }
