@@ -29,7 +29,7 @@ where
     pub fn parse(&mut self) -> Result<Value, ParserDiag> {
         let value = self.parse_value()?;
         match self.tokens.next() {
-            Some(_) => todo!(),
+            Some(_) => Err(ParserDiag {}),
             None => Ok(value),
         }
     }
