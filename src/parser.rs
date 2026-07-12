@@ -94,7 +94,55 @@ where
     }
 
     /// Parses a rest of the object.
-    fn parse_rest_of_object(&mut self, _start: CodePos) -> Result<Value, ParserDiag> {
-        todo!()
+    fn parse_rest_of_object(&mut self, start: CodePos) -> Result<Value, ParserDiag> {
+        let mut buf: Vec<(String, Box<ValueKind>)> = Vec::new();
+        let end = loop {
+            match self.tokens.peek() {
+                Some(token) if token.kind == TokenKind::RightBrace => {
+                    let end = token.range.end;
+                    self.tokens.next();
+                    break end;
+                }
+                Some(token) if token.kind == TokenKind::Comma => {
+                    if buf.is_empty() {
+                        Err(ParserDiag {})
+                    } else {
+                        self.tokens.next();
+                        Ok(())
+                    }
+                }
+                Some(_) => Ok(()),
+                None => Err(ParserDiag {}),
+            }?;
+            let pair = self.parse_pair_for_object()?;
+            buf.push((pair.0, Box::new(pair.1)));
+        };
+        Ok(Value {
+            kind: ValueKind::Object(buf),
+            range: Range { start, end },
+        })
+    }
+
+    /// Parses a pair of the object.
+    fn parse_pair_for_object(&mut self) -> Result<(String, ValueKind), ParserDiag> {
+        let name = match self.tokens.peek() {
+            Some(token) => match token.kind.clone() {
+                TokenKind::String(s) => {
+                    self.tokens.next();
+                    Ok(s)
+                }
+                _ => Err(ParserDiag {}),
+            },
+            _ => Err(ParserDiag {}),
+        }?;
+        match self.tokens.peek() {
+            Some(token) if token.kind == TokenKind::Colon => {
+                self.tokens.next();
+                Ok(())
+            }
+            _ => Err(ParserDiag {}),
+        }?;
+        let value = self.parse_value()?;
+        Ok((name, value.kind))
     }
 }

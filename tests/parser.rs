@@ -66,3 +66,23 @@ fn parse_array_multiple_item() -> Result<()> {
     buf.push(Box::new(ValueKind::Number("1".to_string())));
     do_parse_tokens("[0, 1]", ValueKind::Array(buf))
 }
+
+#[test]
+fn parse_object_empty() -> Result<()> {
+    do_parse_tokens("{}", ValueKind::Object(Vec::new()))
+}
+
+#[test]
+fn parse_object_single_pair() -> Result<()> {
+    let mut buf = Vec::new();
+    buf.push(("a".to_string(), Box::new(ValueKind::Number("0".to_string()))));
+    do_parse_tokens("{\"a\": 0}", ValueKind::Object(buf))
+}
+
+#[test]
+fn parse_object_multiple_pair() -> Result<()> {
+    let mut buf = Vec::new();
+    buf.push(("a".to_string(), Box::new(ValueKind::Number("0".to_string()))));
+    buf.push(("b".to_string(), Box::new(ValueKind::Number("1".to_string()))));
+    do_parse_tokens("{\"a\": 0, \"b\": 1}", ValueKind::Object(buf))
+}

@@ -6,7 +6,7 @@ use crate::CodePos;
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueKind {
     Array(Vec<Box<ValueKind>>),
-    Object(Vec<(String, Box<ValueKind>)>),
+    Object(Vec<(std::string::String, Box<ValueKind>)>),
     Number(std::string::String),
     String(std::string::String),
     Boolean(bool),
