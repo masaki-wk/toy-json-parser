@@ -219,6 +219,13 @@ fn tokenize_invalid_number_bad_char_in_fraction_component() -> Result<()> {
 }
 
 #[test]
+fn tokenize_invalid_number_bad_char_in_exponent_component() -> Result<()> {
+    let body = "0e";
+    let rest = "a";
+    do_tokenize_single_token_with_trailing_chars(body, rest, TokenKind::Invalid(body.to_string()))
+}
+
+#[test]
 fn tokenize_invalid_quoted_string_with_escaped_char() -> Result<()> {
     let s = "\"\\c\"";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))

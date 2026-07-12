@@ -119,7 +119,7 @@ where
                     return TokenKind::Invalid(s);
                 }
             }
-            let has_exponent_component = match self.chars.peek() {
+            let has_exponent_char = match self.chars.peek() {
                 Some(c) if *c == 'e' || *c == 'E' => {
                     s.push(*c);
                     self.chars.next();
@@ -128,7 +128,7 @@ where
                 }
                 _ => false,
             };
-            if has_exponent_component {
+            if has_exponent_char {
                 match self.chars.peek() {
                     Some(c) if *c == '+' || *c == '-' => {
                         s.push(*c);
@@ -137,17 +137,22 @@ where
                     }
                     _ => {}
                 }
+                let mut has_exponent_component = false;
                 loop {
                     match self.chars.peek() {
                         Some(c) if c.is_ascii_digit() => {
                             s.push(*c);
                             self.chars.next();
                             self.pos.advance_column();
+                            has_exponent_component = true;
                         }
                         _ => {
                             break;
                         }
                     }
+                }
+                if !has_exponent_component {
+                    return TokenKind::Invalid(s);
                 }
             }
             TokenKind::Number(s)
