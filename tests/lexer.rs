@@ -6,7 +6,7 @@ use anyhow::{Context as _, Result};
 
 use toy_json_parser::{CodePos, Lexer, TokenKind};
 
-fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<(usize, usize)>) -> Result<()> {
+fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<(usize, usize)>, check_finished: bool) -> Result<()> {
     let expected_pos_start = CodePos {
         line: expected_range.start.0,
         column: expected_range.start.1,
@@ -20,19 +20,28 @@ fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<(usi
     assert_eq!(token.kind, expected_kind);
     assert_eq!(token.range.start, expected_pos_start);
     assert_eq!(token.range.end, expected_pos_end);
-    assert_eq!(lexer.next(), None);
+    if check_finished {
+        assert_eq!(lexer.next(), None);
+    }
     Ok(())
 }
 
 fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) -> Result<()> {
     let start = (1, 1);
     let end = (start.0, start.1 + input.chars().count());
-    do_tokenize(input, expected_kind, start..end)
+    do_tokenize(input, expected_kind, start..end, true)
 }
 
 fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: (usize, usize)) -> Result<()> {
     let end = (start.0, start.1 + input.chars().count());
-    do_tokenize(&format!("{prefix}{input}"), expected_kind, start..end)
+    do_tokenize(&format!("{prefix}{input}"), expected_kind, start..end, true)
+}
+
+fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) -> Result<()> {
+    let input = &format!("{body}{rest}");
+    let start = (1, 1);
+    let end = (start.0, start.1 + body.chars().count());
+    do_tokenize(input, expected_kind, start..end, false)
 }
 
 #[test]
@@ -200,6 +209,13 @@ fn tokenize_invalid_raw_string() -> Result<()> {
 fn tokenize_invalid_number_minus_only() -> Result<()> {
     let s = "-";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+}
+
+#[test]
+fn tokenize_invalid_number_bad_char_in_fraction_component() -> Result<()> {
+    let body = "0.";
+    let rest = "a";
+    do_tokenize_single_token_with_trailing_chars(body, rest, TokenKind::Invalid(body.to_string()))
 }
 
 #[test]

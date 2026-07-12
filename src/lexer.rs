@@ -91,7 +91,7 @@ where
             }
         }
         if has_integer_component {
-            let has_fraction_component = match self.chars.peek() {
+            let has_decimal_point = match self.chars.peek() {
                 Some(c) if *c == '.' => {
                     s.push(*c);
                     self.chars.next();
@@ -100,18 +100,23 @@ where
                 }
                 _ => false,
             };
-            if has_fraction_component {
+            if has_decimal_point {
+                let mut has_fraction_component = false;
                 loop {
                     match self.chars.peek() {
                         Some(c) if c.is_ascii_digit() => {
                             s.push(*c);
                             self.chars.next();
                             self.pos.advance_column();
+                            has_fraction_component = true;
                         }
                         _ => {
                             break;
                         }
                     }
+                }
+                if !has_fraction_component {
+                    return TokenKind::Invalid(s);
                 }
             }
             let has_exponent_component = match self.chars.peek() {
