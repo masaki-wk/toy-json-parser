@@ -111,6 +111,18 @@ fn tokenize_number_negative_integer() -> Result<()> {
 }
 
 #[test]
+fn tokenize_number_positive_decimal_fraction() -> Result<()> {
+    let s = "12.3";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
+fn tokenize_number_negative_decimal_fraction() -> Result<()> {
+    let s = "-12.3";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
 fn tokenize_string_without_escaped() -> Result<()> {
     let s = "foo";
     do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()))
