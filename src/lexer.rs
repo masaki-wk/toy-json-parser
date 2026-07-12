@@ -74,8 +74,8 @@ where
             _ => (false, false),
         };
         let mut s = firstchar.to_string();
-        let mut has_integer_component = !is_negative;
         if !skip_integer_component {
+            let mut has_integer_component = !is_negative;
             loop {
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
@@ -89,76 +89,75 @@ where
                     }
                 }
             }
-        }
-        if has_integer_component {
-            let has_decimal_point = match self.chars.peek() {
-                Some(c) if *c == '.' => {
-                    s.push(*c);
-                    self.chars.next();
-                    self.pos.advance_column();
-                    true
-                }
-                _ => false,
-            };
-            if has_decimal_point {
-                let mut has_fraction_component = false;
-                loop {
-                    match self.chars.peek() {
-                        Some(c) if c.is_ascii_digit() => {
-                            s.push(*c);
-                            self.chars.next();
-                            self.pos.advance_column();
-                            has_fraction_component = true;
-                        }
-                        _ => {
-                            break;
-                        }
-                    }
-                }
-                if !has_fraction_component {
-                    return TokenKind::Invalid(s);
-                }
+            if !has_integer_component {
+                return TokenKind::Invalid(s);
             }
-            let has_exponent_char = match self.chars.peek() {
-                Some(c) if *c == 'e' || *c == 'E' => {
-                    s.push(*c);
-                    self.chars.next();
-                    self.pos.advance_column();
-                    true
-                }
-                _ => false,
-            };
-            if has_exponent_char {
+        }
+        let has_decimal_point = match self.chars.peek() {
+            Some(c) if *c == '.' => {
+                s.push(*c);
+                self.chars.next();
+                self.pos.advance_column();
+                true
+            }
+            _ => false,
+        };
+        if has_decimal_point {
+            let mut has_fraction_component = false;
+            loop {
                 match self.chars.peek() {
-                    Some(c) if *c == '+' || *c == '-' => {
+                    Some(c) if c.is_ascii_digit() => {
                         s.push(*c);
                         self.chars.next();
                         self.pos.advance_column();
+                        has_fraction_component = true;
                     }
-                    _ => {}
-                }
-                let mut has_exponent_component = false;
-                loop {
-                    match self.chars.peek() {
-                        Some(c) if c.is_ascii_digit() => {
-                            s.push(*c);
-                            self.chars.next();
-                            self.pos.advance_column();
-                            has_exponent_component = true;
-                        }
-                        _ => {
-                            break;
-                        }
+                    _ => {
+                        break;
                     }
-                }
-                if !has_exponent_component {
-                    return TokenKind::Invalid(s);
                 }
             }
-            TokenKind::Number(s)
-        } else {
-            TokenKind::Invalid(s)
+            if !has_fraction_component {
+                return TokenKind::Invalid(s);
+            }
         }
+        let has_exponent_char = match self.chars.peek() {
+            Some(c) if *c == 'e' || *c == 'E' => {
+                s.push(*c);
+                self.chars.next();
+                self.pos.advance_column();
+                true
+            }
+            _ => false,
+        };
+        if has_exponent_char {
+            match self.chars.peek() {
+                Some(c) if *c == '+' || *c == '-' => {
+                    s.push(*c);
+                    self.chars.next();
+                    self.pos.advance_column();
+                }
+                _ => {}
+            }
+            let mut has_exponent_component = false;
+            loop {
+                match self.chars.peek() {
+                    Some(c) if c.is_ascii_digit() => {
+                        s.push(*c);
+                        self.chars.next();
+                        self.pos.advance_column();
+                        has_exponent_component = true;
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+            if !has_exponent_component {
+                return TokenKind::Invalid(s);
+            }
+        }
+        TokenKind::Number(s)
     }
 
     // Reads a quoted string token.
