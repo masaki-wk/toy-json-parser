@@ -197,6 +197,12 @@ fn tokenize_invalid_raw_string() -> Result<()> {
 }
 
 #[test]
+fn tokenize_invalid_number_minus_only() -> Result<()> {
+    let s = "-";
+    do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+}
+
+#[test]
 fn tokenize_invalid_quoted_string_with_escaped_char() -> Result<()> {
     let s = "\"\\c\"";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
