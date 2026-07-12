@@ -93,6 +93,24 @@ fn tokenize_number_positive_zero() -> Result<()> {
 }
 
 #[test]
+fn tokenize_number_negative_zero() -> Result<()> {
+    let s = "-0";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
+fn tokenize_number_positive_integer() -> Result<()> {
+    let s = "123";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
+fn tokenize_number_negative_integer() -> Result<()> {
+    let s = "-123";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
 fn tokenize_string_without_escaped() -> Result<()> {
     let s = "foo";
     do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()))
