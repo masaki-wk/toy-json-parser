@@ -67,8 +67,88 @@ where
     }
 
     // Reads a number token.
-    fn read_number(&mut self, _firstchar: char) -> TokenKind {
-        todo!()
+    fn read_number(&mut self, firstchar: char) -> TokenKind {
+        let (is_negative, skip_integer_component) = match firstchar {
+            '-' => (true, false),
+            '0' => (false, true),
+            _ => (false, false),
+        };
+        let mut s = firstchar.to_string();
+        let mut has_integer_component = !is_negative;
+        if !skip_integer_component {
+            loop {
+                match self.chars.peek() {
+                    Some(c) if c.is_ascii_digit() => {
+                        s.push(*c);
+                        self.chars.next();
+                        self.pos.advance_column();
+                        has_integer_component = true;
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+        }
+        if has_integer_component {
+            let has_fraction_component = match self.chars.peek() {
+                Some(c) if *c == '.' => {
+                    s.push(*c);
+                    self.chars.next();
+                    self.pos.advance_column();
+                    true
+                }
+                _ => false,
+            };
+            if has_fraction_component {
+                loop {
+                    match self.chars.peek() {
+                        Some(c) if c.is_ascii_digit() => {
+                            s.push(*c);
+                            self.chars.next();
+                            self.pos.advance_column();
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                }
+            }
+            let has_exponent_component = match self.chars.peek() {
+                Some(c) if *c == 'e' || *c == 'E' => {
+                    s.push(*c);
+                    self.chars.next();
+                    self.pos.advance_column();
+                    true
+                }
+                _ => false,
+            };
+            if has_exponent_component {
+                match self.chars.peek() {
+                    Some(c) if *c == '+' || *c == '-' => {
+                        s.push(*c);
+                        self.chars.next();
+                        self.pos.advance_column();
+                    }
+                    _ => {}
+                }
+                loop {
+                    match self.chars.peek() {
+                        Some(c) if c.is_ascii_digit() => {
+                            s.push(*c);
+                            self.chars.next();
+                            self.pos.advance_column();
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                }
+            }
+            TokenKind::Number(s)
+        } else {
+            TokenKind::Invalid(s)
+        }
     }
 
     // Reads a quoted string token.
