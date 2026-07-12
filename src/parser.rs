@@ -34,7 +34,7 @@ where
         }
     }
 
-    /// Parses a value.
+    // Parses a value.
     fn parse_value(&mut self) -> Result<Value, ParserDiag> {
         enum TokenCategory {
             BeginArray,
@@ -63,7 +63,7 @@ where
         }
     }
 
-    /// Parses a rest of the array.
+    // Parses a rest of the array.
     fn parse_rest_of_array(&mut self, start: CodePos) -> Result<Value, ParserDiag> {
         let mut buf: Vec<Box<ValueKind>> = Vec::new();
         let end = loop {
@@ -93,7 +93,7 @@ where
         })
     }
 
-    /// Parses a rest of the object.
+    // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, start: CodePos) -> Result<Value, ParserDiag> {
         let mut buf: Vec<(String, Box<ValueKind>)> = Vec::new();
         let end = loop {
@@ -123,7 +123,7 @@ where
         })
     }
 
-    /// Parses a pair of the object.
+    // Parses a pair of the object.
     fn parse_pair_for_object(&mut self) -> Result<(String, ValueKind), ParserDiag> {
         let name = match self.tokens.peek() {
             Some(token) => match token.kind.clone() {
