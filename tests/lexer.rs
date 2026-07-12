@@ -123,6 +123,30 @@ fn tokenize_number_negative_decimal_fraction() -> Result<()> {
 }
 
 #[test]
+fn tokenize_number_positive_exponential_notation_small() -> Result<()> {
+    let s = "1.23e-2";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
+fn tokenize_number_positive_exponential_notation_large() -> Result<()> {
+    let s = "1.23e+2";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
+fn tokenize_number_negative_exponential_notation_small() -> Result<()> {
+    let s = "-1.23e-2";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
+fn tokenize_number_negative_exponential_notation_large() -> Result<()> {
+    let s = "-1.23e+2";
+    do_tokenize_single_token(s, TokenKind::Number(s.to_string()))
+}
+
+#[test]
 fn tokenize_string_without_escaped() -> Result<()> {
     let s = "foo";
     do_tokenize_single_token(&format!("\"{s}\""), TokenKind::String(s.to_string()))
