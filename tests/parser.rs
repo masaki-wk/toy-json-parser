@@ -25,3 +25,18 @@ fn parse_string() -> Result<()> {
     let code = format!("\"{s}\"");
     do_parse_single_token(&code, ValueKind::String(s.to_string()))
 }
+
+#[test]
+fn parse_true() -> Result<()> {
+    do_parse_single_token("true", ValueKind::Boolean(true))
+}
+
+#[test]
+fn parse_false() -> Result<()> {
+    do_parse_single_token("false", ValueKind::Boolean(false))
+}
+
+#[test]
+fn parse_null() -> Result<()> {
+    do_parse_single_token("null", ValueKind::Null)
+}
