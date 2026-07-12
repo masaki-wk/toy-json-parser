@@ -1,6 +1,7 @@
 use std::iter::Peekable;
+use std::ops::Range;
 
-use crate::{Token, TokenKind, Value, ValueKind};
+use crate::{CodePos, Token, TokenKind, Value, ValueKind};
 
 /// Represents a parser.
 #[derive(Debug, Clone)]
@@ -57,7 +58,43 @@ where
         self.tokens.next();
         match token_category {
             TokenCategory::Value(kind) => Ok(Value { kind, range }),
-            _ => todo!(),
+            TokenCategory::BeginArray => self.parse_rest_of_array(range.start),
+            TokenCategory::BeginObject => self.parse_rest_of_object(range.start),
         }
+    }
+
+    /// Parses a rest of the array.
+    fn parse_rest_of_array(&mut self, start: CodePos) -> Result<Value, ParserDiag> {
+        let mut buf: Vec<Box<ValueKind>> = Vec::new();
+        let end = loop {
+            match self.tokens.peek() {
+                Some(token) if token.kind == TokenKind::RightBracket => {
+                    let end = token.range.end;
+                    self.tokens.next();
+                    break end;
+                }
+                Some(token) if token.kind == TokenKind::Comma => {
+                    if buf.is_empty() {
+                        Err(ParserDiag {})
+                    } else {
+                        self.tokens.next();
+                        Ok(())
+                    }
+                }
+                Some(_) => Ok(()),
+                None => Err(ParserDiag {}),
+            }?;
+            let item = self.parse_value()?;
+            buf.push(Box::new(item.kind));
+        };
+        Ok(Value {
+            kind: ValueKind::Array(buf),
+            range: Range { start, end },
+        })
+    }
+
+    /// Parses a rest of the object.
+    fn parse_rest_of_object(&mut self, _start: CodePos) -> Result<Value, ParserDiag> {
+        todo!()
     }
 }

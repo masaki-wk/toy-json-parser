@@ -46,3 +46,23 @@ fn parse_false() -> Result<()> {
 fn parse_null() -> Result<()> {
     do_parse_tokens("null", ValueKind::Null)
 }
+
+#[test]
+fn parse_array_empty() -> Result<()> {
+    do_parse_tokens("[]", ValueKind::Array(Vec::new()))
+}
+
+#[test]
+fn parse_array_single_item() -> Result<()> {
+    let mut buf = Vec::new();
+    buf.push(Box::new(ValueKind::Number("0".to_string())));
+    do_parse_tokens("[0]", ValueKind::Array(buf))
+}
+
+#[test]
+fn parse_array_multiple_item() -> Result<()> {
+    let mut buf = Vec::new();
+    buf.push(Box::new(ValueKind::Number("0".to_string())));
+    buf.push(Box::new(ValueKind::Number("1".to_string())));
+    do_parse_tokens("[0, 1]", ValueKind::Array(buf))
+}

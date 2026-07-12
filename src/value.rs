@@ -5,8 +5,8 @@ use crate::CodePos;
 /// Represents a kind of JSON value.
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueKind {
-    Array(Vec<Box<Value>>),
-    Object(Vec<(String, Box<Value>)>),
+    Array(Vec<Box<ValueKind>>),
+    Object(Vec<(String, Box<ValueKind>)>),
     Number(std::string::String),
     String(std::string::String),
     Boolean(bool),
