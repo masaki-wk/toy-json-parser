@@ -20,6 +20,12 @@ fn do_parse_single_token(input: &str, expected_kind: ValueKind) -> Result<()> {
 }
 
 #[test]
+fn parse_number() -> Result<()> {
+    let s = "123";
+    do_parse_single_token(s, ValueKind::Number(s.to_string()))
+}
+
+#[test]
 fn parse_string() -> Result<()> {
     let s = "foo";
     let code = format!("\"{s}\"");
