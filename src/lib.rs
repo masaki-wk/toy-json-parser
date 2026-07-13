@@ -7,3 +7,9 @@ pub use token::TokenKind;
 
 mod lexer;
 pub use lexer::Lexer;
+
+mod value;
+pub use value::{Value, ValueKind};
+
+mod parser;
+pub use parser::{Parser, ParserDiag};
