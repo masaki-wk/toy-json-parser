@@ -31,3 +31,16 @@ mod app {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
+    use std::process::Command;
+
+    #[test]
+    fn test() -> Result<()> {
+        let status = Command::new("cargo").args(["run", "--bin", "json-parse", "--", "[0, 1]"]).status()?;
+        assert!(status.success());
+        Ok(())
+    }
+}
