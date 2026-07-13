@@ -4,6 +4,19 @@ use std::ops::Range;
 use crate::{CodePos, Token, TokenKind, Value, ValueKind};
 
 /// Represents a parser.
+///
+/// # Examples
+///
+/// ```
+/// # use toy_json_parser::{Lexer, Parser};
+/// # fn test() -> Option<()> {
+/// let lexer = Lexer::new("[]".chars());
+/// let mut parser = Parser::new(lexer);
+/// assert!(parser.parse().is_ok());
+/// # Some(())
+/// # }
+/// ```
+///
 #[derive(Debug, Clone)]
 pub struct Parser<T>
 where
