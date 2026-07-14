@@ -12,7 +12,7 @@ impl CodePos {
         self.column = 1;
     }
 
-    /// Advances columns.
+    /// Advances a column.
     pub fn advance_column(&mut self) {
         self.column += 1;
     }
