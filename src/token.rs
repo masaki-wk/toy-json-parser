@@ -1,10 +1,8 @@
-use std::ops::Range;
-
 use crate::CodePos;
 
-/// Represents a kind of token.
+/// Represents a JSON delimiter.
 #[derive(Debug, PartialEq, Clone)]
-pub enum TokenKind {
+pub enum Delimiter {
     /// `[`
     LeftBracket,
 
@@ -22,11 +20,15 @@ pub enum TokenKind {
 
     /// `,`
     Comma,
+}
 
-    /// Number
+/// Represents a JSON literal.
+#[derive(Debug, PartialEq, Clone)]
+pub enum Literal {
+    /// A number, e.g. `0`, `123`
     Number(std::string::String),
 
-    /// String
+    /// A string, e.g. `"foo"`, `"bar"`
     String(std::string::String),
 
     /// `true` or `false`
@@ -34,14 +36,63 @@ pub enum TokenKind {
 
     /// `null`
     Null,
-
-    /// Invalid character
-    Invalid(std::string::String),
 }
 
-/// Represents a token.
+impl Literal {
+    /// Returns the number of characters in the literal.
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Number(s) => s.chars().count(),
+            Self::String(s) => s.chars().count() + 2,
+            Self::Boolean(b) => {
+                if *b {
+                    4
+                } else {
+                    5
+                }
+            }
+            Self::Null => 4,
+        }
+    }
+
+    /// Returns `true` if the literal has a length of 0.
+    pub const fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+/// Represents a kind of JSON token.
+#[derive(Debug, PartialEq, Clone)]
+pub enum TokenKind {
+    /// Delimiter
+    Delimiter(Delimiter),
+
+    /// Literal
+    Literal(Literal),
+
+    /// Invalid
+    Invalid(String),
+}
+
+impl TokenKind {
+    /// Returns the number of characters in the token.
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Delimiter(_) => 1,
+            Self::Literal(l) => l.len(),
+            Self::Invalid(s) => s.chars().count(),
+        }
+    }
+
+    /// Returns `true` if the literal has a length of 0.
+    pub const fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+/// Represents a JSON token.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub kind: TokenKind,
-    pub range: Range<CodePos>,
+    pub pos: CodePos,
 }
