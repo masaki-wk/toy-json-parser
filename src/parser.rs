@@ -55,10 +55,10 @@ where
             Literal(Literal),
         }
         let (token_category, pos) = if let Some(token) = self.tokens.peek() {
-            match token.kind.clone() {
+            match &token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.pos)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.pos)),
-                TokenKind::Literal(l) => Ok((TokenCategory::Literal(l), token.pos)),
+                TokenKind::Literal(l) => Ok((TokenCategory::Literal(l.clone()), token.pos)),
                 TokenKind::Invalid(_) => Err(ParserDiag {}),
                 _ => Err(ParserDiag {}),
             }
@@ -132,15 +132,13 @@ where
     // Parses a pair of the object.
     fn parse_pair_for_object(&mut self) -> Result<(String, Value), ParserDiag> {
         let name = match self.tokens.peek() {
-            Some(token) => match token.kind.clone() {
-                TokenKind::Literal(Literal::String(s)) => {
-                    self.tokens.next();
-                    Ok(s)
-                }
+            Some(token) => match &token.kind {
+                TokenKind::Literal(Literal::String(s)) => Ok(s.clone()),
                 _ => Err(ParserDiag {}),
             },
             _ => Err(ParserDiag {}),
         }?;
+        self.tokens.next();
         match self.tokens.peek() {
             Some(token) if token.kind == TokenKind::Delimiter(Delimiter::Colon) => {
                 self.tokens.next();
