@@ -25,10 +25,10 @@ pub enum Delimiter {
 /// Represents a JSON literal.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
-    /// Number
+    /// A number, e.g. `0`, `123`
     Number(std::string::String),
 
-    /// String
+    /// A string, e.g. `"foo"`, `"bar"`
     String(std::string::String),
 
     /// `true` or `false`
