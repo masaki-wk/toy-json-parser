@@ -262,8 +262,8 @@ where
                 'n' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Null, "null")),
                 '"' => CharCategory::FirstCharOfToken(TokenCategory::QuotedString),
                 '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                c if c.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                c if c.is_ascii_alphabetic() || c == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
+                _ if ch.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
             match ch_category {
