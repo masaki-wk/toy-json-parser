@@ -236,8 +236,8 @@ where
             Delimiter(Delimiter),
             RawStringKnown(Literal, &'static str),
             RawStringUnknown,
-            QuotedString,
             Number,
+            QuotedString,
             Invalid,
         }
         let (pos, category, firstchar) = loop {
@@ -278,9 +278,9 @@ where
         let kind = match category {
             TokenCategory::Delimiter(delim) => TokenKind::Delimiter(delim),
             TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar),
-            TokenCategory::QuotedString => self.read_quoted_string(),
-            TokenCategory::Number => self.read_number(firstchar),
             TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar),
+            TokenCategory::Number => self.read_number(firstchar),
+            TokenCategory::QuotedString => self.read_quoted_string(),
             TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
         };
         Some(Token { kind, pos })
