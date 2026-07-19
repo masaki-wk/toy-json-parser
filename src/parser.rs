@@ -58,9 +58,9 @@ where
             match &token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.pos)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.pos)),
+                TokenKind::Delimiter(_) => Err(ParserDiag {}),
                 TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit.clone()), token.pos)),
                 TokenKind::Invalid(_) => Err(ParserDiag {}),
-                _ => Err(ParserDiag {}),
             }
         } else {
             Err(ParserDiag {})
