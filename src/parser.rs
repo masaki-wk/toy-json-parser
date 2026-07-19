@@ -54,22 +54,21 @@ where
             BeginObject,
             Literal(Literal),
         }
-        let (token_category, pos) = if let Some(token) = self.tokens.peek() {
-            match &token.kind {
+        let (token_category, pos) = if let Some(token) = self.tokens.next() {
+            match token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.pos)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.pos)),
-                TokenKind::Literal(l) => Ok((TokenCategory::Literal(l.clone()), token.pos)),
+                TokenKind::Delimiter(_) => Err(ParserDiag {}),
+                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.pos)),
                 TokenKind::Invalid(_) => Err(ParserDiag {}),
-                _ => Err(ParserDiag {}),
             }
         } else {
             Err(ParserDiag {})
         }?;
-        self.tokens.next();
         match token_category {
             TokenCategory::BeginArray => self.parse_rest_of_array(pos),
             TokenCategory::BeginObject => self.parse_rest_of_object(pos),
-            TokenCategory::Literal(l) => Ok(Value::Literal(l)),
+            TokenCategory::Literal(lit) => Ok(Value::Literal(lit)),
         }
     }
 
@@ -77,14 +76,15 @@ where
     fn parse_rest_of_array(&mut self, start: CodePos) -> Result<Value, ParserDiag> {
         let mut buf: Vec<Box<Value>> = Vec::new();
         let end = loop {
-            match self.tokens.peek() {
-                Some(token) if token.kind == TokenKind::Delimiter(Delimiter::RightBracket) => {
+            let token = self.tokens.peek().ok_or(ParserDiag {})?;
+            match token.kind {
+                TokenKind::Delimiter(Delimiter::RightBracket) => {
                     let mut pos = token.pos;
                     pos.advance_column();
                     self.tokens.next();
                     break pos;
                 }
-                Some(token) if token.kind == TokenKind::Delimiter(Delimiter::Comma) => {
+                TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
                         Err(ParserDiag {})
                     } else {
@@ -92,8 +92,7 @@ where
                         Ok(())
                     }
                 }
-                Some(_) => Ok(()),
-                None => Err(ParserDiag {}),
+                _ => Ok(()),
             }?;
             let item = self.parse_value()?;
             buf.push(Box::new(item));
@@ -105,14 +104,15 @@ where
     fn parse_rest_of_object(&mut self, start: CodePos) -> Result<Value, ParserDiag> {
         let mut buf: Vec<(String, Box<Value>)> = Vec::new();
         let end = loop {
-            match self.tokens.peek() {
-                Some(token) if token.kind == TokenKind::Delimiter(Delimiter::RightBrace) => {
+            let token = self.tokens.peek().ok_or(ParserDiag {})?;
+            match token.kind {
+                TokenKind::Delimiter(Delimiter::RightBrace) => {
                     let mut pos = token.pos;
                     pos.advance_column();
                     self.tokens.next();
                     break pos;
                 }
-                Some(token) if token.kind == TokenKind::Delimiter(Delimiter::Comma) => {
+                TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
                         Err(ParserDiag {})
                     } else {
@@ -120,8 +120,7 @@ where
                         Ok(())
                     }
                 }
-                Some(_) => Ok(()),
-                None => Err(ParserDiag {}),
+                _ => Ok(()),
             }?;
             let pair = self.parse_pair_for_object()?;
             buf.push((pair.0, Box::new(pair.1)));
@@ -131,19 +130,14 @@ where
 
     // Parses a pair of the object.
     fn parse_pair_for_object(&mut self) -> Result<(String, Value), ParserDiag> {
-        let name = match self.tokens.peek() {
-            Some(token) => match &token.kind {
-                TokenKind::Literal(Literal::String(s)) => Ok(s.clone()),
-                _ => Err(ParserDiag {}),
-            },
+        let token_for_name = self.tokens.next().ok_or(ParserDiag {})?;
+        let name = match token_for_name.kind {
+            TokenKind::Literal(Literal::String(s)) => Ok(s),
             _ => Err(ParserDiag {}),
         }?;
-        self.tokens.next();
-        match self.tokens.peek() {
-            Some(token) if token.kind == TokenKind::Delimiter(Delimiter::Colon) => {
-                self.tokens.next();
-                Ok(())
-            }
+        let token_for_colon = self.tokens.next().ok_or(ParserDiag {})?;
+        match token_for_colon.kind {
+            TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             _ => Err(ParserDiag {}),
         }?;
         let value = self.parse_value()?;
