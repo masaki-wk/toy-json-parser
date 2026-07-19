@@ -130,19 +130,15 @@ where
 
     // Parses a pair of the object.
     fn parse_pair_for_object(&mut self) -> Result<(String, Value), ParserDiag> {
-        let name = match self.tokens.peek() {
-            Some(token) => match &token.kind {
-                TokenKind::Literal(Literal::String(s)) => Ok(s.clone()),
+        let name = match self.tokens.next() {
+            Some(token) => match token.kind {
+                TokenKind::Literal(Literal::String(s)) => Ok(s),
                 _ => Err(ParserDiag {}),
             },
             _ => Err(ParserDiag {}),
         }?;
-        self.tokens.next();
-        match self.tokens.peek() {
-            Some(token) if token.kind == TokenKind::Delimiter(Delimiter::Colon) => {
-                self.tokens.next();
-                Ok(())
-            }
+        match self.tokens.next() {
+            Some(token) if token.kind == TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             _ => Err(ParserDiag {}),
         }?;
         let value = self.parse_value()?;
