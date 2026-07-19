@@ -58,7 +58,7 @@ where
             match &token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.pos)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.pos)),
-                TokenKind::Literal(l) => Ok((TokenCategory::Literal(l.clone()), token.pos)),
+                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit.clone()), token.pos)),
                 TokenKind::Invalid(_) => Err(ParserDiag {}),
                 _ => Err(ParserDiag {}),
             }
@@ -69,7 +69,7 @@ where
         match token_category {
             TokenCategory::BeginArray => self.parse_rest_of_array(pos),
             TokenCategory::BeginObject => self.parse_rest_of_object(pos),
-            TokenCategory::Literal(l) => Ok(Value::Literal(l)),
+            TokenCategory::Literal(lit) => Ok(Value::Literal(lit)),
         }
     }
 
