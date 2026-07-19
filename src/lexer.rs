@@ -62,16 +62,16 @@ where
 
     // Reads a raw string.
     fn read_raw_string(&mut self, firstchar: char) -> String {
-        let mut s = firstchar.to_string();
+        let mut buf = firstchar.to_string();
         while let Some(c) = self.chars.peek().copied() {
             if c.is_ascii_alphanumeric() || c == '_' {
                 self.chars_next_and_then_advance_column();
-                s.push(c);
+                buf.push(c);
             } else {
                 break;
             }
         }
-        s
+        buf
     }
 
     // Reads a known raw string.
@@ -96,13 +96,13 @@ where
             '0' => (false, true),
             _ => (false, false),
         };
-        let mut s = firstchar.to_string();
+        let mut buf = firstchar.to_string();
         if !skip_integer_component {
             let mut has_integer_component = !is_negative;
             loop {
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
-                        s.push(*c);
+                        buf.push(*c);
                         self.chars_next_and_then_advance_column();
                         has_integer_component = true;
                     }
@@ -112,12 +112,12 @@ where
                 }
             }
             if !has_integer_component {
-                return TokenKind::Invalid(s);
+                return TokenKind::Invalid(buf);
             }
         }
         let has_decimal_point = match self.chars.peek() {
             Some(c) if *c == '.' => {
-                s.push(*c);
+                buf.push(*c);
                 self.chars_next_and_then_advance_column();
                 true
             }
@@ -128,7 +128,7 @@ where
             loop {
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
-                        s.push(*c);
+                        buf.push(*c);
                         self.chars_next_and_then_advance_column();
                         has_fraction_component = true;
                     }
@@ -138,12 +138,12 @@ where
                 }
             }
             if !has_fraction_component {
-                return TokenKind::Invalid(s);
+                return TokenKind::Invalid(buf);
             }
         }
         let has_exponent_char = match self.chars.peek() {
             Some(c) if *c == 'e' || *c == 'E' => {
-                s.push(*c);
+                buf.push(*c);
                 self.chars_next_and_then_advance_column();
                 true
             }
@@ -152,7 +152,7 @@ where
         if has_exponent_char {
             match self.chars.peek() {
                 Some(c) if *c == '+' || *c == '-' => {
-                    s.push(*c);
+                    buf.push(*c);
                     self.chars_next_and_then_advance_column();
                 }
                 _ => {}
@@ -161,7 +161,7 @@ where
             loop {
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
-                        s.push(*c);
+                        buf.push(*c);
                         self.chars_next_and_then_advance_column();
                         has_exponent_component = true;
                     }
@@ -171,15 +171,15 @@ where
                 }
             }
             if !has_exponent_component {
-                return TokenKind::Invalid(s);
+                return TokenKind::Invalid(buf);
             }
         }
-        TokenKind::Literal(Literal::Number(s))
+        TokenKind::Literal(Literal::Number(buf))
     }
 
     // Reads a quoted string token.
     fn read_quoted_string(&mut self) -> TokenKind {
-        let mut s = String::new();
+        let mut buf = String::new();
         let status = (|| {
             let mut failed = false;
             loop {
@@ -189,15 +189,15 @@ where
                         break;
                     }
                     '\\' => {
-                        s.push(c);
+                        buf.push(c);
                         let c = self.chars_next_and_then_advance_auto()?;
-                        s.push(c);
+                        buf.push(c);
                         match c {
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
                                     let c = self.chars_next_and_then_advance_auto()?;
-                                    s.push(c);
+                                    buf.push(c);
                                     if !c.is_ascii_hexdigit() {
                                         failed = true;
                                     }
@@ -209,20 +209,20 @@ where
                         }
                     }
                     '\0'..'\x1f' => {
-                        s.push(c);
+                        buf.push(c);
                         failed = true;
                     }
                     _ => {
-                        s.push(c);
+                        buf.push(c);
                     }
                 }
             }
             Some(!failed)
         })();
         match status {
-            Some(true) => TokenKind::Literal(Literal::String(s)),
-            Some(false) => TokenKind::Invalid(format!("\"{s}\"")),
-            None => TokenKind::Invalid('"'.to_string() + &s),
+            Some(true) => TokenKind::Literal(Literal::String(buf)),
+            Some(false) => TokenKind::Invalid(format!("\"{buf}\"")),
+            None => TokenKind::Invalid('"'.to_string() + &buf),
         }
     }
 }
