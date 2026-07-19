@@ -39,13 +39,33 @@ where
         }
     }
 
+    // The implementation of `chars_next_and_advance_column` and `chars_next_and_advance_auto`.
+    fn chars_next_and_advance(&mut self, always_column: bool) -> Option<T::Item> {
+        let c = self.chars.next()?;
+        if always_column || c != '\n' {
+            self.pos.advance_column();
+        } else {
+            self.pos.advance_line();
+        }
+        Some(c)
+    }
+
+    // Returns the result of `self.chars.next()`, and advances the column of the position.
+    fn chars_next_and_advance_column(&mut self) -> Option<T::Item> {
+        self.chars_next_and_advance(true)
+    }
+
+    // Returns the result of `self.chars.next()`, and advances the position automatically.
+    fn chars_next_and_advance_auto(&mut self) -> Option<T::Item> {
+        self.chars_next_and_advance(false)
+    }
+
     // Reads a raw string.
     fn read_raw_string(&mut self, firstchar: char) -> String {
         let mut s = firstchar.to_string();
         while let Some(c) = self.chars.peek().copied() {
             if c.is_ascii_alphanumeric() || c == '_' {
-                self.chars.next();
-                self.pos.advance_column();
+                self.chars_next_and_advance_column();
                 s.push(c);
             } else {
                 break;
@@ -83,8 +103,7 @@ where
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
                         s.push(*c);
-                        self.chars.next();
-                        self.pos.advance_column();
+                        self.chars_next_and_advance_column();
                         has_integer_component = true;
                     }
                     _ => {
@@ -99,8 +118,7 @@ where
         let has_decimal_point = match self.chars.peek() {
             Some(c) if *c == '.' => {
                 s.push(*c);
-                self.chars.next();
-                self.pos.advance_column();
+                self.chars_next_and_advance_column();
                 true
             }
             _ => false,
@@ -111,8 +129,7 @@ where
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
                         s.push(*c);
-                        self.chars.next();
-                        self.pos.advance_column();
+                        self.chars_next_and_advance_column();
                         has_fraction_component = true;
                     }
                     _ => {
@@ -127,8 +144,7 @@ where
         let has_exponent_char = match self.chars.peek() {
             Some(c) if *c == 'e' || *c == 'E' => {
                 s.push(*c);
-                self.chars.next();
-                self.pos.advance_column();
+                self.chars_next_and_advance_column();
                 true
             }
             _ => false,
@@ -137,8 +153,7 @@ where
             match self.chars.peek() {
                 Some(c) if *c == '+' || *c == '-' => {
                     s.push(*c);
-                    self.chars.next();
-                    self.pos.advance_column();
+                    self.chars_next_and_advance_column();
                 }
                 _ => {}
             }
@@ -147,8 +162,7 @@ where
                 match self.chars.peek() {
                     Some(c) if c.is_ascii_digit() => {
                         s.push(*c);
-                        self.chars.next();
-                        self.pos.advance_column();
+                        self.chars_next_and_advance_column();
                         has_exponent_component = true;
                     }
                     _ => {
@@ -169,23 +183,20 @@ where
         let valid = (|| {
             let mut failed = false;
             loop {
-                let c = self.chars.next()?;
-                self.pos.advance_column();
+                let c = self.chars_next_and_advance_auto()?;
                 match c {
                     '"' => {
                         break;
                     }
                     '\\' => {
                         s.push(c);
-                        let c = self.chars.next()?;
-                        self.pos.advance_column();
+                        let c = self.chars_next_and_advance_auto()?;
                         s.push(c);
                         match c {
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
-                                    let c = self.chars.next()?;
-                                    self.pos.advance_column();
+                                    let c = self.chars_next_and_advance_auto()?;
                                     s.push(c);
                                     if !c.is_ascii_hexdigit() {
                                         failed = true;
@@ -234,15 +245,13 @@ where
         }
         let (pos, category, firstchar) = loop {
             enum CharCategory {
-                WhitespaceColumn,
-                WhitespaceLine,
+                Whitespace,
                 FirstCharOfToken(TokenCategory),
             }
             let pos = self.pos;
-            let ch = self.chars.next()?;
+            let ch = self.chars_next_and_advance_auto()?;
             let ch_category = match ch {
-                ' ' | '\t' | '\r' => CharCategory::WhitespaceColumn,
-                '\n' => CharCategory::WhitespaceLine,
+                ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
                 '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
                 ']' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBracket)),
                 '{' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBrace)),
@@ -258,13 +267,8 @@ where
                 _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
-            match ch_category {
-                CharCategory::WhitespaceColumn => self.pos.advance_column(),
-                CharCategory::WhitespaceLine => self.pos.advance_line(),
-                CharCategory::FirstCharOfToken(token_category) => {
-                    self.pos.advance_column();
-                    break (pos, token_category, ch);
-                }
+            if let CharCategory::FirstCharOfToken(token_category) = ch_category {
+                break (pos, token_category, ch);
             }
         };
         let kind = match category {
