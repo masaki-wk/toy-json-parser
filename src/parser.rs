@@ -54,18 +54,17 @@ where
             BeginObject,
             Literal(Literal),
         }
-        let (token_category, pos) = if let Some(token) = self.tokens.peek() {
-            match &token.kind {
+        let (token_category, pos) = if let Some(token) = self.tokens.next() {
+            match token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.pos)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.pos)),
                 TokenKind::Delimiter(_) => Err(ParserDiag {}),
-                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit.clone()), token.pos)),
+                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.pos)),
                 TokenKind::Invalid(_) => Err(ParserDiag {}),
             }
         } else {
             Err(ParserDiag {})
         }?;
-        self.tokens.next();
         match token_category {
             TokenCategory::BeginArray => self.parse_rest_of_array(pos),
             TokenCategory::BeginObject => self.parse_rest_of_object(pos),
