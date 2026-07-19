@@ -166,9 +166,10 @@ where
     // Reads a quoted string token.
     fn read_quoted_string(&mut self) -> TokenKind {
         let mut s = String::new();
-        let mut failed = false;
-        loop {
-            if let Some(c) = self.chars.next() {
+        let valid = (|| {
+            let mut failed = false;
+            loop {
+                let c = self.chars.next()?;
                 self.pos.advance_column();
                 match c {
                     '"' => {
@@ -176,32 +177,24 @@ where
                     }
                     '\\' => {
                         s.push(c);
-                        if let Some(c) = self.chars.next() {
-                            self.pos.advance_column();
-                            s.push(c);
-                            match c {
-                                '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
-                                'u' => {
-                                    for _ in 0..4 {
-                                        if let Some(c) = self.chars.next() {
-                                            self.pos.advance_column();
-                                            s.push(c);
-                                            if !c.is_ascii_hexdigit() {
-                                                failed = true;
-                                            }
-                                        } else {
-                                            failed = true;
-                                            break;
-                                        }
+                        let c = self.chars.next()?;
+                        self.pos.advance_column();
+                        s.push(c);
+                        match c {
+                            '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
+                            'u' => {
+                                for _ in 0..4 {
+                                    let c = self.chars.next()?;
+                                    self.pos.advance_column();
+                                    s.push(c);
+                                    if !c.is_ascii_hexdigit() {
+                                        failed = true;
                                     }
                                 }
-                                _ => {
-                                    failed = true;
-                                }
                             }
-                        } else {
-                            failed = true;
-                            break;
+                            _ => {
+                                failed = true;
+                            }
                         }
                     }
                     '\0'..'\x1f' => {
@@ -212,12 +205,11 @@ where
                         s.push(c);
                     }
                 }
-            } else {
-                failed = true;
-                break;
             }
-        }
-        if !failed {
+            Some(!failed)
+        })()
+        .unwrap_or(false);
+        if valid {
             TokenKind::Literal(Literal::String(s))
         } else {
             TokenKind::Invalid(format!("\"{s}\""))
