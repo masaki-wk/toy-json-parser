@@ -180,7 +180,7 @@ where
     // Reads a quoted string token.
     fn read_quoted_string(&mut self) -> TokenKind {
         let mut s = String::new();
-        let valid = (|| {
+        let status = (|| {
             let mut failed = false;
             loop {
                 let c = self.chars_next_and_advance_auto()?;
@@ -218,12 +218,11 @@ where
                 }
             }
             Some(!failed)
-        })()
-        .unwrap_or(false);
-        if valid {
-            TokenKind::Literal(Literal::String(s))
-        } else {
-            TokenKind::Invalid(format!("\"{s}\""))
+        })();
+        match status {
+            Some(true) => TokenKind::Literal(Literal::String(s)),
+            Some(false) => TokenKind::Invalid(format!("\"{s}\"")),
+            None => TokenKind::Invalid('"'.to_string() + &s),
         }
     }
 }
