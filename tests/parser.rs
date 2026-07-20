@@ -189,3 +189,47 @@ fn parse_illegal_unfinished_array_lacks_next_value() -> Result<()> {
     };
     do_parse_illegal_code(input, ParserError::UnfinishedArray(start, end))
 }
+
+#[test]
+fn parse_illegal_unfinished_object_no_name() -> Result<()> {
+    let input = "{";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    do_parse_illegal_code(input, ParserError::UnfinishedObject(start, end))
+}
+
+#[test]
+fn parse_illegal_unfinished_object_lacks_next_colon() -> Result<()> {
+    let input = "{\"foo\"";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    do_parse_illegal_code(input, ParserError::ObjectMemberLacksSeparator(start, end))
+}
+
+#[test]
+fn parse_illegal_unfinished_object_lacks_next_value() -> Result<()> {
+    let input = "{\"foo\":";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    do_parse_illegal_code(input, ParserError::ObjectMemberLacksValue(start, end))
+}
+
+#[test]
+fn parse_illegal_unfinished_object_lacks_next_comma() -> Result<()> {
+    let input = "{\"foo\": 0";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    do_parse_illegal_code(input, ParserError::UnfinishedObject(start, end))
+}

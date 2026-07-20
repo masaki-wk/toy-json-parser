@@ -9,7 +9,7 @@ pub enum ParserError {
     UnfinishedArray(CodePos, CodePos),
     UnfinishedObject(CodePos, CodePos),
     NameOfObjectMemberIsNotString(CodePos, Token),
-    ObjectMemberLacksSeparator(CodePos, Token),
+    ObjectMemberLacksSeparator(CodePos, CodePos),
     ObjectMemberLacksValue(CodePos, CodePos),
     ExtraTokenAtTheEnd(CodePos),
 }
