@@ -140,6 +140,7 @@ where
         let token_for_colon = self.lexer.next().ok_or(ParserError::ObjectMemberLacksSeparator(start, self.lexer.position()))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
+            TokenKind::Invalid(_) => Err(ParserError::InvalidToken(token_for_colon)),
             _ => Err(ParserError::ObjectMemberLacksSeparator(start, token_for_colon.pos)),
         }?;
         let value = self.parse_value().map_err(|e| match e {
