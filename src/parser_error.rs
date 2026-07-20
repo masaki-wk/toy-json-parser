@@ -1,10 +1,10 @@
-use crate::{CodePos, Delimiter, Literal, Token};
+use crate::{CodePos, Delimiter, Literal};
 
 /// Represents a parser error.
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParserError {
     NoToken,
-    InvalidToken(Token),
+    InvalidToken(String, CodePos),
     DelimiterInWrongPlace(Delimiter, CodePos),
     UnfinishedArray(CodePos, CodePos),
     UnfinishedObject(CodePos, CodePos),

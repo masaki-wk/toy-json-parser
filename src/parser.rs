@@ -55,7 +55,7 @@ where
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.pos)),
                 TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token.pos)),
                 TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.pos)),
-                TokenKind::Invalid(_) => Err(ParserError::InvalidToken(token)),
+                TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token.pos)),
             }
         } else {
             Err(ParserError::NoToken)
@@ -135,12 +135,12 @@ where
             TokenKind::Literal(Literal::String(s)) => Ok(s),
             TokenKind::Literal(lit) => Err(ParserError::NameOfObjectMemberIsNotString(lit, token_for_name.pos)),
             TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token_for_name.pos)),
-            TokenKind::Invalid(_) => Err(ParserError::InvalidToken(token_for_name)),
+            TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_name.pos)),
         }?;
         let token_for_colon = self.lexer.next().ok_or(ParserError::ObjectMemberLacksSeparator(start, self.lexer.position()))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
-            TokenKind::Invalid(_) => Err(ParserError::InvalidToken(token_for_colon)),
+            TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_colon.pos)),
             _ => Err(ParserError::ObjectMemberLacksSeparator(start, token_for_colon.pos)),
         }?;
         let value = self.parse_value().map_err(|e| match e {

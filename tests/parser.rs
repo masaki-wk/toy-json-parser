@@ -146,6 +146,13 @@ fn parse_illegal_no_token() -> Result<()> {
 }
 
 #[test]
+fn parse_illegal_invalid_token() -> Result<()> {
+    let input = "_";
+    let pos = CodePos { line: 1, column: 1 };
+    do_parse_illegal_code(input, ParserError::InvalidToken(input.to_string(), pos))
+}
+
+#[test]
 fn parse_illegal_extra_token_at_the_end() -> Result<()> {
     let body = "0 ";
     let extra = "1";
