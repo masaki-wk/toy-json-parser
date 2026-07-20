@@ -35,6 +35,7 @@ pub enum ParserError {
     UnfinishedObject(CodePos, CodePos),
     NameOfObjectMemberIsNotString(CodePos, Token),
     ObjectMemberLacksSeparator(CodePos, Token),
+    ObjectMemberLacksValue(CodePos, CodePos),
     ExtraTokenAtTheEnd(Token),
 }
 
@@ -103,7 +104,10 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let item = self.parse_value()?;
+            let item = self.parse_value().map_err(|e| match e {
+                ParserError::NoToken => ParserError::UnfinishedArray(start, CodePos { line: 1, column: 1 }),
+                _ => e,
+            })?;
             buf.push(Box::new(item));
         };
         Ok(Value::Array((buf, Range { start, end })))
@@ -150,7 +154,10 @@ where
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             _ => Err(ParserError::ObjectMemberLacksSeparator(start, token_for_colon)),
         }?;
-        let value = self.parse_value()?;
+        let value = self.parse_value().map_err(|e| match e {
+            ParserError::NoToken => ParserError::ObjectMemberLacksValue(start, CodePos { line: 1, column: 1 }),
+            _ => e,
+        })?;
         Ok((name, value))
     }
 }
