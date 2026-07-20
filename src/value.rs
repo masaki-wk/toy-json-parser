@@ -6,6 +6,6 @@ use crate::{CodePos, Literal};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     Array((Vec<Box<Value>>, Range<CodePos>)),
-    Object((Vec<(std::string::String, Box<Value>)>, Range<CodePos>)),
+    Object((Vec<((std::string::String, CodePos), Box<Value>)>, Range<CodePos>)),
     Literal(Literal, CodePos),
 }

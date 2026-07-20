@@ -133,16 +133,23 @@ fn parse_object_empty() -> Result<()> {
 fn parse_object_single_pair() -> Result<()> {
     let input = "{\"a\": 0}";
     let start = CodePos { line: 1, column: 1 };
+    let name_pos = CodePos {
+        line: start.line,
+        column: start.column + 1,
+    };
     let value_pos = CodePos {
         line: start.line,
-        column: start.column + 6,
+        column: name_pos.column + 5,
     };
     let end = CodePos {
         line: start.line,
         column: start.column + input.chars().count(),
     };
     let mut buf = Vec::new();
-    buf.push(("a".to_string(), Box::new(Value::Literal(Literal::Number("0".to_string()), value_pos))));
+    buf.push((
+        ("a".to_string(), name_pos),
+        Box::new(Value::Literal(Literal::Number("0".to_string()), value_pos)),
+    ));
     do_parse_legal_code(input, Value::Object((buf, start..end)))
 }
 
@@ -150,21 +157,35 @@ fn parse_object_single_pair() -> Result<()> {
 fn parse_object_multiple_pair() -> Result<()> {
     let input = "{\"a\": 0, \"b\": 1}";
     let start = CodePos { line: 1, column: 1 };
+    let name1_pos = CodePos {
+        line: start.line,
+        column: start.column + 1,
+    };
     let value1_pos = CodePos {
         line: start.line,
-        column: start.column + 6,
+        column: name1_pos.column + 5,
+    };
+    let name2_pos = CodePos {
+        line: start.line,
+        column: value1_pos.column + 3,
     };
     let value2_pos = CodePos {
         line: start.line,
-        column: value1_pos.column + 8,
+        column: name2_pos.column + 5,
     };
     let end = CodePos {
         line: start.line,
         column: start.column + input.chars().count(),
     };
     let mut buf = Vec::new();
-    buf.push(("a".to_string(), Box::new(Value::Literal(Literal::Number("0".to_string()), value1_pos))));
-    buf.push(("b".to_string(), Box::new(Value::Literal(Literal::Number("1".to_string()), value2_pos))));
+    buf.push((
+        ("a".to_string(), name1_pos),
+        Box::new(Value::Literal(Literal::Number("0".to_string()), value1_pos)),
+    ));
+    buf.push((
+        ("b".to_string(), name2_pos),
+        Box::new(Value::Literal(Literal::Number("1".to_string()), value2_pos)),
+    ));
     do_parse_legal_code(input, Value::Object((buf, start..end)))
 }
 
