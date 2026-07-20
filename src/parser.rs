@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::ops::Range;
 
-use crate::{CodePos, Delimiter, Literal, Token, TokenKind, Value};
+use crate::{CodePos, Delimiter, Literal, ParserError, Token, TokenKind, Value};
 
 /// Represents a parser.
 ///
@@ -24,28 +24,6 @@ where
 {
     tokens: Peekable<T>,
 }
-
-/// Represents a parser error.
-#[derive(Debug, PartialEq, Clone)]
-pub enum ParserError {
-    NoToken,
-    InvalidToken(Token),
-    DelimiterInWrongPlace(Delimiter, CodePos),
-    UnfinishedArray(CodePos, CodePos),
-    UnfinishedObject(CodePos, CodePos),
-    NameOfObjectMemberIsNotString(CodePos, Token),
-    ObjectMemberLacksSeparator(CodePos, Token),
-    ObjectMemberLacksValue(CodePos, CodePos),
-    ExtraTokenAtTheEnd(Token),
-}
-
-impl std::fmt::Display for ParserError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl std::error::Error for ParserError {}
 
 impl<T> Parser<T>
 where

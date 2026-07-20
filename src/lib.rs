@@ -13,6 +13,8 @@ pub use lexer::Lexer;
 mod value;
 pub use value::Value;
 
+mod parser_error;
+pub use parser_error::ParserError;
+
 mod parser;
 pub use parser::Parser;
-pub use parser::ParserError;
