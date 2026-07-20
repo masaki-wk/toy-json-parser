@@ -15,4 +15,4 @@ pub use value::Value;
 
 mod parser;
 pub use parser::Parser;
-pub use parser::ParserDiag;
+pub use parser::ParserError;
