@@ -63,7 +63,7 @@ where
         match token_category {
             TokenCategory::BeginArray => self.parse_rest_of_array(pos),
             TokenCategory::BeginObject => self.parse_rest_of_object(pos),
-            TokenCategory::Literal(lit) => Ok(Value::Literal(lit)),
+            TokenCategory::Literal(lit) => Ok(Value::Literal(lit, pos)),
         }
     }
 

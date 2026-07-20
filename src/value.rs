@@ -7,5 +7,5 @@ use crate::{CodePos, Literal};
 pub enum Value {
     Array((Vec<Box<Value>>, Range<CodePos>)),
     Object((Vec<(std::string::String, Box<Value>)>, Range<CodePos>)),
-    Literal(Literal),
+    Literal(Literal, CodePos),
 }
