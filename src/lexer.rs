@@ -60,6 +60,55 @@ where
         self.chars_next_and_then_advance(false)
     }
 
+    // Advances the iterator and returns the next token, like `iter.next()`.
+    fn take_token(&mut self) -> Option<Token> {
+        enum TokenCategory {
+            Delimiter(Delimiter),
+            RawStringKnown(Literal, &'static str),
+            RawStringUnknown,
+            Number,
+            QuotedString,
+            Invalid,
+        }
+        let (pos, category, firstchar) = loop {
+            enum CharCategory {
+                Whitespace,
+                FirstCharOfToken(TokenCategory),
+            }
+            let pos = self.pos;
+            let ch = self.chars_next_and_then_advance_auto()?;
+            let ch_category = match ch {
+                ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
+                '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
+                ']' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBracket)),
+                '{' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBrace)),
+                '}' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBrace)),
+                ':' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Colon)),
+                ',' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Comma)),
+                't' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
+                'f' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
+                'n' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Null, "null")),
+                '"' => CharCategory::FirstCharOfToken(TokenCategory::QuotedString),
+                '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                _ if ch.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
+                _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
+            };
+            if let CharCategory::FirstCharOfToken(token_category) = ch_category {
+                break (pos, token_category, ch);
+            }
+        };
+        let kind = match category {
+            TokenCategory::Delimiter(delim) => TokenKind::Delimiter(delim),
+            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar),
+            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar),
+            TokenCategory::Number => self.read_number(firstchar),
+            TokenCategory::QuotedString => self.read_quoted_string(),
+            TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
+        };
+        Some(Token { kind, pos })
+    }
+
     // Reads a raw string.
     fn read_raw_string(&mut self, firstchar: char) -> String {
         let mut buf = firstchar.to_string();
@@ -234,50 +283,6 @@ where
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        enum TokenCategory {
-            Delimiter(Delimiter),
-            RawStringKnown(Literal, &'static str),
-            RawStringUnknown,
-            Number,
-            QuotedString,
-            Invalid,
-        }
-        let (pos, category, firstchar) = loop {
-            enum CharCategory {
-                Whitespace,
-                FirstCharOfToken(TokenCategory),
-            }
-            let pos = self.pos;
-            let ch = self.chars_next_and_then_advance_auto()?;
-            let ch_category = match ch {
-                ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
-                '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
-                ']' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBracket)),
-                '{' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBrace)),
-                '}' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBrace)),
-                ':' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Colon)),
-                ',' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Comma)),
-                't' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
-                'f' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
-                'n' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Null, "null")),
-                '"' => CharCategory::FirstCharOfToken(TokenCategory::QuotedString),
-                '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                _ if ch.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
-                _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
-            };
-            if let CharCategory::FirstCharOfToken(token_category) = ch_category {
-                break (pos, token_category, ch);
-            }
-        };
-        let kind = match category {
-            TokenCategory::Delimiter(delim) => TokenKind::Delimiter(delim),
-            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar),
-            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar),
-            TokenCategory::Number => self.read_number(firstchar),
-            TokenCategory::QuotedString => self.read_quoted_string(),
-            TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
-        };
-        Some(Token { kind, pos })
+        self.take_token()
     }
 }
