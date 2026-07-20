@@ -24,6 +24,7 @@ where
     T: Iterator<Item = char>,
 {
     chars: Peekable<T>,
+    peeked: Option<Option<Token>>,
     pos: CodePos,
 }
 
@@ -35,6 +36,7 @@ where
     pub fn new(chars: T) -> Self {
         Self {
             chars: chars.peekable(),
+            peeked: None,
             pos: CodePos { line: 1, column: 1 },
         }
     }
@@ -107,6 +109,19 @@ where
             TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
         };
         Some(Token { kind, pos })
+    }
+
+    // The implementation of `next()`.
+    fn next_impl(&mut self) -> Option<Token> {
+        if let Some(item) = self.peeked.take() { item } else { self.take_token() }
+    }
+
+    /// Returns a reference to `next()` value without advancing the iterator, like `Peekable`.
+    pub fn peek(&mut self) -> Option<&Token> {
+        if self.peeked.is_none() {
+            self.peeked = Some(self.take_token());
+        }
+        self.peeked.as_ref()?.as_ref()
     }
 
     // Reads a raw string.
@@ -283,6 +298,6 @@ where
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.take_token()
+        self.next_impl()
     }
 }
