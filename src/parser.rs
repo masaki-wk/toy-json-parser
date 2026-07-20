@@ -26,7 +26,7 @@ where
 }
 
 /// Represents a parser error.
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ParserError {
     NoToken,
     InvalidToken(Token),

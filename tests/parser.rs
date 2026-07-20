@@ -1,8 +1,8 @@
 // Tests for Parser
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 
-use toy_json_parser::{CodePos, Lexer, Literal, Parser, Value};
+use toy_json_parser::{CodePos, Lexer, Literal, Parser, ParserError, Value};
 
 #[test]
 fn new() -> Result<()> {
@@ -16,6 +16,20 @@ fn do_parse_legal_code(input: &str, expected: Value) -> Result<()> {
     let mut parser = Parser::new(lexer);
     let value = parser.parse()?;
     assert_eq!(value, expected);
+    Ok(())
+}
+
+fn do_parse_illegal_code(input: &str, expected: ParserError) -> Result<()> {
+    let lexer = Lexer::new(input.chars());
+    let mut parser = Parser::new(lexer);
+    match parser.parse() {
+        Ok(_) => {
+            bail!("");
+        }
+        Err(e) => {
+            assert_eq!(e, expected);
+        }
+    }
     Ok(())
 }
 
@@ -123,4 +137,10 @@ fn parse_object_multiple_pair() -> Result<()> {
     buf.push(("a".to_string(), Box::new(Value::Literal(Literal::Number("0".to_string())))));
     buf.push(("b".to_string(), Box::new(Value::Literal(Literal::Number("1".to_string())))));
     do_parse_legal_code(input, Value::Object((buf, start..end)))
+}
+
+#[test]
+fn parse_illegal_no_token() -> Result<()> {
+    let input = "";
+    do_parse_illegal_code(input, ParserError::NoToken)
 }
