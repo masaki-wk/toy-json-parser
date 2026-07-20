@@ -133,7 +133,9 @@ where
         let token_for_name = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, self.lexer.position()))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
-            _ => Err(ParserError::NameOfObjectMemberIsNotString(start, token_for_name)),
+            TokenKind::Literal(_) => Err(ParserError::NameOfObjectMemberIsNotString(start, token_for_name)),
+            TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token_for_name.pos)),
+            TokenKind::Invalid(_) => Err(ParserError::InvalidToken(token_for_name)),
         }?;
         let token_for_colon = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, self.lexer.position()))?;
         match token_for_colon.kind {
