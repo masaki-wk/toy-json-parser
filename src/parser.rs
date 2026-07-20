@@ -71,7 +71,8 @@ where
     fn parse_rest_of_array(&mut self, start: CodePos) -> Result<Value, ParserError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
         let end = loop {
-            let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(start, CodePos { line: 1, column: 1 }))?;
+            let token_pos = self.lexer.position();
+            let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(start, token_pos))?;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
                     let mut pos = token.pos;
@@ -90,7 +91,7 @@ where
                 _ => Ok(()),
             }?;
             let item = self.parse_value().map_err(|e| match e {
-                ParserError::NoToken => ParserError::UnfinishedArray(start, CodePos { line: 1, column: 1 }),
+                ParserError::NoToken => ParserError::UnfinishedArray(start, self.lexer.position()),
                 _ => e,
             })?;
             buf.push(Box::new(item));
@@ -102,7 +103,8 @@ where
     fn parse_rest_of_object(&mut self, start: CodePos) -> Result<Value, ParserError> {
         let mut buf: Vec<(String, Box<Value>)> = Vec::new();
         let end = loop {
-            let token = self.lexer.peek().ok_or(ParserError::UnfinishedObject(start, CodePos { line: 1, column: 1 }))?;
+            let token_pos = self.lexer.position();
+            let token = self.lexer.peek().ok_or(ParserError::UnfinishedObject(start, token_pos))?;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
                     let mut pos = token.pos;
@@ -128,19 +130,18 @@ where
 
     // Parses a pair of the object.
     fn parse_pair_for_object(&mut self, start: CodePos) -> Result<(String, Value), ParserError> {
-        let token_for_name = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, CodePos { line: 1, column: 1 }))?;
-        let token_for_name_pos = token_for_name.pos;
+        let token_for_name = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, self.lexer.position()))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
             _ => Err(ParserError::NameOfObjectMemberIsNotString(start, token_for_name)),
         }?;
-        let token_for_colon = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, token_for_name_pos))?;
+        let token_for_colon = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, self.lexer.position()))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             _ => Err(ParserError::ObjectMemberLacksSeparator(start, token_for_colon)),
         }?;
         let value = self.parse_value().map_err(|e| match e {
-            ParserError::NoToken => ParserError::ObjectMemberLacksValue(start, CodePos { line: 1, column: 1 }),
+            ParserError::NoToken => ParserError::ObjectMemberLacksValue(start, self.lexer.position()),
             _ => e,
         })?;
         Ok((name, value))
