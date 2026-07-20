@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use toy_json_parser::{CodePos, Lexer, Literal, Parser, ParserError, Value};
+use toy_json_parser::{CodePos, Delimiter, Lexer, Literal, Parser, ParserError, Value};
 
 #[test]
 fn new() -> Result<()> {
@@ -150,6 +150,13 @@ fn parse_illegal_invalid_token() -> Result<()> {
     let input = "_";
     let pos = CodePos { line: 1, column: 1 };
     do_parse_illegal_code(input, ParserError::InvalidToken(input.to_string(), pos))
+}
+
+#[test]
+fn parse_illegal_delimiter_in_wrong_place() -> Result<()> {
+    let input = ",";
+    let pos = CodePos { line: 1, column: 1 };
+    do_parse_illegal_code(input, ParserError::DelimiterInWrongPlace(Delimiter::Comma, pos))
 }
 
 #[test]
