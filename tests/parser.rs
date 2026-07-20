@@ -14,7 +14,7 @@ fn new() -> Result<()> {
 fn do_parse_tokens(input: &str, expected: Value) -> Result<()> {
     let lexer = Lexer::new(input.chars());
     let mut parser = Parser::new(lexer);
-    let value = parser.parse().unwrap();
+    let value = parser.parse()?;
     assert_eq!(value, expected);
     Ok(())
 }
