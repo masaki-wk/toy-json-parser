@@ -233,3 +233,17 @@ fn parse_illegal_unfinished_object_lacks_next_comma() -> Result<()> {
     };
     do_parse_illegal_code(input, ParserError::UnfinishedObject(start, end))
 }
+
+#[test]
+fn parse_illegal_object_name_is_not_string() -> Result<()> {
+    let pre = "{";
+    let name = "0";
+    let post = ": 0}";
+    let input = &format!("{pre}{name}{post}");
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + pre.chars().count(),
+    };
+    do_parse_illegal_code(input, ParserError::NameOfObjectMemberIsNotString(Literal::Number(name.to_string()), end))
+}
