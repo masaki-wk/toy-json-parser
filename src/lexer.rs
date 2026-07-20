@@ -24,6 +24,7 @@ where
     T: Iterator<Item = char>,
 {
     chars: Peekable<T>,
+    peeked: Option<Option<Token>>,
     pos: CodePos,
 }
 
@@ -35,8 +36,14 @@ where
     pub fn new(chars: T) -> Self {
         Self {
             chars: chars.peekable(),
+            peeked: None,
             pos: CodePos { line: 1, column: 1 },
         }
+    }
+
+    /// Returns the current position.
+    pub fn position(&self) -> CodePos {
+        self.pos
     }
 
     // The implementation of `chars_next_and_then_advance_column` and `chars_next_and_then_advance_auto`.
@@ -58,6 +65,68 @@ where
     // Returns the result of `self.chars.next()`, and advances the position automatically.
     fn chars_next_and_then_advance_auto(&mut self) -> Option<T::Item> {
         self.chars_next_and_then_advance(false)
+    }
+
+    // Advances the iterator and returns the next token, like `iter.next()`.
+    fn take_token(&mut self) -> Option<Token> {
+        enum TokenCategory {
+            Delimiter(Delimiter),
+            RawStringKnown(Literal, &'static str),
+            RawStringUnknown,
+            Number,
+            QuotedString,
+            Invalid,
+        }
+        let (pos, category, firstchar) = loop {
+            enum CharCategory {
+                Whitespace,
+                FirstCharOfToken(TokenCategory),
+            }
+            let pos = self.pos;
+            let ch = self.chars_next_and_then_advance_auto()?;
+            let ch_category = match ch {
+                ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
+                '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
+                ']' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBracket)),
+                '{' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBrace)),
+                '}' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBrace)),
+                ':' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Colon)),
+                ',' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Comma)),
+                't' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
+                'f' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
+                'n' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Null, "null")),
+                '"' => CharCategory::FirstCharOfToken(TokenCategory::QuotedString),
+                '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                _ if ch.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
+                _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
+                _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
+            };
+            if let CharCategory::FirstCharOfToken(token_category) = ch_category {
+                break (pos, token_category, ch);
+            }
+        };
+        let kind = match category {
+            TokenCategory::Delimiter(delim) => TokenKind::Delimiter(delim),
+            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar),
+            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar),
+            TokenCategory::Number => self.read_number(firstchar),
+            TokenCategory::QuotedString => self.read_quoted_string(),
+            TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
+        };
+        Some(Token { kind, pos })
+    }
+
+    // The implementation of `next()`.
+    fn next_impl(&mut self) -> Option<Token> {
+        if let Some(item) = self.peeked.take() { item } else { self.take_token() }
+    }
+
+    /// Returns a reference to `next()` value without advancing the iterator, like `Peekable`.
+    pub fn peek(&mut self) -> Option<&Token> {
+        if self.peeked.is_none() {
+            self.peeked = Some(self.take_token());
+        }
+        self.peeked.as_ref()?.as_ref()
     }
 
     // Reads a raw string.
@@ -89,7 +158,7 @@ where
         TokenKind::Invalid(self.read_raw_string(firstchar))
     }
 
-    // Reads a number token.
+    // Reads a number.
     fn read_number(&mut self, firstchar: char) -> TokenKind {
         let (is_negative, skip_integer_component) = match firstchar {
             '-' => (true, false),
@@ -177,7 +246,7 @@ where
         TokenKind::Literal(Literal::Number(buf))
     }
 
-    // Reads a quoted string token.
+    // Reads a quoted string.
     fn read_quoted_string(&mut self) -> TokenKind {
         let mut buf = String::new();
         let status = (|| {
@@ -234,50 +303,6 @@ where
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        enum TokenCategory {
-            Delimiter(Delimiter),
-            RawStringKnown(Literal, &'static str),
-            RawStringUnknown,
-            Number,
-            QuotedString,
-            Invalid,
-        }
-        let (pos, category, firstchar) = loop {
-            enum CharCategory {
-                Whitespace,
-                FirstCharOfToken(TokenCategory),
-            }
-            let pos = self.pos;
-            let ch = self.chars_next_and_then_advance_auto()?;
-            let ch_category = match ch {
-                ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
-                '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
-                ']' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBracket)),
-                '{' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBrace)),
-                '}' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBrace)),
-                ':' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Colon)),
-                ',' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Comma)),
-                't' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
-                'f' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
-                'n' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Null, "null")),
-                '"' => CharCategory::FirstCharOfToken(TokenCategory::QuotedString),
-                '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                _ if ch.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
-                _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
-            };
-            if let CharCategory::FirstCharOfToken(token_category) = ch_category {
-                break (pos, token_category, ch);
-            }
-        };
-        let kind = match category {
-            TokenCategory::Delimiter(delim) => TokenKind::Delimiter(delim),
-            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar),
-            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar),
-            TokenCategory::Number => self.read_number(firstchar),
-            TokenCategory::QuotedString => self.read_quoted_string(),
-            TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
-        };
-        Some(Token { kind, pos })
+        self.next_impl()
     }
 }
