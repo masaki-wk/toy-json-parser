@@ -63,7 +63,7 @@ where
         match token_category {
             TokenCategory::BeginArray => self.parse_rest_of_array(pos),
             TokenCategory::BeginObject => self.parse_rest_of_object(pos),
-            TokenCategory::Literal(lit) => Ok(Value::Literal(lit)),
+            TokenCategory::Literal(lit) => Ok(Value::Literal(lit, pos)),
         }
     }
 
@@ -101,7 +101,7 @@ where
 
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, start: CodePos) -> Result<Value, ParserError> {
-        let mut buf: Vec<(String, Box<Value>)> = Vec::new();
+        let mut buf: Vec<((String, CodePos), Box<Value>)> = Vec::new();
         let end = loop {
             let token_pos = self.lexer.position();
             let token = self.lexer.peek().ok_or(ParserError::UnfinishedObject(start, token_pos))?;
@@ -129,7 +129,7 @@ where
     }
 
     // Parses a pair of the object.
-    fn parse_pair_for_object(&mut self, start: CodePos) -> Result<(String, Value), ParserError> {
+    fn parse_pair_for_object(&mut self, start: CodePos) -> Result<((String, CodePos), Value), ParserError> {
         let token_for_name = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, self.lexer.position()))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
@@ -147,6 +147,6 @@ where
             ParserError::NoToken => ParserError::ObjectMemberLacksValue(start, self.lexer.position()),
             _ => e,
         })?;
-        Ok((name, value))
+        Ok(((name, token_for_name.pos), value))
     }
 }
