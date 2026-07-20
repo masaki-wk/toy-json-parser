@@ -138,7 +138,7 @@ where
         TokenKind::Invalid(self.read_raw_string(firstchar))
     }
 
-    // Reads a number token.
+    // Reads a number.
     fn read_number(&mut self, firstchar: char) -> TokenKind {
         let (is_negative, skip_integer_component) = match firstchar {
             '-' => (true, false),
@@ -226,7 +226,7 @@ where
         TokenKind::Literal(Literal::Number(buf))
     }
 
-    // Reads a quoted string token.
+    // Reads a quoted string.
     fn read_quoted_string(&mut self) -> TokenKind {
         let mut buf = String::new();
         let status = (|| {
