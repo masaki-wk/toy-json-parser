@@ -37,7 +37,7 @@ where
     pub fn parse(&mut self) -> Result<Value, ParserError> {
         let value = self.parse_value()?;
         match self.lexer.next() {
-            Some(token) => Err(ParserError::ExtraTokenAtTheEnd(token)),
+            Some(token) => Err(ParserError::ExtraTokenAtTheEnd(token.pos)),
             None => Ok(value),
         }
     }

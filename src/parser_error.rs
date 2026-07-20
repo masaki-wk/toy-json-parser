@@ -11,7 +11,7 @@ pub enum ParserError {
     NameOfObjectMemberIsNotString(CodePos, Token),
     ObjectMemberLacksSeparator(CodePos, Token),
     ObjectMemberLacksValue(CodePos, CodePos),
-    ExtraTokenAtTheEnd(Token),
+    ExtraTokenAtTheEnd(CodePos),
 }
 
 impl std::fmt::Display for ParserError {
