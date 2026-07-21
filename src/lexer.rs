@@ -77,12 +77,12 @@ where
             QuotedString,
             Invalid,
         }
-        let (pos, category, firstchar) = loop {
+        let (pos_start, category, firstchar) = loop {
             enum CharCategory {
                 Whitespace,
                 FirstCharOfToken(TokenCategory),
             }
-            let pos = self.pos;
+            let pos_start = self.pos;
             let ch = self.chars_next_and_then_advance_auto()?;
             let ch_category = match ch {
                 ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
@@ -102,7 +102,7 @@ where
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
             if let CharCategory::FirstCharOfToken(token_category) = ch_category {
-                break (pos, token_category, ch);
+                break (pos_start, token_category, ch);
             }
         };
         let kind = match category {
@@ -113,7 +113,11 @@ where
             TokenCategory::QuotedString => self.read_quoted_string(),
             TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
         };
-        Some(Token { kind, pos })
+        let pos_end = self.pos;
+        Some(Token {
+            kind,
+            range: pos_start..pos_end,
+        })
     }
 
     // The implementation of `next()`.

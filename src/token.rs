@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::CodePos;
 
 /// Represents a JSON delimiter.
@@ -55,5 +57,5 @@ pub enum TokenKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub kind: TokenKind,
-    pub pos: CodePos,
+    pub range: Range<CodePos>,
 }

@@ -8,7 +8,7 @@ fn do_tokenize(input: &str, expected_kind: TokenKind, expected_pos: CodePos, che
     let mut lexer = Lexer::new(input.chars());
     let token = lexer.next().with_context(|| "")?;
     assert_eq!(token.kind, expected_kind);
-    assert_eq!(token.pos, expected_pos);
+    assert_eq!(token.range.start, expected_pos);
     if check_finished {
         assert_eq!(lexer.next(), None);
     }
