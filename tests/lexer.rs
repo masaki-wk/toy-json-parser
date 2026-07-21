@@ -1,14 +1,16 @@
 // Tests for Lexer
 
+use std::ops::Range;
+
 use anyhow::{Context as _, Result};
 
 use toy_json_parser::{CodePos, Delimiter, Lexer, Literal, TokenKind};
 
-fn do_tokenize(input: &str, expected_kind: TokenKind, expected_pos: CodePos, check_finished: bool) -> Result<()> {
+fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<CodePos>, check_finished: bool) -> Result<()> {
     let mut lexer = Lexer::new(input.chars());
     let token = lexer.next().with_context(|| "")?;
     assert_eq!(token.kind, expected_kind);
-    assert_eq!(token.range.start, expected_pos);
+    assert_eq!(token.range, expected_range);
     if check_finished {
         assert_eq!(lexer.next(), None);
     }
@@ -16,19 +18,34 @@ fn do_tokenize(input: &str, expected_kind: TokenKind, expected_pos: CodePos, che
 }
 
 fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) -> Result<()> {
-    let pos = CodePos { line: 1, column: 1 };
-    do_tokenize(input, expected_kind, pos, true)
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    do_tokenize(input, expected_kind, start..end, true)
 }
 
-fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, pos: (usize, usize)) -> Result<()> {
-    let codepos = CodePos { line: pos.0, column: pos.1 };
-    do_tokenize(&format!("{prefix}{input}"), expected_kind, codepos, true)
+fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: (usize, usize)) -> Result<()> {
+    let start = CodePos {
+        line: start.0,
+        column: start.1,
+    };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    do_tokenize(&format!("{prefix}{input}"), expected_kind, start..end, true)
 }
 
 fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) -> Result<()> {
     let input = &format!("{body}{rest}");
-    let pos = CodePos { line: 1, column: 1 };
-    do_tokenize(input, expected_kind, pos, false)
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + body.chars().count(),
+    };
+    do_tokenize(input, expected_kind, start..end, false)
 }
 
 #[test]
