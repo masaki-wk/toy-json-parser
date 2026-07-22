@@ -23,8 +23,7 @@ fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) -> Result<()>
     do_tokenize(input, expected_kind, start..end, true)
 }
 
-fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: (usize, usize)) -> Result<()> {
-    let start = CodePos::new(start.0, start.1);
+fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: CodePos) -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     do_tokenize(&format!("{prefix}{input}"), expected_kind, start..end, true)
 }
@@ -167,22 +166,22 @@ fn tokenize_string_with_escaped_unicode() -> Result<()> {
 
 #[test]
 fn skip_space() -> Result<()> {
-    do_tokenize_single_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), (1, 2))
+    do_tokenize_single_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), CodePos::new(1, 2))
 }
 
 #[test]
 fn skip_tab() -> Result<()> {
-    do_tokenize_single_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), (1, 2))
+    do_tokenize_single_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), CodePos::new(1, 2))
 }
 
 #[test]
 fn skip_line_feed() -> Result<()> {
-    do_tokenize_single_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), (2, 1))
+    do_tokenize_single_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), CodePos::new(2, 1))
 }
 
 #[test]
 fn skip_carrige_return() -> Result<()> {
-    do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), (1, 2))
+    do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodePos::new(1, 2))
 }
 
 #[test]
