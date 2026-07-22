@@ -37,7 +37,7 @@ where
         Self {
             chars: chars.peekable(),
             peeked: None,
-            pos: CodePos { line: 1, column: 1 },
+            pos: CodePos::new(1, 1),
         }
     }
 

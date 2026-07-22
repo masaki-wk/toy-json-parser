@@ -6,6 +6,11 @@ pub struct CodePos {
 }
 
 impl CodePos {
+    /// Creates a new `CodePos`.
+    pub fn new(line: usize, column: usize) -> Self {
+        Self { line, column }
+    }
+
     /// Advances a line.
     pub fn advance_line(&mut self) {
         self.line += 1;
