@@ -78,10 +78,9 @@ where
             let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(start, token_pos))?;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
-                    let mut pos = token.range.start;
-                    pos.advance_column();
+                    let end = token.range.end;
                     self.lexer.next();
-                    break pos;
+                    break end;
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
@@ -113,10 +112,9 @@ where
             let token = self.lexer.peek().ok_or(ParserError::UnfinishedObject(start, token_pos))?;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
-                    let mut pos = token.range.start;
-                    pos.advance_column();
+                    let end = token.range.end;
                     self.lexer.next();
-                    break pos;
+                    break end;
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
