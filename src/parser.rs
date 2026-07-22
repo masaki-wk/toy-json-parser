@@ -49,7 +49,7 @@ where
             BeginObject,
             Literal(Literal),
         }
-        let (token_category, range) = if let Some(token) = self.lexer.next() {
+        let (token_category, token_range) = if let Some(token) = self.lexer.next() {
             match token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.range)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.range)),
@@ -61,11 +61,11 @@ where
             Err(ParserError::NoToken)
         }?;
         match token_category {
-            TokenCategory::BeginArray => self.parse_rest_of_array(range.start),
-            TokenCategory::BeginObject => self.parse_rest_of_object(range.start),
+            TokenCategory::BeginArray => self.parse_rest_of_array(token_range.start),
+            TokenCategory::BeginObject => self.parse_rest_of_object(token_range.start),
             TokenCategory::Literal(lit) => {
                 let kind = ValueKind::Literal(lit);
-                Ok(Value { kind, range })
+                Ok(Value { kind, range: token_range })
             }
         }
     }
