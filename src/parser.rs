@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crate::{CodePos, Delimiter, Lexer, Literal, ParserError, TokenKind, Value};
+use crate::{CodePos, Delimiter, Lexer, Literal, ParserError, TokenKind, Value, ValueKind};
 
 /// Represents a parser.
 ///
@@ -49,21 +49,24 @@ where
             BeginObject,
             Literal(Literal),
         }
-        let (token_category, pos) = if let Some(token) = self.lexer.next() {
+        let (token_category, range) = if let Some(token) = self.lexer.next() {
             match token.kind {
-                TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.range.start)),
-                TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.range.start)),
+                TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.range)),
+                TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.range)),
                 TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token.range.start)),
-                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.range.start)),
+                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.range)),
                 TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token.range.start)),
             }
         } else {
             Err(ParserError::NoToken)
         }?;
         match token_category {
-            TokenCategory::BeginArray => self.parse_rest_of_array(pos),
-            TokenCategory::BeginObject => self.parse_rest_of_object(pos),
-            TokenCategory::Literal(lit) => Ok(Value::Literal(lit, pos)),
+            TokenCategory::BeginArray => self.parse_rest_of_array(range.start),
+            TokenCategory::BeginObject => self.parse_rest_of_object(range.start),
+            TokenCategory::Literal(lit) => {
+                let kind = ValueKind::Literal(lit);
+                Ok(Value { kind, range })
+            }
         }
     }
 
@@ -96,12 +99,15 @@ where
             })?;
             buf.push(Box::new(item));
         };
-        Ok(Value::Array((buf, Range { start, end })))
+        Ok(Value {
+            kind: ValueKind::Array(buf),
+            range: start..end,
+        })
     }
 
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, start: CodePos) -> Result<Value, ParserError> {
-        let mut buf: Vec<((String, CodePos), Box<Value>)> = Vec::new();
+        let mut buf: Vec<((String, Range<CodePos>), Box<Value>)> = Vec::new();
         let end = loop {
             let token_pos = self.lexer.position();
             let token = self.lexer.peek().ok_or(ParserError::UnfinishedObject(start, token_pos))?;
@@ -125,11 +131,14 @@ where
             let pair = self.parse_pair_for_object(start)?;
             buf.push((pair.0, Box::new(pair.1)));
         };
-        Ok(Value::Object((buf, Range { start, end })))
+        Ok(Value {
+            kind: ValueKind::Object(buf),
+            range: start..end,
+        })
     }
 
     // Parses a pair of the object.
-    fn parse_pair_for_object(&mut self, start: CodePos) -> Result<((String, CodePos), Value), ParserError> {
+    fn parse_pair_for_object(&mut self, start: CodePos) -> Result<((String, Range<CodePos>), Value), ParserError> {
         let token_for_name = self.lexer.next().ok_or(ParserError::UnfinishedObject(start, self.lexer.position()))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
@@ -147,6 +156,6 @@ where
             ParserError::NoToken => ParserError::ObjectMemberLacksValue(start, self.lexer.position()),
             _ => e,
         })?;
-        Ok(((name, token_for_name.range.start), value))
+        Ok(((name, token_for_name.range), value))
     }
 }
