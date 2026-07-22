@@ -79,8 +79,9 @@ where
     // Parses a rest of the array.
     fn parse_rest_of_array(&mut self, begin_array_token_range: Range<CodePos>) -> Result<(Value, Range<CodePos>), ParserError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
+        let mut last_token_range = begin_array_token_range.clone();
         let (end, last_token_range) = loop {
-            let token_pos = self.lexer.position();
+            let token_pos = last_token_range.end;
             let token = self
                 .lexer
                 .peek()
@@ -102,11 +103,12 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let (item, _) = self.parse_value().map_err(|e| match e {
-                ParserError::NoToken => ParserError::UnfinishedArray(begin_array_token_range.start, self.lexer.position()),
+            let (item, last_token_range_new) = self.parse_value().map_err(|e| match e {
+                ParserError::NoToken => ParserError::UnfinishedArray(begin_array_token_range.start, token_range.end),
                 _ => e,
             })?;
             buf.push(Box::new(item));
+            last_token_range = last_token_range_new;
         };
         Ok((
             Value {
