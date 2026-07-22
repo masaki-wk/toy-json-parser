@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use toy_json_parser::{CodePos, Delimiter, Lexer, Literal, Parser, ParserError, Value};
+use toy_json_parser::{CodePos, Delimiter, Lexer, Literal, Parser, ParserError, Value, ValueKind};
 
 #[test]
 fn new() -> Result<()> {
@@ -35,35 +35,63 @@ fn do_parse_illegal_code(input: &str, expected: ParserError) -> Result<()> {
 
 #[test]
 fn parse_number() -> Result<()> {
-    let s = "123";
-    let pos = CodePos { line: 1, column: 1 };
-    do_parse_legal_code(s, Value::Literal(Literal::Number(s.to_string()), pos))
+    let input = "123";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    let kind = ValueKind::Literal(Literal::Number(input.to_string()));
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_string() -> Result<()> {
-    let s = "foo";
-    let code = format!("\"{s}\"");
-    let pos = CodePos { line: 1, column: 1 };
-    do_parse_legal_code(&code, Value::Literal(Literal::String(s.to_string()), pos))
+    let input = "foo";
+    let code = format!("\"{input}\"");
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + code.chars().count(),
+    };
+    let kind = ValueKind::Literal(Literal::String(input.to_string()));
+    do_parse_legal_code(&code, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_true() -> Result<()> {
-    let pos = CodePos { line: 1, column: 1 };
-    do_parse_legal_code("true", Value::Literal(Literal::Boolean(true), pos))
+    let input = "true";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    let kind = ValueKind::Literal(Literal::Boolean(true));
+    do_parse_legal_code(&input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_false() -> Result<()> {
-    let pos = CodePos { line: 1, column: 1 };
-    do_parse_legal_code("false", Value::Literal(Literal::Boolean(false), pos))
+    let input = "false";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    let kind = ValueKind::Literal(Literal::Boolean(false));
+    do_parse_legal_code(&input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_null() -> Result<()> {
-    let pos = CodePos { line: 1, column: 1 };
-    do_parse_legal_code("null", Value::Literal(Literal::Null, pos))
+    let input = "null";
+    let start = CodePos { line: 1, column: 1 };
+    let end = CodePos {
+        line: start.line,
+        column: start.column + input.chars().count(),
+    };
+    let kind = ValueKind::Literal(Literal::Null);
+    do_parse_legal_code(&input, Value { kind, range: start..end })
 }
 
 #[test]
@@ -71,50 +99,74 @@ fn parse_array_empty() -> Result<()> {
     let input = "[]";
     let start = CodePos { line: 1, column: 1 };
     let end = CodePos {
-        line: 1,
+        line: start.line,
         column: start.column + input.chars().count(),
     };
     let buf = Vec::new();
-    do_parse_legal_code(input, Value::Array((buf, start..end)))
+    let kind = ValueKind::Array(buf);
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_array_single_item() -> Result<()> {
     let input = "[0]";
     let start = CodePos { line: 1, column: 1 };
-    let literal_pos = CodePos {
+    let literal_start = CodePos {
         line: start.line,
         column: start.column + 1,
+    };
+    let literal_end = CodePos {
+        line: literal_start.line,
+        column: literal_start.column + 1,
     };
     let end = CodePos {
         line: start.line,
         column: start.column + input.chars().count(),
     };
     let mut buf = Vec::new();
-    buf.push(Box::new(Value::Literal(Literal::Number("0".to_string()), literal_pos)));
-    do_parse_legal_code(input, Value::Array((buf, start..end)))
+    buf.push(Box::new(Value {
+        kind: ValueKind::Literal(Literal::Number("0".to_string())),
+        range: literal_start..literal_end,
+    }));
+    let kind = ValueKind::Array(buf);
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_array_multiple_item() -> Result<()> {
     let input = "[0, 1]";
     let start = CodePos { line: 1, column: 1 };
-    let literal1_pos = CodePos {
+    let literal1_start = CodePos {
         line: start.line,
         column: start.column + 1,
     };
-    let literal2_pos = CodePos {
-        line: start.line,
-        column: literal1_pos.column + 3,
+    let literal1_end = CodePos {
+        line: literal1_start.line,
+        column: literal1_start.column + 1,
+    };
+    let literal2_start = CodePos {
+        line: literal1_end.line,
+        column: literal1_end.column + 2,
+    };
+    let literal2_end = CodePos {
+        line: literal2_start.line,
+        column: literal2_start.column + 1,
     };
     let end = CodePos {
-        line: 1,
+        line: start.line,
         column: start.column + input.chars().count(),
     };
     let mut buf = Vec::new();
-    buf.push(Box::new(Value::Literal(Literal::Number("0".to_string()), literal1_pos)));
-    buf.push(Box::new(Value::Literal(Literal::Number("1".to_string()), literal2_pos)));
-    do_parse_legal_code(input, Value::Array((buf, start..end)))
+    buf.push(Box::new(Value {
+        kind: ValueKind::Literal(Literal::Number("0".to_string())),
+        range: literal1_start..literal1_end,
+    }));
+    buf.push(Box::new(Value {
+        kind: ValueKind::Literal(Literal::Number("1".to_string())),
+        range: literal2_start..literal2_end,
+    }));
+    let kind = ValueKind::Array(buf);
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]
@@ -126,20 +178,29 @@ fn parse_object_empty() -> Result<()> {
         column: start.column + input.chars().count(),
     };
     let buf = Vec::new();
-    do_parse_legal_code(input, Value::Object((buf, start..end)))
+    let kind = ValueKind::Object(buf);
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_object_single_pair() -> Result<()> {
     let input = "{\"a\": 0}";
     let start = CodePos { line: 1, column: 1 };
-    let name_pos = CodePos {
+    let name_start = CodePos {
         line: start.line,
         column: start.column + 1,
     };
-    let value_pos = CodePos {
-        line: start.line,
-        column: name_pos.column + 5,
+    let name_end = CodePos {
+        line: name_start.line,
+        column: name_start.column + 3,
+    };
+    let value_start = CodePos {
+        line: name_end.line,
+        column: name_end.column + 2,
+    };
+    let value_end = CodePos {
+        line: value_start.line,
+        column: value_start.column + 1,
     };
     let end = CodePos {
         line: start.line,
@@ -147,31 +208,51 @@ fn parse_object_single_pair() -> Result<()> {
     };
     let mut buf = Vec::new();
     buf.push((
-        ("a".to_string(), name_pos),
-        Box::new(Value::Literal(Literal::Number("0".to_string()), value_pos)),
+        ("a".to_string(), name_start..name_end),
+        Box::new(Value {
+            kind: ValueKind::Literal(Literal::Number("0".to_string())),
+            range: value_start..value_end,
+        }),
     ));
-    do_parse_legal_code(input, Value::Object((buf, start..end)))
+    let kind = ValueKind::Object(buf);
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]
 fn parse_object_multiple_pair() -> Result<()> {
     let input = "{\"a\": 0, \"b\": 1}";
     let start = CodePos { line: 1, column: 1 };
-    let name1_pos = CodePos {
+    let name1_start = CodePos {
         line: start.line,
         column: start.column + 1,
     };
-    let value1_pos = CodePos {
-        line: start.line,
-        column: name1_pos.column + 5,
+    let name1_end = CodePos {
+        line: name1_start.line,
+        column: name1_start.column + 3,
     };
-    let name2_pos = CodePos {
-        line: start.line,
-        column: value1_pos.column + 3,
+    let value1_start = CodePos {
+        line: name1_end.line,
+        column: name1_end.column + 2,
     };
-    let value2_pos = CodePos {
-        line: start.line,
-        column: name2_pos.column + 5,
+    let value1_end = CodePos {
+        line: value1_start.line,
+        column: value1_start.column + 1,
+    };
+    let name2_start = CodePos {
+        line: value1_end.line,
+        column: value1_end.column + 2,
+    };
+    let name2_end = CodePos {
+        line: name2_start.line,
+        column: name2_start.column + 3,
+    };
+    let value2_start = CodePos {
+        line: name2_end.line,
+        column: name2_end.column + 2,
+    };
+    let value2_end = CodePos {
+        line: value2_start.line,
+        column: value2_start.column + 1,
     };
     let end = CodePos {
         line: start.line,
@@ -179,14 +260,21 @@ fn parse_object_multiple_pair() -> Result<()> {
     };
     let mut buf = Vec::new();
     buf.push((
-        ("a".to_string(), name1_pos),
-        Box::new(Value::Literal(Literal::Number("0".to_string()), value1_pos)),
+        ("a".to_string(), name1_start..name1_end),
+        Box::new(Value {
+            kind: ValueKind::Literal(Literal::Number("0".to_string())),
+            range: value1_start..value1_end,
+        }),
     ));
     buf.push((
-        ("b".to_string(), name2_pos),
-        Box::new(Value::Literal(Literal::Number("1".to_string()), value2_pos)),
+        ("b".to_string(), name2_start..name2_end),
+        Box::new(Value {
+            kind: ValueKind::Literal(Literal::Number("1".to_string())),
+            range: value2_start..value2_end,
+        }),
     ));
-    do_parse_legal_code(input, Value::Object((buf, start..end)))
+    let kind = ValueKind::Object(buf);
+    do_parse_legal_code(input, Value { kind, range: start..end })
 }
 
 #[test]

@@ -12,6 +12,7 @@ pub use lexer::Lexer;
 
 mod value;
 pub use value::Value;
+pub use value::ValueKind;
 
 mod parser_error;
 pub use parser_error::ParserError;
