@@ -18,33 +18,21 @@ fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<Code
 }
 
 fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) -> Result<()> {
-    let start = CodePos { line: 1, column: 1 };
-    let end = CodePos {
-        line: start.line,
-        column: start.column + input.chars().count(),
-    };
+    let start = CodePos::new(1, 1);
+    let end = CodePos::new(start.line, start.column + input.chars().count());
     do_tokenize(input, expected_kind, start..end, true)
 }
 
 fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: (usize, usize)) -> Result<()> {
-    let start = CodePos {
-        line: start.0,
-        column: start.1,
-    };
-    let end = CodePos {
-        line: start.line,
-        column: start.column + input.chars().count(),
-    };
+    let start = CodePos::new(start.0, start.1);
+    let end = CodePos::new(start.line, start.column + input.chars().count());
     do_tokenize(&format!("{prefix}{input}"), expected_kind, start..end, true)
 }
 
 fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) -> Result<()> {
     let input = &format!("{body}{rest}");
-    let start = CodePos { line: 1, column: 1 };
-    let end = CodePos {
-        line: start.line,
-        column: start.column + body.chars().count(),
-    };
+    let start = CodePos::new(1, 1);
+    let end = CodePos::new(start.line, start.column + body.chars().count());
     do_tokenize(input, expected_kind, start..end, false)
 }
 
