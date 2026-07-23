@@ -122,8 +122,9 @@ where
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, begin_object_token_range: Range<CodePos>) -> Result<(Value, Range<CodePos>), ParserError> {
         let mut buf: Vec<((String, Range<CodePos>), Box<Value>)> = Vec::new();
+        let mut last_token_range = begin_object_token_range.clone();
         let (end, last_token_range) = loop {
-            let token_pos = self.lexer.position();
+            let token_pos = last_token_range.end;
             let token = self
                 .lexer
                 .peek()
@@ -145,8 +146,9 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let (name_pair, value, _) = self.parse_pair_for_object(begin_object_token_range.clone())?;
+            let (name_pair, value, last_token_range_new) = self.parse_pair_for_object(begin_object_token_range.clone())?;
             buf.push((name_pair, Box::new(value)));
+            last_token_range = last_token_range_new;
         };
         Ok((
             Value {
