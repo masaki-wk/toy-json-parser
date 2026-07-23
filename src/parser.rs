@@ -1,6 +1,7 @@
+use std::iter::Peekable;
 use std::ops::Range;
 
-use crate::{CodePos, Delimiter, Lexer, Literal, ParserError, TokenKind, Value, ValueKind};
+use crate::{CodePos, Delimiter, Literal, ParserError, Token, TokenKind, Value, ValueKind};
 
 /// Represents a parser.
 ///
@@ -19,18 +20,18 @@ use crate::{CodePos, Delimiter, Lexer, Literal, ParserError, TokenKind, Value, V
 #[derive(Debug, Clone)]
 pub struct Parser<T>
 where
-    T: Iterator<Item = char>,
+    T: Iterator<Item = Token>,
 {
-    lexer: Lexer<T>,
+    lexer: Peekable<T>,
 }
 
 impl<T> Parser<T>
 where
-    T: Iterator<Item = char>,
+    T: Iterator<Item = Token>,
 {
     /// Creates a new parser.
-    pub fn new(lexer: Lexer<T>) -> Self {
-        Self { lexer }
+    pub fn new(lexer: T) -> Self {
+        Self { lexer: lexer.peekable() }
     }
 
     /// Parses a code.
