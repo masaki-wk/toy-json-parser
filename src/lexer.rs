@@ -41,11 +41,6 @@ where
         }
     }
 
-    /// Returns the current position.
-    pub fn position(&self) -> CodePos {
-        self.pos
-    }
-
     // The implementation of `chars_next_and_then_advance_column` and `chars_next_and_then_advance_auto`.
     fn chars_next_and_then_advance(&mut self, always_column: bool) -> Option<T::Item> {
         let c = self.chars.next()?;
