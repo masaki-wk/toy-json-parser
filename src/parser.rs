@@ -146,7 +146,7 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let (name_pair, value, last_token_range_new) = self.parse_pair_for_object(begin_object_token_range.clone())?;
+            let (name_pair, value, last_token_range_new) = self.parse_pair_for_object(begin_object_token_range.clone(), token_range)?;
             buf.push((name_pair, Box::new(value)));
             last_token_range = last_token_range_new;
         };
@@ -160,21 +160,25 @@ where
     }
 
     // Parses a pair of the object.
-    fn parse_pair_for_object(&mut self, begin_object_token_range: Range<CodePos>) -> Result<((String, Range<CodePos>), Value, Range<CodePos>), ParserError> {
+    fn parse_pair_for_object(
+        &mut self,
+        begin_object_token_range: Range<CodePos>,
+        last_token_range: Range<CodePos>,
+    ) -> Result<((String, Range<CodePos>), Value, Range<CodePos>), ParserError> {
         let token_for_name = self
             .lexer
             .next()
-            .ok_or(ParserError::UnfinishedObject(begin_object_token_range.start, self.lexer.position()))?;
+            .ok_or(ParserError::UnfinishedObject(begin_object_token_range.start, last_token_range.end))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
             TokenKind::Literal(lit) => Err(ParserError::NameOfObjectMemberIsNotString(lit, token_for_name.range.start)),
             TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token_for_name.range.start)),
             TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_name.range.start)),
         }?;
-        let token_for_colon = self
-            .lexer
-            .next()
-            .ok_or(ParserError::ObjectMemberLacksSeparator(begin_object_token_range.start, self.lexer.position()))?;
+        let token_for_colon = self.lexer.next().ok_or(ParserError::ObjectMemberLacksSeparator(
+            begin_object_token_range.start,
+            token_for_name.range.end,
+        ))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_colon.range.start)),
@@ -184,7 +188,7 @@ where
             )),
         }?;
         let (value, last_token_range) = self.parse_value().map_err(|e| match e {
-            ParserError::NoToken => ParserError::ObjectMemberLacksValue(begin_object_token_range.start, self.lexer.position()),
+            ParserError::NoToken => ParserError::ObjectMemberLacksValue(begin_object_token_range.start, token_for_colon.range.end),
             _ => e,
         })?;
         Ok(((name, token_for_name.range), value, last_token_range))
