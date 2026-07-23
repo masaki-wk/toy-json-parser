@@ -16,3 +16,10 @@ pub struct Value {
     pub kind: ValueKind,
     pub range: Range<CodePos>,
 }
+
+impl Value {
+    /// Creates a new Value.
+    pub fn new(kind: ValueKind, range: Range<CodePos>) -> Self {
+        Self { kind, range }
+    }
+}
