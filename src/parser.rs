@@ -66,13 +66,7 @@ where
             TokenCategory::BeginObject => self.parse_rest_of_object(token_range),
             TokenCategory::Literal(lit) => {
                 let kind = ValueKind::Literal(lit);
-                Ok((
-                    Value {
-                        kind,
-                        range: token_range.clone(),
-                    },
-                    token_range,
-                ))
+                Ok((Value::new(kind, token_range.clone()), token_range))
             }
         }
     }
@@ -111,13 +105,7 @@ where
             buf.push(Box::new(item));
             last_token_range = last_token_range_new;
         };
-        Ok((
-            Value {
-                kind: ValueKind::Array(buf),
-                range: begin_array_token_range.start..end,
-            },
-            last_token_range,
-        ))
+        Ok((Value::new(ValueKind::Array(buf), begin_array_token_range.start..end), last_token_range))
     }
 
     // Parses a rest of the object.
@@ -151,13 +139,7 @@ where
             buf.push((name_pair, Box::new(value)));
             last_token_range = last_token_range_new;
         };
-        Ok((
-            Value {
-                kind: ValueKind::Object(buf),
-                range: begin_object_token_range.start..end,
-            },
-            last_token_range,
-        ))
+        Ok((Value::new(ValueKind::Object(buf), begin_object_token_range.start..end), last_token_range))
     }
 
     // Parses a pair of the object.

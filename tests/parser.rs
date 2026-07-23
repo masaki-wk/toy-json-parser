@@ -39,7 +39,7 @@ fn parse_number() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Number(input.to_string()));
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -49,7 +49,7 @@ fn parse_string() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + code.chars().count());
     let kind = ValueKind::Literal(Literal::String(input.to_string()));
-    do_parse_legal_code(&code, Value { kind, range: start..end })
+    do_parse_legal_code(&code, Value::new(kind, start..end))
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn parse_true() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Boolean(true));
-    do_parse_legal_code(&input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn parse_false() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Boolean(false));
-    do_parse_legal_code(&input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -76,7 +76,7 @@ fn parse_null() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Null);
-    do_parse_legal_code(&input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn parse_array_empty() -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let buf = Vec::new();
     let kind = ValueKind::Array(buf);
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -97,12 +97,12 @@ fn parse_array_single_item() -> Result<()> {
     let literal_end = CodePos::new(literal_start.line, literal_start.column + 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let mut buf = Vec::new();
-    buf.push(Box::new(Value {
-        kind: ValueKind::Literal(Literal::Number("0".to_string())),
-        range: literal_start..literal_end,
-    }));
+    buf.push(Box::new(Value::new(
+        ValueKind::Literal(Literal::Number("0".to_string())),
+        literal_start..literal_end,
+    )));
     let kind = ValueKind::Array(buf);
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -115,16 +115,16 @@ fn parse_array_multiple_item() -> Result<()> {
     let literal2_end = CodePos::new(literal2_start.line, literal2_start.column + 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let mut buf = Vec::new();
-    buf.push(Box::new(Value {
-        kind: ValueKind::Literal(Literal::Number("0".to_string())),
-        range: literal1_start..literal1_end,
-    }));
-    buf.push(Box::new(Value {
-        kind: ValueKind::Literal(Literal::Number("1".to_string())),
-        range: literal2_start..literal2_end,
-    }));
+    buf.push(Box::new(Value::new(
+        ValueKind::Literal(Literal::Number("0".to_string())),
+        literal1_start..literal1_end,
+    )));
+    buf.push(Box::new(Value::new(
+        ValueKind::Literal(Literal::Number("1".to_string())),
+        literal2_start..literal2_end,
+    )));
     let kind = ValueKind::Array(buf);
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -134,7 +134,7 @@ fn parse_object_empty() -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let buf = Vec::new();
     let kind = ValueKind::Object(buf);
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -149,13 +149,10 @@ fn parse_object_single_pair() -> Result<()> {
     let mut buf = Vec::new();
     buf.push((
         ("a".to_string(), name_start..name_end),
-        Box::new(Value {
-            kind: ValueKind::Literal(Literal::Number("0".to_string())),
-            range: value_start..value_end,
-        }),
+        Box::new(Value::new(ValueKind::Literal(Literal::Number("0".to_string())), value_start..value_end)),
     ));
     let kind = ValueKind::Object(buf);
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
@@ -174,20 +171,14 @@ fn parse_object_multiple_pair() -> Result<()> {
     let mut buf = Vec::new();
     buf.push((
         ("a".to_string(), name1_start..name1_end),
-        Box::new(Value {
-            kind: ValueKind::Literal(Literal::Number("0".to_string())),
-            range: value1_start..value1_end,
-        }),
+        Box::new(Value::new(ValueKind::Literal(Literal::Number("0".to_string())), value1_start..value1_end)),
     ));
     buf.push((
         ("b".to_string(), name2_start..name2_end),
-        Box::new(Value {
-            kind: ValueKind::Literal(Literal::Number("1".to_string())),
-            range: value2_start..value2_end,
-        }),
+        Box::new(Value::new(ValueKind::Literal(Literal::Number("1".to_string())), value2_start..value2_end)),
     ));
     let kind = ValueKind::Object(buf);
-    do_parse_legal_code(input, Value { kind, range: start..end })
+    do_parse_legal_code(input, Value::new(kind, start..end))
 }
 
 #[test]
