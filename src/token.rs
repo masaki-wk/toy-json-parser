@@ -59,3 +59,10 @@ pub struct Token {
     pub kind: TokenKind,
     pub range: Range<CodePos>,
 }
+
+impl Token {
+    /// Creates a new Token.
+    pub fn new(kind: TokenKind, range: Range<CodePos>) -> Self {
+        Self { kind, range }
+    }
+}

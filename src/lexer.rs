@@ -107,10 +107,7 @@ where
             TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
         };
         let pos_end = self.pos;
-        Some(Token {
-            kind,
-            range: pos_start..pos_end,
-        })
+        Some(Token::new(kind, pos_start..pos_end))
     }
 
     // Reads a raw string.
