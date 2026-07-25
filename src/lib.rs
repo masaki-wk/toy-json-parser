@@ -19,3 +19,6 @@ pub use parser_error::ParserError;
 
 mod parser;
 pub use parser::Parser;
+
+mod char_reader;
+pub use char_reader::CharReader;
