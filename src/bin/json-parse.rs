@@ -43,7 +43,7 @@ mod app {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
+    use anyhow::{Result, ensure};
     use std::io::Write as _;
     use std::process::{Command, Stdio};
 
@@ -53,7 +53,7 @@ mod tests {
         let mut child = Command::new("cargo").args(["run", "--bin", "json-parse"]).stdin(Stdio::piped()).spawn()?;
         child.stdin.as_mut().unwrap().write_all(input.as_bytes())?;
         let status = child.wait()?;
-        assert!(status.success());
+        ensure!(status.success());
         Ok(())
     }
 }
