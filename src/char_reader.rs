@@ -27,7 +27,7 @@ pub struct CharReader<R> {
 
 impl<R> CharReader<R> {
     /// Creates a new `CharReader<R>` from a value implementing `BufRead`.
-    pub fn new(inner: R) -> Self {
+    pub const fn new(inner: R) -> Self {
         Self {
             inner,
             line: String::new(),
