@@ -12,13 +12,22 @@ mod app {
 
     #[derive(Parser, Debug)]
     pub struct Args {
-        #[arg(help = "JSON string")]
-        code: String,
+        #[arg(default_value = "-", help = "JSON file")]
+        file: String,
     }
 
     pub fn run(args: Args) -> Result<()> {
-        use toy_json_parser::{Lexer, Parser};
-        let lexer = Lexer::new(args.code.chars());
+        use std::fs::File;
+        use std::io::{self, BufReader, Read};
+        use toy_json_parser::{CharReader, Lexer, Parser};
+
+        let reader: BufReader<Box<dyn Read>> = BufReader::new(if args.file == "-" {
+            Box::new(io::stdin())
+        } else {
+            Box::new(File::open(args.file)?)
+        });
+
+        let lexer = Lexer::new(CharReader::new(reader));
         let mut parser = Parser::new(lexer);
         match parser.parse() {
             Ok(value) => {
@@ -34,13 +43,17 @@ mod app {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
-    use std::process::Command;
+    use anyhow::{Result, ensure};
+    use std::io::Write as _;
+    use std::process::{Command, Stdio};
 
     #[test]
     fn test() -> Result<()> {
-        let status = Command::new("cargo").args(["run", "--bin", "json-parse", "--", "[0, 1]"]).status()?;
-        assert!(status.success());
+        let input = String::from("[0, 1]");
+        let mut child = Command::new("cargo").args(["run", "--bin", "json-parse"]).stdin(Stdio::piped()).spawn()?;
+        child.stdin.as_mut().unwrap().write_all(input.as_bytes())?;
+        let status = child.wait()?;
+        ensure!(status.success());
         Ok(())
     }
 }
