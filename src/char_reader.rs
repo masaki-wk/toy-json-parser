@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-/// A converter from an instance of `BufRead` into an iterator over chars.
+/// Represents an iterator over chars read from a `BufRead`.
 pub struct CharReader<R> {
     inner: R,
     line: String,
@@ -8,7 +8,7 @@ pub struct CharReader<R> {
 }
 
 impl<R> CharReader<R> {
-    /// Creates a new `CharReader<R>` from an instance of `R`.
+    /// Creates a new `CharReader<R>` from a value implementing `BufRead`.
     pub fn new(inner: R) -> Self {
         Self {
             inner,
