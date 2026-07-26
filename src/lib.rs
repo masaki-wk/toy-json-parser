@@ -22,3 +22,6 @@ pub use parser::Parser;
 
 mod char_reader;
 pub use char_reader::CharReader;
+
+mod bufread_chars_ext;
+pub use bufread_chars_ext::{BufReadChars, BufReadCharsExt};
