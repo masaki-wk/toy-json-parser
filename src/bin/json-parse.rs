@@ -19,15 +19,15 @@ mod app {
     pub fn run(args: Args) -> Result<()> {
         use std::fs::File;
         use std::io::{self, BufReader, Read};
-        use toy_json_parser::{CharReader, Lexer, Parser};
+        use toy_json_parser::{BufReadCharsExt as _, Lexer, Parser};
 
-        let reader: BufReader<Box<dyn Read>> = BufReader::new(if args.file == "-" {
+        let mut reader: BufReader<Box<dyn Read>> = BufReader::new(if args.file == "-" {
             Box::new(io::stdin())
         } else {
             Box::new(File::open(args.file)?)
         });
 
-        let lexer = Lexer::new(CharReader::new(reader));
+        let lexer = Lexer::new(reader.chars());
         let mut parser = Parser::new(lexer);
         match parser.parse() {
             Ok(value) => {
