@@ -1,6 +1,4 @@
-use std::ops::Range;
-
-use crate::CodePos;
+use crate::CodeSpan;
 
 /// Represents a JSON delimiter.
 #[derive(Debug, PartialEq, Clone)]
@@ -57,12 +55,12 @@ pub enum TokenKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub kind: TokenKind,
-    pub range: Range<CodePos>,
+    pub span: CodeSpan,
 }
 
 impl Token {
     /// Creates a new Token.
-    pub fn new(kind: TokenKind, range: Range<CodePos>) -> Self {
-        Self { kind, range }
+    pub fn new(kind: TokenKind, span: CodeSpan) -> Self {
+        Self { kind, span }
     }
 }

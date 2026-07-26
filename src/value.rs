@@ -1,12 +1,10 @@
-use std::ops::Range;
-
-use crate::{CodePos, Literal};
+use crate::{CodeSpan, Literal};
 
 /// Represents a kind of JSON value.
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueKind {
     Array(Vec<Box<Value>>),
-    Object(Vec<((std::string::String, Range<CodePos>), Box<Value>)>),
+    Object(Vec<((std::string::String, CodeSpan), Box<Value>)>),
     Literal(Literal),
 }
 
@@ -14,12 +12,12 @@ pub enum ValueKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Value {
     pub kind: ValueKind,
-    pub range: Range<CodePos>,
+    pub span: CodeSpan,
 }
 
 impl Value {
     /// Creates a new Value.
-    pub fn new(kind: ValueKind, range: Range<CodePos>) -> Self {
-        Self { kind, range }
+    pub fn new(kind: ValueKind, span: CodeSpan) -> Self {
+        Self { kind, span }
     }
 }
