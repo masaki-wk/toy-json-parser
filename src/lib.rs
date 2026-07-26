@@ -18,7 +18,7 @@ pub use value::Value;
 pub use value::ValueKind;
 
 mod parser;
-pub use parser::{Parser, ParserError};
+pub use parser::{ParseError, Parser};
 
 mod bufread_chars_ext;
 pub use bufread_chars_ext::{BufReadChars, BufReadCharsExt};
