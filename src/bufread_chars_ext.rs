@@ -10,7 +10,7 @@ pub struct BufReadChars<T> {
 
 impl<T> BufReadChars<T> {
     // Creates a new `BufReadChars` from a mutable reference implementing `BufRead`.
-    fn new(inner: T) -> Self {
+    const fn new(inner: T) -> Self {
         Self {
             inner,
             line: String::new(),

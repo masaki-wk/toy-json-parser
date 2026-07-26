@@ -60,7 +60,7 @@ pub struct Token {
 
 impl Token {
     /// Creates a new Token.
-    pub fn new(kind: TokenKind, span: CodeSpan) -> Self {
+    pub const fn new(kind: TokenKind, span: CodeSpan) -> Self {
         Self { kind, span }
     }
 }
