@@ -18,7 +18,7 @@ use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal
 /// # }
 /// ```
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Lexer<T>
 where
     T: Iterator<Item = char>,

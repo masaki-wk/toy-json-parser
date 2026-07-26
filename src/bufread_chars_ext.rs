@@ -1,7 +1,7 @@
 use std::io::BufRead;
 
 /// An iterator over [`char`]s read from [`BufRead`].
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BufReadChars<T> {
     inner: T,
     line: String,
