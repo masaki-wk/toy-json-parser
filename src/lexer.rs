@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use crate::{CodePos, CodeSpan, Delimiter, Literal, Token, TokenKind};
+use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind};
 
 /// Represents a lexer.
 ///
@@ -24,7 +24,7 @@ where
     T: Iterator<Item = char>,
 {
     chars: Peekable<T>,
-    pos: CodePos,
+    pos: CodeLocation,
 }
 
 impl<T> Lexer<T>
@@ -35,7 +35,7 @@ where
     pub fn new(chars: T) -> Self {
         Self {
             chars: chars.peekable(),
-            pos: CodePos::new(1, 1),
+            pos: CodeLocation::new(1, 1),
         }
     }
 

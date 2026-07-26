@@ -1,12 +1,12 @@
-/// Represents a code position.
+/// Represents a code location.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct CodePos {
+pub struct CodeLocation {
     pub line: usize,
     pub column: usize,
 }
 
-impl CodePos {
-    /// Creates a new `CodePos`.
+impl CodeLocation {
+    /// Creates a new `CodeLocation`.
     pub fn new(line: usize, column: usize) -> Self {
         Self { line, column }
     }
@@ -26,13 +26,13 @@ impl CodePos {
 /// Represents a code span.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct CodeSpan {
-    pub start: CodePos,
-    pub end: CodePos,
+    pub start: CodeLocation,
+    pub end: CodeLocation,
 }
 
 impl CodeSpan {
     /// Creates a new `CodeSpan`.
-    pub const fn new(start: CodePos, end: CodePos) -> Self {
+    pub const fn new(start: CodeLocation, end: CodeLocation) -> Self {
         Self { start, end }
     }
 }

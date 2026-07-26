@@ -1,17 +1,17 @@
-use crate::{CodePos, Delimiter, Literal};
+use crate::{CodeLocation, Delimiter, Literal};
 
 /// Represents a parser error.
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParserError {
     NoToken,
-    InvalidToken(String, CodePos),
-    DelimiterInWrongPlace(Delimiter, CodePos),
-    UnfinishedArray(CodePos, CodePos),
-    UnfinishedObject(CodePos, CodePos),
-    NameOfObjectMemberIsNotString(Literal, CodePos),
-    ObjectMemberLacksSeparator(CodePos, CodePos),
-    ObjectMemberLacksValue(CodePos, CodePos),
-    ExtraTokenAtTheEnd(CodePos),
+    InvalidToken(String, CodeLocation),
+    DelimiterInWrongPlace(Delimiter, CodeLocation),
+    UnfinishedArray(CodeLocation, CodeLocation),
+    UnfinishedObject(CodeLocation, CodeLocation),
+    NameOfObjectMemberIsNotString(Literal, CodeLocation),
+    ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
+    ObjectMemberLacksValue(CodeLocation, CodeLocation),
+    ExtraTokenAtTheEnd(CodeLocation),
 }
 
 impl std::fmt::Display for ParserError {
