@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-/// An iterator over [`char`]s of [`BufRead`].
+/// An iterator over [`char`]s read from [`BufRead`].
 #[derive(Debug)]
 pub struct BufReadChars<'a, T>
 where
@@ -15,7 +15,7 @@ impl<'a, T> BufReadChars<'a, T>
 where
     T: ?Sized,
 {
-    // Creates a new `BufReadChars` from a reference implementing `BufRead`.
+    // Creates a new `BufReadChars` from a mutable reference implementing `BufRead`.
     fn new(inner: &'a mut T) -> Self {
         Self {
             inner,
@@ -53,7 +53,7 @@ where
     }
 }
 
-/// Extends [`BufRead`] trait with the method [`chars`] which returns an iterator over [`char`]s.
+/// Extends [`BufRead`] trait with [`chars`] method that returns an iterator over [`char`]s.
 ///
 /// [`chars`]: BufReadCharsExt::chars
 ///
@@ -75,7 +75,7 @@ where
 /// ```
 ///
 pub trait BufReadCharsExt: BufRead {
-    /// Returns an iterator over [`char`]s of [`BufRead`].
+    /// Returns an iterator over [`char`]s read from this [`BufRead`].
     fn chars(&mut self) -> BufReadChars<'_, Self> {
         BufReadChars::new(self)
     }
