@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind};
+use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal, LocatedIterator, Token, TokenKind};
 
 /// Represents a lexer.
 ///
@@ -18,13 +18,12 @@ use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind};
 /// # }
 /// ```
 ///
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    chars: Peekable<T>,
-    location: CodeLocation,
+    chars: Peekable<LocatedIterator<T>>,
 }
 
 impl<T> Lexer<T>
@@ -34,30 +33,8 @@ where
     /// Creates a new lexer.
     pub fn new(chars: T) -> Self {
         Self {
-            chars: chars.peekable(),
-            location: CodeLocation::new(1, 1),
+            chars: chars.locate().peekable(),
         }
-    }
-
-    // The implementation of `chars_next_and_then_advance_column` and `chars_next_and_then_advance_auto`.
-    fn chars_next_and_then_advance(&mut self, always_column: bool) -> Option<T::Item> {
-        let c = self.chars.next()?;
-        if always_column || c != '\n' {
-            self.location.advance_column();
-        } else {
-            self.location.advance_line();
-        }
-        Some(c)
-    }
-
-    // Returns the result of `self.chars.next()`, and advances the column of the location.
-    fn chars_next_and_then_advance_column(&mut self) -> Option<T::Item> {
-        self.chars_next_and_then_advance(true)
-    }
-
-    // Returns the result of `self.chars.next()`, and advances the location automatically.
-    fn chars_next_and_then_advance_auto(&mut self) -> Option<T::Item> {
-        self.chars_next_and_then_advance(false)
     }
 
     // Advances the iterator and returns the next token, like `iter.next()`.
@@ -70,13 +47,12 @@ where
             QuotedString,
             Invalid,
         }
-        let (loc_start, category, firstchar) = loop {
+        let (category, firstchar, loc_start) = loop {
             enum CharCategory {
                 Whitespace,
                 FirstCharOfToken(TokenCategory),
             }
-            let loc_start = self.location;
-            let ch = self.chars_next_and_then_advance_auto()?;
+            let (loc, ch) = self.chars.next()?;
             let ch_category = match ch {
                 ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
                 '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
@@ -95,65 +71,70 @@ where
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
             if let CharCategory::FirstCharOfToken(token_category) = ch_category {
-                break (loc_start, token_category, ch);
+                break (token_category, ch, loc);
             }
         };
-        let kind = match category {
-            TokenCategory::Delimiter(delim) => TokenKind::Delimiter(delim),
-            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar),
-            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar),
-            TokenCategory::Number => self.read_number(firstchar),
-            TokenCategory::QuotedString => self.read_quoted_string(),
-            TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
+        let (kind, loc_last) = match category {
+            TokenCategory::Delimiter(delim) => (TokenKind::Delimiter(delim), loc_start),
+            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar, loc_start),
+            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar, loc_start),
+            TokenCategory::Number => self.read_number(firstchar, loc_start),
+            TokenCategory::QuotedString => self.read_quoted_string(loc_start),
+            TokenCategory::Invalid => (TokenKind::Invalid(firstchar.to_string()), loc_start),
         };
-        let loc_end = self.location;
+        let loc_end = CodeLocation::new(loc_last.line, loc_last.column + 1);
         Some(Token::new(kind, CodeSpan::new(loc_start, loc_end)))
     }
 
     // Reads a raw string.
-    fn read_raw_string(&mut self, firstchar: char) -> String {
+    fn read_raw_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
         let mut buf = firstchar.to_string();
-        while let Some(c) = self.chars.peek().copied() {
-            if c.is_ascii_alphanumeric() || c == '_' {
-                self.chars_next_and_then_advance_column();
-                buf.push(c);
+        let mut loc = loc_start;
+        while let Some((ch_loc, ch)) = self.chars.peek().copied() {
+            loc = ch_loc;
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                self.chars.next();
+                buf.push(ch);
             } else {
                 break;
             }
         }
-        buf
+        (buf, loc)
     }
 
     // Reads a known raw string.
-    fn read_raw_string_known(&mut self, expected_literal: Literal, expected_str: &str, firstchar: char) -> TokenKind {
-        let s = self.read_raw_string(firstchar);
-        if s == expected_str {
+    fn read_raw_string_known(&mut self, expected_literal: Literal, expected_str: &str, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
+        let (s, loc) = self.read_raw_string(firstchar, loc_start);
+        let kind = if s == expected_str {
             TokenKind::Literal(expected_literal)
         } else {
             TokenKind::Invalid(s)
-        }
+        };
+        (kind, loc)
     }
 
     // Reads an unknown raw string.
-    fn read_raw_string_unknown(&mut self, firstchar: char) -> TokenKind {
-        TokenKind::Invalid(self.read_raw_string(firstchar))
+    fn read_raw_string_unknown(&mut self, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
+        let (s, loc) = self.read_raw_string(firstchar, loc_start);
+        (TokenKind::Invalid(s), loc)
     }
 
     // Reads a number.
-    fn read_number(&mut self, firstchar: char) -> TokenKind {
+    fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
         let (is_negative, skip_integer_component) = match firstchar {
             '-' => (true, false),
             '0' => (false, true),
             _ => (false, false),
         };
         let mut buf = firstchar.to_string();
+        let mut loc = loc_start;
         if !skip_integer_component {
             let mut has_integer_component = !is_negative;
             loop {
                 match self.chars.peek() {
-                    Some(c) if c.is_ascii_digit() => {
-                        buf.push(*c);
-                        self.chars_next_and_then_advance_column();
+                    Some((_, ch)) if ch.is_ascii_digit() => {
+                        buf.push(*ch);
+                        loc = self.chars.next().unwrap().0;
                         has_integer_component = true;
                     }
                     _ => {
@@ -162,13 +143,13 @@ where
                 }
             }
             if !has_integer_component {
-                return TokenKind::Invalid(buf);
+                return (TokenKind::Invalid(buf), loc);
             }
         }
         let has_decimal_point = match self.chars.peek() {
-            Some(c) if *c == '.' => {
-                buf.push(*c);
-                self.chars_next_and_then_advance_column();
+            Some((_, ch)) if *ch == '.' => {
+                buf.push(*ch);
+                loc = self.chars.next().unwrap().0;
                 true
             }
             _ => false,
@@ -177,9 +158,9 @@ where
             let mut has_fraction_component = false;
             loop {
                 match self.chars.peek() {
-                    Some(c) if c.is_ascii_digit() => {
-                        buf.push(*c);
-                        self.chars_next_and_then_advance_column();
+                    Some((_, ch)) if ch.is_ascii_digit() => {
+                        buf.push(*ch);
+                        loc = self.chars.next().unwrap().0;
                         has_fraction_component = true;
                     }
                     _ => {
@@ -188,31 +169,31 @@ where
                 }
             }
             if !has_fraction_component {
-                return TokenKind::Invalid(buf);
+                return (TokenKind::Invalid(buf), loc);
             }
         }
         let has_exponent_char = match self.chars.peek() {
-            Some(c) if *c == 'e' || *c == 'E' => {
-                buf.push(*c);
-                self.chars_next_and_then_advance_column();
+            Some((_, ch)) if *ch == 'e' || *ch == 'E' => {
+                buf.push(*ch);
+                loc = self.chars.next().unwrap().0;
                 true
             }
             _ => false,
         };
         if has_exponent_char {
             match self.chars.peek() {
-                Some(c) if *c == '+' || *c == '-' => {
-                    buf.push(*c);
-                    self.chars_next_and_then_advance_column();
+                Some((_, ch)) if *ch == '+' || *ch == '-' => {
+                    buf.push(*ch);
+                    loc = self.chars.next().unwrap().0;
                 }
                 _ => {}
             }
             let mut has_exponent_component = false;
             loop {
                 match self.chars.peek() {
-                    Some(c) if c.is_ascii_digit() => {
-                        buf.push(*c);
-                        self.chars_next_and_then_advance_column();
+                    Some((_, ch)) if ch.is_ascii_digit() => {
+                        buf.push(*ch);
+                        loc = self.chars.next().unwrap().0;
                         has_exponent_component = true;
                     }
                     _ => {
@@ -221,34 +202,38 @@ where
                 }
             }
             if !has_exponent_component {
-                return TokenKind::Invalid(buf);
+                return (TokenKind::Invalid(buf), loc);
             }
         }
-        TokenKind::Literal(Literal::Number(buf))
+        (TokenKind::Literal(Literal::Number(buf)), loc)
     }
 
     // Reads a quoted string.
-    fn read_quoted_string(&mut self) -> TokenKind {
+    fn read_quoted_string(&mut self, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
         let mut buf = String::new();
+        let mut loc = loc_start;
         let status = (|| {
             let mut failed = false;
             loop {
-                let c = self.chars_next_and_then_advance_auto()?;
-                match c {
+                let (ch_loc, ch) = self.chars.next()?;
+                loc = ch_loc;
+                match ch {
                     '"' => {
                         break;
                     }
                     '\\' => {
-                        buf.push(c);
-                        let c = self.chars_next_and_then_advance_auto()?;
-                        buf.push(c);
-                        match c {
+                        buf.push(ch);
+                        let (ch_loc, ch) = self.chars.next()?;
+                        loc = ch_loc;
+                        buf.push(ch);
+                        match ch {
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
-                                    let c = self.chars_next_and_then_advance_auto()?;
-                                    buf.push(c);
-                                    if !c.is_ascii_hexdigit() {
+                                    let (ch_loc, ch) = self.chars.next()?;
+                                    loc = ch_loc;
+                                    buf.push(ch);
+                                    if !ch.is_ascii_hexdigit() {
                                         failed = true;
                                     }
                                 }
@@ -259,20 +244,20 @@ where
                         }
                     }
                     '\0'..'\x1f' => {
-                        buf.push(c);
+                        buf.push(ch);
                         failed = true;
                     }
                     _ => {
-                        buf.push(c);
+                        buf.push(ch);
                     }
                 }
             }
             Some(!failed)
         })();
         match status {
-            Some(true) => TokenKind::Literal(Literal::String(buf)),
-            Some(false) => TokenKind::Invalid(format!("\"{buf}\"")),
-            None => TokenKind::Invalid('"'.to_string() + &buf),
+            Some(true) => (TokenKind::Literal(Literal::String(buf)), loc),
+            Some(false) => (TokenKind::Invalid(format!("\"{buf}\"")), loc),
+            None => (TokenKind::Invalid('"'.to_string() + &buf), loc),
         }
     }
 }
