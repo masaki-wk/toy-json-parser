@@ -7,19 +7,8 @@ pub struct CodeLocation {
 
 impl CodeLocation {
     /// Creates a new `CodeLocation`.
-    pub fn new(line: usize, column: usize) -> Self {
+    pub const fn new(line: usize, column: usize) -> Self {
         Self { line, column }
-    }
-
-    /// Advances a line.
-    pub fn advance_line(&mut self) {
-        self.line += 1;
-        self.column = 1;
-    }
-
-    /// Advances a column.
-    pub fn advance_column(&mut self) {
-        self.column += 1;
     }
 }
 
