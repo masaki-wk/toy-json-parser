@@ -54,6 +54,24 @@ where
 }
 
 /// Extends `BufRead` trait with the method `chars` which returns an iterator over `char`s.
+///
+/// # Examples
+///
+/// ```
+/// # use std::io::Cursor;
+/// use toy_json_parser::BufReadCharsExt as _;
+/// # fn test() -> Option<()> {
+/// let s = String::from("bar");
+/// let mut reader = Cursor::new(s);
+/// let mut iter = reader.chars();
+/// assert_eq!(iter.next(), Some('b'));
+/// assert_eq!(iter.next(), Some('a'));
+/// assert_eq!(iter.next(), Some('r'));
+/// assert_eq!(iter.next(), None);
+/// # Some(())
+/// # }
+/// ```
+///
 pub trait BufReadCharsExt: BufRead {
     /// Returns an iterator over `char`s of `BufRead`.
     fn chars(&mut self) -> BufReadChars<'_, Self> {
