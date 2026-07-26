@@ -65,7 +65,7 @@ where
             TokenCategory::BeginObject => self.parse_rest_of_object(token_span),
             TokenCategory::Literal(lit) => {
                 let kind = ValueKind::Literal(lit);
-                Ok((Value::new(kind, token_span.clone()), token_span))
+                Ok((Value::new(kind, token_span), token_span))
             }
         }
     }
@@ -73,11 +73,11 @@ where
     // Parses a rest of the array.
     fn parse_rest_of_array(&mut self, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParserError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
-        let mut last_token_span = begin_array_token_span.clone();
+        let mut last_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
             let token_pos = last_token_span.end;
             let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(begin_array_token_span.start, token_pos))?;
-            let token_span = token.span.clone();
+            let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
                     let end = token_span.end;
@@ -110,14 +110,14 @@ where
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParserError> {
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
-        let mut last_token_span = begin_object_token_span.clone();
+        let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
             let token_pos = last_token_span.end;
             let token = self
                 .lexer
                 .peek()
                 .ok_or(ParserError::UnfinishedObject(begin_object_token_span.start, token_pos))?;
-            let token_span = token.span.clone();
+            let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
                     let end = token_span.end;
@@ -134,7 +134,7 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(begin_object_token_span.clone(), token_span)?;
+            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(begin_object_token_span, token_span)?;
             buf.push((name_pair, Box::new(value)));
             last_token_span = last_token_span_new;
         };
