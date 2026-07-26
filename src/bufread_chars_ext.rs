@@ -1,6 +1,6 @@
 use std::io::BufRead;
 
-/// An iterator over the `char`s of `BufRead`.
+/// An iterator over [`char`]s of [`BufRead`].
 #[derive(Debug)]
 pub struct BufReadChars<'a, T>
 where
@@ -24,7 +24,7 @@ where
         }
     }
 
-    // Advances the iterator and returns the next char.
+    // Advances the iterator and returns the next `char`.
     fn take_char(&mut self) -> Option<char>
     where
         T: BufRead,
@@ -53,7 +53,9 @@ where
     }
 }
 
-/// Extends `BufRead` trait with the method `chars` which returns an iterator over `char`s.
+/// Extends [`BufRead`] trait with the method [`chars`] which returns an iterator over [`char`]s.
+///
+/// [`chars`]: BufReadCharsExt::chars
 ///
 /// # Examples
 ///
@@ -73,7 +75,7 @@ where
 /// ```
 ///
 pub trait BufReadCharsExt: BufRead {
-    /// Returns an iterator over `char`s of `BufRead`.
+    /// Returns an iterator over [`char`]s of [`BufRead`].
     fn chars(&mut self) -> BufReadChars<'_, Self> {
         BufReadChars::new(self)
     }
