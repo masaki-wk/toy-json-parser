@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value, ValueKind};
 
-/// Represents a parser error.
+/// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {
     NoToken,
