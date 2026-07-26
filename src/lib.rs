@@ -1,6 +1,9 @@
 mod code_span;
 pub use code_span::{CodeLocation, CodeSpan};
 
+mod iterator_location_ext;
+pub use iterator_location_ext::{IteratorLocationExt, LocatedIterator};
+
 mod token;
 pub use token::Delimiter;
 pub use token::Literal;
