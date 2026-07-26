@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal, LocatedIterator, Token, TokenKind};
 
-/// Represents a lexer.
+/// Represents a JSON lexer.
 ///
 /// # Examples
 ///

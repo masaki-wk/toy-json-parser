@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::{CodeSpan, Delimiter, Literal, ParserError, Token, TokenKind, Value, ValueKind};
 
-/// Represents a parser.
+/// Represents a JSON parser.
 ///
 /// # Examples
 ///
