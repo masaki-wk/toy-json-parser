@@ -75,8 +75,8 @@ where
         let mut buf: Vec<Box<Value>> = Vec::new();
         let mut last_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
-            let token_pos = last_token_span.end;
-            let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(begin_array_token_span.start, token_pos))?;
+            let token_loc = last_token_span.end;
+            let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(begin_array_token_span.start, token_loc))?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
@@ -112,11 +112,11 @@ where
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
         let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
-            let token_pos = last_token_span.end;
+            let token_loc = last_token_span.end;
             let token = self
                 .lexer
                 .peek()
-                .ok_or(ParserError::UnfinishedObject(begin_object_token_span.start, token_pos))?;
+                .ok_or(ParserError::UnfinishedObject(begin_object_token_span.start, token_loc))?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
