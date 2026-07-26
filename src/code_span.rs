@@ -6,7 +6,7 @@ pub struct CodeLocation {
 }
 
 impl CodeLocation {
-    /// Creates a new `CodeLocation`.
+    /// Creates a new [`CodeLocation`].
     pub const fn new(line: usize, column: usize) -> Self {
         Self { line, column }
     }
@@ -20,7 +20,7 @@ pub struct CodeSpan {
 }
 
 impl CodeSpan {
-    /// Creates a new `CodeSpan`.
+    /// Creates a new [`CodeSpan`].
     pub const fn new(start: CodeLocation, end: CodeLocation) -> Self {
         Self { start, end }
     }

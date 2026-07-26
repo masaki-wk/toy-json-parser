@@ -21,7 +21,7 @@ mod app {
         use std::io::{self, BufReader, Read};
         use toy_json_parser::{BufReadCharsExt as _, Lexer, Parser};
 
-        let mut reader: BufReader<Box<dyn Read>> = BufReader::new(if args.file == "-" {
+        let reader: BufReader<Box<dyn Read>> = BufReader::new(if args.file == "-" {
             Box::new(io::stdin())
         } else {
             Box::new(File::open(args.file)?)

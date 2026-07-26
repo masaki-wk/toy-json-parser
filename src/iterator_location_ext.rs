@@ -1,7 +1,7 @@
 use crate::CodeLocation;
 
 /// An iterator which gives a tuple of a current [`CodeLocation`] and an item from [`Iterator`].
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LocatedIterator<T> {
     inner: T,
     location: CodeLocation,

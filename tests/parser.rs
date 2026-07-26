@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use toy_json_parser::{CodeLocation, CodeSpan, Delimiter, Lexer, Literal, Parser, ParserError, Value, ValueKind};
+use toy_json_parser::{CodeLocation, CodeSpan, Delimiter, Lexer, Literal, ParseError, Parser, Value, ValueKind};
 
 #[test]
 fn new() -> Result<()> {
@@ -19,7 +19,7 @@ fn do_parse_legal_code(input: &str, expected: Value) -> Result<()> {
     Ok(())
 }
 
-fn do_parse_illegal_code(input: &str, expected: ParserError) -> Result<()> {
+fn do_parse_illegal_code(input: &str, expected: ParseError) -> Result<()> {
     let lexer = Lexer::new(input.chars());
     let mut parser = Parser::new(lexer);
     match parser.parse() {
@@ -204,21 +204,21 @@ fn parse_object_multiple_pair() -> Result<()> {
 #[test]
 fn parse_illegal_no_token() -> Result<()> {
     let input = "";
-    do_parse_illegal_code(input, ParserError::NoToken)
+    do_parse_illegal_code(input, ParseError::NoToken)
 }
 
 #[test]
 fn parse_illegal_invalid_token() -> Result<()> {
     let input = "_";
     let loc = CodeLocation::new(1, 1);
-    do_parse_illegal_code(input, ParserError::InvalidToken(input.to_string(), loc))
+    do_parse_illegal_code(input, ParseError::InvalidToken(input.to_string(), loc))
 }
 
 #[test]
 fn parse_illegal_delimiter_in_wrong_place() -> Result<()> {
     let input = ",";
     let loc = CodeLocation::new(1, 1);
-    do_parse_illegal_code(input, ParserError::DelimiterInWrongPlace(Delimiter::Comma, loc))
+    do_parse_illegal_code(input, ParseError::DelimiterInWrongPlace(Delimiter::Comma, loc))
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn parse_illegal_extra_token_at_the_end() -> Result<()> {
     let extra = "1";
     let input = &format!("{body}{extra}");
     let loc = CodeLocation::new(1, 1 + body.chars().count());
-    do_parse_illegal_code(input, ParserError::ExtraTokenAtTheEnd(loc))
+    do_parse_illegal_code(input, ParseError::ExtraTokenAtTheEnd(loc))
 }
 
 #[test]
@@ -235,7 +235,7 @@ fn parse_illegal_unfinished_array_no_value() -> Result<()> {
     let input = "[";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::UnfinishedArray(start, end))
+    do_parse_illegal_code(input, ParseError::UnfinishedArray(start, end))
 }
 
 #[test]
@@ -243,7 +243,7 @@ fn parse_illegal_unfinished_array_lacks_next_comma() -> Result<()> {
     let input = "[0";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::UnfinishedArray(start, end))
+    do_parse_illegal_code(input, ParseError::UnfinishedArray(start, end))
 }
 
 #[test]
@@ -251,7 +251,7 @@ fn parse_illegal_unfinished_array_lacks_next_value() -> Result<()> {
     let input = "[0,";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::UnfinishedArray(start, end))
+    do_parse_illegal_code(input, ParseError::UnfinishedArray(start, end))
 }
 
 #[test]
@@ -259,7 +259,7 @@ fn parse_illegal_unfinished_object_no_name() -> Result<()> {
     let input = "{";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::UnfinishedObject(start, end))
+    do_parse_illegal_code(input, ParseError::UnfinishedObject(start, end))
 }
 
 #[test]
@@ -267,7 +267,7 @@ fn parse_illegal_unfinished_object_lacks_next_colon() -> Result<()> {
     let input = "{\"foo\"";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::ObjectMemberLacksSeparator(start, end))
+    do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator(start, end))
 }
 
 #[test]
@@ -275,7 +275,7 @@ fn parse_illegal_unfinished_object_lacks_next_value() -> Result<()> {
     let input = "{\"foo\":";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::ObjectMemberLacksValue(start, end))
+    do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue(start, end))
 }
 
 #[test]
@@ -283,7 +283,7 @@ fn parse_illegal_unfinished_object_lacks_next_comma() -> Result<()> {
     let input = "{\"foo\": 0";
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    do_parse_illegal_code(input, ParserError::UnfinishedObject(start, end))
+    do_parse_illegal_code(input, ParseError::UnfinishedObject(start, end))
 }
 
 #[test]
@@ -294,5 +294,5 @@ fn parse_illegal_object_name_is_not_string() -> Result<()> {
     let input = &format!("{pre}{name}{post}");
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + pre.chars().count());
-    do_parse_illegal_code(input, ParserError::NameOfObjectMemberIsNotString(Literal::Number(name.to_string()), end))
+    do_parse_illegal_code(input, ParseError::NameOfObjectMemberIsNotString(Literal::Number(name.to_string()), end))
 }

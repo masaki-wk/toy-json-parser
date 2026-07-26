@@ -1,22 +1,16 @@
 use std::io::BufRead;
 
 /// An iterator over [`char`]s read from [`BufRead`].
-#[derive(Debug)]
-pub struct BufReadChars<'a, T>
-where
-    T: ?Sized,
-{
-    inner: &'a mut T,
+#[derive(Debug, Clone)]
+pub struct BufReadChars<T> {
+    inner: T,
     line: String,
     curr_pos: usize,
 }
 
-impl<'a, T> BufReadChars<'a, T>
-where
-    T: ?Sized,
-{
+impl<T> BufReadChars<T> {
     // Creates a new `BufReadChars` from a mutable reference implementing `BufRead`.
-    fn new(inner: &'a mut T) -> Self {
+    const fn new(inner: T) -> Self {
         Self {
             inner,
             line: String::new(),
@@ -42,7 +36,7 @@ where
     }
 }
 
-impl<'a, T> Iterator for BufReadChars<'a, T>
+impl<T> Iterator for BufReadChars<T>
 where
     T: BufRead,
 {
@@ -64,7 +58,7 @@ where
 /// use toy_json_parser::BufReadCharsExt as _;
 /// # fn test() -> Option<()> {
 /// let s = String::from("bar");
-/// let mut reader = Cursor::new(s);
+/// let reader = Cursor::new(s);
 /// let mut iter = reader.chars();
 /// assert_eq!(iter.next(), Some('b'));
 /// assert_eq!(iter.next(), Some('a'));
@@ -76,7 +70,10 @@ where
 ///
 pub trait BufReadCharsExt: BufRead {
     /// Returns an iterator over [`char`]s read from this [`BufRead`].
-    fn chars(&mut self) -> BufReadChars<'_, Self> {
+    fn chars(self) -> BufReadChars<Self>
+    where
+        Self: Sized,
+    {
         BufReadChars::new(self)
     }
 }

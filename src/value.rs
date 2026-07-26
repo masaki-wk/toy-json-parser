@@ -17,7 +17,7 @@ pub struct Value {
 
 impl Value {
     /// Creates a new Value.
-    pub fn new(kind: ValueKind, span: CodeSpan) -> Self {
+    pub const fn new(kind: ValueKind, span: CodeSpan) -> Self {
         Self { kind, span }
     }
 }
