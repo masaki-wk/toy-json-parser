@@ -2,7 +2,7 @@
 
 use anyhow::{Result, bail};
 
-use toy_json_parser::{CodePos, Delimiter, Lexer, Literal, Parser, ParserError, Value, ValueKind};
+use toy_json_parser::{CodePos, CodeSpan, Delimiter, Lexer, Literal, Parser, ParserError, Value, ValueKind};
 
 #[test]
 fn new() -> Result<()> {
@@ -39,7 +39,8 @@ fn parse_number() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Number(input.to_string()));
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -49,7 +50,8 @@ fn parse_string() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + code.chars().count());
     let kind = ValueKind::Literal(Literal::String(input.to_string()));
-    do_parse_legal_code(&code, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(&code, Value::new(kind, span))
 }
 
 #[test]
@@ -58,7 +60,8 @@ fn parse_true() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Boolean(true));
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -67,7 +70,8 @@ fn parse_false() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Boolean(false));
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -76,7 +80,8 @@ fn parse_null() -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let kind = ValueKind::Literal(Literal::Null);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -86,7 +91,8 @@ fn parse_array_empty() -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let buf = Vec::new();
     let kind = ValueKind::Array(buf);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -99,10 +105,11 @@ fn parse_array_single_item() -> Result<()> {
     let mut buf = Vec::new();
     buf.push(Box::new(Value::new(
         ValueKind::Literal(Literal::Number("0".to_string())),
-        literal_start..literal_end,
+        CodeSpan::new(literal_start, literal_end),
     )));
     let kind = ValueKind::Array(buf);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -117,14 +124,15 @@ fn parse_array_multiple_item() -> Result<()> {
     let mut buf = Vec::new();
     buf.push(Box::new(Value::new(
         ValueKind::Literal(Literal::Number("0".to_string())),
-        literal1_start..literal1_end,
+        CodeSpan::new(literal1_start, literal1_end),
     )));
     buf.push(Box::new(Value::new(
         ValueKind::Literal(Literal::Number("1".to_string())),
-        literal2_start..literal2_end,
+        CodeSpan::new(literal2_start, literal2_end),
     )));
     let kind = ValueKind::Array(buf);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -134,7 +142,8 @@ fn parse_object_empty() -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let buf = Vec::new();
     let kind = ValueKind::Object(buf);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -148,11 +157,15 @@ fn parse_object_single_pair() -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let mut buf = Vec::new();
     buf.push((
-        ("a".to_string(), name_start..name_end),
-        Box::new(Value::new(ValueKind::Literal(Literal::Number("0".to_string())), value_start..value_end)),
+        ("a".to_string(), CodeSpan::new(name_start, name_end)),
+        Box::new(Value::new(
+            ValueKind::Literal(Literal::Number("0".to_string())),
+            CodeSpan::new(value_start, value_end),
+        )),
     ));
     let kind = ValueKind::Object(buf);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]
@@ -170,15 +183,22 @@ fn parse_object_multiple_pair() -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
     let mut buf = Vec::new();
     buf.push((
-        ("a".to_string(), name1_start..name1_end),
-        Box::new(Value::new(ValueKind::Literal(Literal::Number("0".to_string())), value1_start..value1_end)),
+        ("a".to_string(), CodeSpan::new(name1_start, name1_end)),
+        Box::new(Value::new(
+            ValueKind::Literal(Literal::Number("0".to_string())),
+            CodeSpan::new(value1_start, value1_end),
+        )),
     ));
     buf.push((
-        ("b".to_string(), name2_start..name2_end),
-        Box::new(Value::new(ValueKind::Literal(Literal::Number("1".to_string())), value2_start..value2_end)),
+        ("b".to_string(), CodeSpan::new(name2_start, name2_end)),
+        Box::new(Value::new(
+            ValueKind::Literal(Literal::Number("1".to_string())),
+            CodeSpan::new(value2_start, value2_end),
+        )),
     ));
     let kind = ValueKind::Object(buf);
-    do_parse_legal_code(input, Value::new(kind, start..end))
+    let span = CodeSpan::new(start, end);
+    do_parse_legal_code(input, Value::new(kind, span))
 }
 
 #[test]

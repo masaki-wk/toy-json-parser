@@ -1,7 +1,6 @@
 use std::iter::Peekable;
-use std::ops::Range;
 
-use crate::{CodePos, Delimiter, Literal, ParserError, Token, TokenKind, Value, ValueKind};
+use crate::{CodeSpan, Delimiter, Literal, ParserError, Token, TokenKind, Value, ValueKind};
 
 /// Represents a parser.
 ///
@@ -38,59 +37,56 @@ where
     pub fn parse(&mut self) -> Result<Value, ParserError> {
         let (value, _) = self.parse_value()?;
         match self.lexer.next() {
-            Some(token) => Err(ParserError::ExtraTokenAtTheEnd(token.range.start)),
+            Some(token) => Err(ParserError::ExtraTokenAtTheEnd(token.span.start)),
             None => Ok(value),
         }
     }
 
-    // Parses a value and then returns the value and the range of the last token.
-    fn parse_value(&mut self) -> Result<(Value, Range<CodePos>), ParserError> {
+    // Parses a value and then returns the value and the span of the last token.
+    fn parse_value(&mut self) -> Result<(Value, CodeSpan), ParserError> {
         enum TokenCategory {
             BeginArray,
             BeginObject,
             Literal(Literal),
         }
-        let (token_category, token_range) = if let Some(token) = self.lexer.next() {
+        let (token_category, token_span) = if let Some(token) = self.lexer.next() {
             match token.kind {
-                TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.range)),
-                TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.range)),
-                TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token.range.start)),
-                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.range)),
-                TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token.range.start)),
+                TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.span)),
+                TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.span)),
+                TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token.span.start)),
+                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.span)),
+                TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token.span.start)),
             }
         } else {
             Err(ParserError::NoToken)
         }?;
         match token_category {
-            TokenCategory::BeginArray => self.parse_rest_of_array(token_range),
-            TokenCategory::BeginObject => self.parse_rest_of_object(token_range),
+            TokenCategory::BeginArray => self.parse_rest_of_array(token_span),
+            TokenCategory::BeginObject => self.parse_rest_of_object(token_span),
             TokenCategory::Literal(lit) => {
                 let kind = ValueKind::Literal(lit);
-                Ok((Value::new(kind, token_range.clone()), token_range))
+                Ok((Value::new(kind, token_span.clone()), token_span))
             }
         }
     }
 
     // Parses a rest of the array.
-    fn parse_rest_of_array(&mut self, begin_array_token_range: Range<CodePos>) -> Result<(Value, Range<CodePos>), ParserError> {
+    fn parse_rest_of_array(&mut self, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParserError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
-        let mut last_token_range = begin_array_token_range.clone();
-        let (end, last_token_range) = loop {
-            let token_pos = last_token_range.end;
-            let token = self
-                .lexer
-                .peek()
-                .ok_or(ParserError::UnfinishedArray(begin_array_token_range.start, token_pos))?;
-            let token_range = token.range.clone();
+        let mut last_token_span = begin_array_token_span.clone();
+        let (end, last_token_span) = loop {
+            let token_pos = last_token_span.end;
+            let token = self.lexer.peek().ok_or(ParserError::UnfinishedArray(begin_array_token_span.start, token_pos))?;
+            let token_span = token.span.clone();
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
-                    let end = token_range.end;
+                    let end = token_span.end;
                     self.lexer.next();
-                    break (end, token_range);
+                    break (end, token_span);
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
-                        Err(ParserError::DelimiterInWrongPlace(Delimiter::Comma, token.range.start))
+                        Err(ParserError::DelimiterInWrongPlace(Delimiter::Comma, token.span.start))
                     } else {
                         self.lexer.next();
                         Ok(())
@@ -98,36 +94,39 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let (item, last_token_range_new) = self.parse_value().map_err(|e| match e {
-                ParserError::NoToken => ParserError::UnfinishedArray(begin_array_token_range.start, token_range.end),
+            let (item, last_token_span_new) = self.parse_value().map_err(|e| match e {
+                ParserError::NoToken => ParserError::UnfinishedArray(begin_array_token_span.start, token_span.end),
                 _ => e,
             })?;
             buf.push(Box::new(item));
-            last_token_range = last_token_range_new;
+            last_token_span = last_token_span_new;
         };
-        Ok((Value::new(ValueKind::Array(buf), begin_array_token_range.start..end), last_token_range))
+        Ok((
+            Value::new(ValueKind::Array(buf), CodeSpan::new(begin_array_token_span.start, end)),
+            last_token_span,
+        ))
     }
 
     // Parses a rest of the object.
-    fn parse_rest_of_object(&mut self, begin_object_token_range: Range<CodePos>) -> Result<(Value, Range<CodePos>), ParserError> {
-        let mut buf: Vec<((String, Range<CodePos>), Box<Value>)> = Vec::new();
-        let mut last_token_range = begin_object_token_range.clone();
-        let (end, last_token_range) = loop {
-            let token_pos = last_token_range.end;
+    fn parse_rest_of_object(&mut self, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParserError> {
+        let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
+        let mut last_token_span = begin_object_token_span.clone();
+        let (end, last_token_span) = loop {
+            let token_pos = last_token_span.end;
             let token = self
                 .lexer
                 .peek()
-                .ok_or(ParserError::UnfinishedObject(begin_object_token_range.start, token_pos))?;
-            let token_range = token.range.clone();
+                .ok_or(ParserError::UnfinishedObject(begin_object_token_span.start, token_pos))?;
+            let token_span = token.span.clone();
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
-                    let end = token_range.end;
+                    let end = token_span.end;
                     self.lexer.next();
-                    break (end, token_range);
+                    break (end, token_span);
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
-                        Err(ParserError::DelimiterInWrongPlace(Delimiter::Comma, token.range.start))
+                        Err(ParserError::DelimiterInWrongPlace(Delimiter::Comma, token.span.start))
                     } else {
                         self.lexer.next();
                         Ok(())
@@ -135,45 +134,48 @@ where
                 }
                 _ => Ok(()),
             }?;
-            let (name_pair, value, last_token_range_new) = self.parse_pair_for_object(begin_object_token_range.clone(), token_range)?;
+            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(begin_object_token_span.clone(), token_span)?;
             buf.push((name_pair, Box::new(value)));
-            last_token_range = last_token_range_new;
+            last_token_span = last_token_span_new;
         };
-        Ok((Value::new(ValueKind::Object(buf), begin_object_token_range.start..end), last_token_range))
+        Ok((
+            Value::new(ValueKind::Object(buf), CodeSpan::new(begin_object_token_span.start, end)),
+            last_token_span,
+        ))
     }
 
     // Parses a pair of the object.
     fn parse_pair_for_object(
         &mut self,
-        begin_object_token_range: Range<CodePos>,
-        last_token_range: Range<CodePos>,
-    ) -> Result<((String, Range<CodePos>), Value, Range<CodePos>), ParserError> {
+        begin_object_token_span: CodeSpan,
+        last_token_span: CodeSpan,
+    ) -> Result<((String, CodeSpan), Value, CodeSpan), ParserError> {
         let token_for_name = self
             .lexer
             .next()
-            .ok_or(ParserError::UnfinishedObject(begin_object_token_range.start, last_token_range.end))?;
+            .ok_or(ParserError::UnfinishedObject(begin_object_token_span.start, last_token_span.end))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
-            TokenKind::Literal(lit) => Err(ParserError::NameOfObjectMemberIsNotString(lit, token_for_name.range.start)),
-            TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token_for_name.range.start)),
-            TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_name.range.start)),
+            TokenKind::Literal(lit) => Err(ParserError::NameOfObjectMemberIsNotString(lit, token_for_name.span.start)),
+            TokenKind::Delimiter(delim) => Err(ParserError::DelimiterInWrongPlace(delim, token_for_name.span.start)),
+            TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_name.span.start)),
         }?;
-        let token_for_colon = self.lexer.next().ok_or(ParserError::ObjectMemberLacksSeparator(
-            begin_object_token_range.start,
-            token_for_name.range.end,
-        ))?;
+        let token_for_colon = self
+            .lexer
+            .next()
+            .ok_or(ParserError::ObjectMemberLacksSeparator(begin_object_token_span.start, token_for_name.span.end))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
-            TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_colon.range.start)),
+            TokenKind::Invalid(s) => Err(ParserError::InvalidToken(s, token_for_colon.span.start)),
             _ => Err(ParserError::ObjectMemberLacksSeparator(
-                begin_object_token_range.start,
-                token_for_colon.range.start,
+                begin_object_token_span.start,
+                token_for_colon.span.start,
             )),
         }?;
-        let (value, last_token_range) = self.parse_value().map_err(|e| match e {
-            ParserError::NoToken => ParserError::ObjectMemberLacksValue(begin_object_token_range.start, token_for_colon.range.end),
+        let (value, last_token_span) = self.parse_value().map_err(|e| match e {
+            ParserError::NoToken => ParserError::ObjectMemberLacksValue(begin_object_token_span.start, token_for_colon.span.end),
             _ => e,
         })?;
-        Ok(((name, token_for_name.range), value, last_token_range))
+        Ok(((name, token_for_name.span), value, last_token_span))
     }
 }

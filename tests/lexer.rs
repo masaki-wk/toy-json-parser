@@ -1,16 +1,14 @@
 // Tests for Lexer
 
-use std::ops::Range;
-
 use anyhow::{Context as _, Result};
 
-use toy_json_parser::{CodePos, Delimiter, Lexer, Literal, TokenKind};
+use toy_json_parser::{CodePos, CodeSpan, Delimiter, Lexer, Literal, TokenKind};
 
-fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<CodePos>, check_finished: bool) -> Result<()> {
+fn do_tokenize(input: &str, expected_kind: TokenKind, expected_span: CodeSpan, check_finished: bool) -> Result<()> {
     let mut lexer = Lexer::new(input.chars());
     let token = lexer.next().with_context(|| "")?;
     assert_eq!(token.kind, expected_kind);
-    assert_eq!(token.range, expected_range);
+    assert_eq!(token.span, expected_span);
     if check_finished {
         assert_eq!(lexer.next(), None);
     }
@@ -20,19 +18,19 @@ fn do_tokenize(input: &str, expected_kind: TokenKind, expected_range: Range<Code
 fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) -> Result<()> {
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + input.chars().count());
-    do_tokenize(input, expected_kind, start..end, true)
+    do_tokenize(input, expected_kind, CodeSpan::new(start, end), true)
 }
 
 fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: CodePos) -> Result<()> {
     let end = CodePos::new(start.line, start.column + input.chars().count());
-    do_tokenize(&format!("{prefix}{input}"), expected_kind, start..end, true)
+    do_tokenize(&format!("{prefix}{input}"), expected_kind, CodeSpan::new(start, end), true)
 }
 
 fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) -> Result<()> {
     let input = &format!("{body}{rest}");
     let start = CodePos::new(1, 1);
     let end = CodePos::new(start.line, start.column + body.chars().count());
-    do_tokenize(input, expected_kind, start..end, false)
+    do_tokenize(input, expected_kind, CodeSpan::new(start, end), false)
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use crate::{CodePos, Delimiter, Literal, Token, TokenKind};
+use crate::{CodePos, CodeSpan, Delimiter, Literal, Token, TokenKind};
 
 /// Represents a lexer.
 ///
@@ -107,7 +107,7 @@ where
             TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
         };
         let pos_end = self.pos;
-        Some(Token::new(kind, pos_start..pos_end))
+        Some(Token::new(kind, CodeSpan::new(pos_start, pos_end)))
     }
 
     // Reads a raw string.

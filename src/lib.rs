@@ -1,6 +1,9 @@
 mod codepos;
 pub use codepos::CodePos;
 
+mod code_span;
+pub use code_span::CodeSpan;
+
 mod token;
 pub use token::Delimiter;
 pub use token::Literal;
