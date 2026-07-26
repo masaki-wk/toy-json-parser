@@ -24,7 +24,7 @@ where
     T: Iterator<Item = char>,
 {
     chars: Peekable<T>,
-    pos: CodeLocation,
+    location: CodeLocation,
 }
 
 impl<T> Lexer<T>
@@ -35,7 +35,7 @@ where
     pub fn new(chars: T) -> Self {
         Self {
             chars: chars.peekable(),
-            pos: CodeLocation::new(1, 1),
+            location: CodeLocation::new(1, 1),
         }
     }
 
@@ -43,19 +43,19 @@ where
     fn chars_next_and_then_advance(&mut self, always_column: bool) -> Option<T::Item> {
         let c = self.chars.next()?;
         if always_column || c != '\n' {
-            self.pos.advance_column();
+            self.location.advance_column();
         } else {
-            self.pos.advance_line();
+            self.location.advance_line();
         }
         Some(c)
     }
 
-    // Returns the result of `self.chars.next()`, and advances the column of the position.
+    // Returns the result of `self.chars.next()`, and advances the column of the location.
     fn chars_next_and_then_advance_column(&mut self) -> Option<T::Item> {
         self.chars_next_and_then_advance(true)
     }
 
-    // Returns the result of `self.chars.next()`, and advances the position automatically.
+    // Returns the result of `self.chars.next()`, and advances the location automatically.
     fn chars_next_and_then_advance_auto(&mut self) -> Option<T::Item> {
         self.chars_next_and_then_advance(false)
     }
@@ -70,12 +70,12 @@ where
             QuotedString,
             Invalid,
         }
-        let (pos_start, category, firstchar) = loop {
+        let (loc_start, category, firstchar) = loop {
             enum CharCategory {
                 Whitespace,
                 FirstCharOfToken(TokenCategory),
             }
-            let pos_start = self.pos;
+            let loc_start = self.location;
             let ch = self.chars_next_and_then_advance_auto()?;
             let ch_category = match ch {
                 ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
@@ -95,7 +95,7 @@ where
                 _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
             };
             if let CharCategory::FirstCharOfToken(token_category) = ch_category {
-                break (pos_start, token_category, ch);
+                break (loc_start, token_category, ch);
             }
         };
         let kind = match category {
@@ -106,8 +106,8 @@ where
             TokenCategory::QuotedString => self.read_quoted_string(),
             TokenCategory::Invalid => TokenKind::Invalid(firstchar.to_string()),
         };
-        let pos_end = self.pos;
-        Some(Token::new(kind, CodeSpan::new(pos_start, pos_end)))
+        let loc_end = self.location;
+        Some(Token::new(kind, CodeSpan::new(loc_start, loc_end)))
     }
 
     // Reads a raw string.

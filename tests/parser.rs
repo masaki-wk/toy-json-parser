@@ -210,15 +210,15 @@ fn parse_illegal_no_token() -> Result<()> {
 #[test]
 fn parse_illegal_invalid_token() -> Result<()> {
     let input = "_";
-    let pos = CodeLocation::new(1, 1);
-    do_parse_illegal_code(input, ParserError::InvalidToken(input.to_string(), pos))
+    let loc = CodeLocation::new(1, 1);
+    do_parse_illegal_code(input, ParserError::InvalidToken(input.to_string(), loc))
 }
 
 #[test]
 fn parse_illegal_delimiter_in_wrong_place() -> Result<()> {
     let input = ",";
-    let pos = CodeLocation::new(1, 1);
-    do_parse_illegal_code(input, ParserError::DelimiterInWrongPlace(Delimiter::Comma, pos))
+    let loc = CodeLocation::new(1, 1);
+    do_parse_illegal_code(input, ParserError::DelimiterInWrongPlace(Delimiter::Comma, loc))
 }
 
 #[test]
@@ -226,8 +226,8 @@ fn parse_illegal_extra_token_at_the_end() -> Result<()> {
     let body = "0 ";
     let extra = "1";
     let input = &format!("{body}{extra}");
-    let pos = CodeLocation::new(1, 1 + body.chars().count());
-    do_parse_illegal_code(input, ParserError::ExtraTokenAtTheEnd(pos))
+    let loc = CodeLocation::new(1, 1 + body.chars().count());
+    do_parse_illegal_code(input, ParserError::ExtraTokenAtTheEnd(loc))
 }
 
 #[test]
