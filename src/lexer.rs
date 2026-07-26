@@ -48,29 +48,25 @@ where
             Invalid,
         }
         let (category, firstchar, loc_start) = loop {
-            enum CharCategory {
-                Whitespace,
-                FirstCharOfToken(TokenCategory),
-            }
             let (loc, ch) = self.chars.next()?;
-            let ch_category = match ch {
-                ' ' | '\t' | '\n' | '\r' => CharCategory::Whitespace,
-                '[' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBracket)),
-                ']' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBracket)),
-                '{' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::LeftBrace)),
-                '}' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::RightBrace)),
-                ':' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Colon)),
-                ',' => CharCategory::FirstCharOfToken(TokenCategory::Delimiter(Delimiter::Comma)),
-                't' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
-                'f' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
-                'n' => CharCategory::FirstCharOfToken(TokenCategory::RawStringKnown(Literal::Null, "null")),
-                '"' => CharCategory::FirstCharOfToken(TokenCategory::QuotedString),
-                '-' => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                _ if ch.is_ascii_digit() => CharCategory::FirstCharOfToken(TokenCategory::Number),
-                _ if ch.is_ascii_alphabetic() || ch == '_' => CharCategory::FirstCharOfToken(TokenCategory::RawStringUnknown),
-                _ => CharCategory::FirstCharOfToken(TokenCategory::Invalid),
+            let category_candidate = match ch {
+                ' ' | '\t' | '\n' | '\r' => None,
+                '[' => Some(TokenCategory::Delimiter(Delimiter::LeftBracket)),
+                ']' => Some(TokenCategory::Delimiter(Delimiter::RightBracket)),
+                '{' => Some(TokenCategory::Delimiter(Delimiter::LeftBrace)),
+                '}' => Some(TokenCategory::Delimiter(Delimiter::RightBrace)),
+                ':' => Some(TokenCategory::Delimiter(Delimiter::Colon)),
+                ',' => Some(TokenCategory::Delimiter(Delimiter::Comma)),
+                't' => Some(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
+                'f' => Some(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
+                'n' => Some(TokenCategory::RawStringKnown(Literal::Null, "null")),
+                '"' => Some(TokenCategory::QuotedString),
+                '-' => Some(TokenCategory::Number),
+                _ if ch.is_ascii_digit() => Some(TokenCategory::Number),
+                _ if ch.is_ascii_alphabetic() || ch == '_' => Some(TokenCategory::RawStringUnknown),
+                _ => Some(TokenCategory::Invalid),
             };
-            if let CharCategory::FirstCharOfToken(token_category) = ch_category {
+            if let Some(token_category) = category_candidate {
                 break (token_category, ch, loc);
             }
         };
