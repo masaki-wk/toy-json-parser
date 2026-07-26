@@ -17,11 +17,8 @@ mod value;
 pub use value::Value;
 pub use value::ValueKind;
 
-mod parser_error;
-pub use parser_error::ParserError;
-
 mod parser;
-pub use parser::Parser;
+pub use parser::{Parser, ParserError};
 
 mod bufread_chars_ext;
 pub use bufread_chars_ext::{BufReadChars, BufReadCharsExt};
