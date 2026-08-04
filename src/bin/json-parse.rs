@@ -12,7 +12,8 @@ mod app {
 
     #[derive(Parser, Debug)]
     pub struct Args {
-        #[arg(default_value = "-", help = "JSON file")]
+        /// JSON file
+        #[arg(default_value = "-")]
         file: String,
     }
 
