@@ -15,6 +15,10 @@ mod app {
         /// JSON file
         #[arg(default_value = "-")]
         file: String,
+
+        /// Verbosely output
+        #[arg(short, long)]
+        verbose: bool,
     }
 
     pub fn run(args: Args) -> Result<()> {
@@ -29,8 +33,16 @@ mod app {
         });
 
         let lexer = Lexer::new(reader.chars());
-        for token in lexer {
-            println!("{:?}", token)
+        if args.verbose {
+            for token in lexer {
+                println!("{:?}", token)
+            }
+        } else {
+            for (i, token) in lexer.enumerate() {
+                if i > 0 { print!(" ") }
+                print!("{token}")
+            }
+            println!("")
         }
         Ok(())
     }
