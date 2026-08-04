@@ -39,10 +39,12 @@ mod app {
             }
         } else {
             for (i, token) in lexer.enumerate() {
-                if i > 0 { print!(" ") }
+                if i > 0 {
+                    print!(" ")
+                }
                 print!("{token}")
             }
-            println!("")
+            println!()
         }
         Ok(())
     }
