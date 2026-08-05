@@ -4,7 +4,7 @@ use crate::{CodeSpan, Literal};
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueKind {
     Array(Vec<Box<Value>>),
-    Object(Vec<((std::string::String, CodeSpan), Box<Value>)>),
+    Object(Vec<((String, CodeSpan), Box<Value>)>),
     Literal(Literal),
 }
 
