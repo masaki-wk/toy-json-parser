@@ -30,15 +30,9 @@ mod app {
 
         let lexer = Lexer::new(reader.chars());
         let mut parser = Parser::new(lexer);
-        match parser.parse() {
-            Ok(value) => {
-                println!("{:?}", value);
-                Ok(())
-            }
-            Err(diag) => {
-                anyhow::bail!(format!("{:?}", diag))
-            }
-        }
+        let value = parser.parse()?;
+        println!("{:?}", value);
+        Ok(())
     }
 }
 
