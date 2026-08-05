@@ -34,7 +34,7 @@ impl fmt::Display for Delimiter {
             Self::Colon => ':',
             Self::Comma => ',',
         };
-        write!(f, "{}", ch)
+        write!(f, "{ch}")
     }
 }
 
