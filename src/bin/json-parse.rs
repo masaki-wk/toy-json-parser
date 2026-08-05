@@ -15,6 +15,10 @@ mod app {
         /// JSON file
         #[arg(default_value = "-")]
         file: String,
+
+        /// Verbosely output
+        #[arg(short, long)]
+        verbose: bool,
     }
 
     pub fn run(args: Args) -> Result<()> {
@@ -31,7 +35,11 @@ mod app {
         let lexer = Lexer::new(reader.chars());
         let mut parser = Parser::new(lexer);
         let value = parser.parse()?;
-        println!("{:?}", value);
+        if args.verbose {
+            println!("{:?}", value);
+        } else {
+            println!("{value}");
+        }
         Ok(())
     }
 }
