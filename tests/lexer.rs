@@ -178,7 +178,7 @@ fn skip_line_feed() -> Result<()> {
 }
 
 #[test]
-fn skip_carrige_return() -> Result<()> {
+fn skip_carriage_return() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
 }
 
