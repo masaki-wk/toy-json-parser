@@ -96,7 +96,7 @@ pub struct Token {
 }
 
 impl Token {
-    /// Creates a new Token.
+    /// Creates a new [`Token`].
     pub const fn new(kind: TokenKind, span: CodeSpan) -> Self {
         Self { kind, span }
     }
