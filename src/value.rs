@@ -43,15 +43,19 @@ impl ValueKind {
     fn fmt_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
         lit.fmt(f)
     }
-}
 
-impl fmt::Display for ValueKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_impl(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Array(vec) => ValueKind::fmt_array(f, vec.iter()),
             Self::Object(vec) => ValueKind::fmt_object(f, vec.iter()),
             Self::Literal(lit) => ValueKind::fmt_literal(f, lit),
         }
+    }
+}
+
+impl fmt::Display for ValueKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.fmt_impl(f)
     }
 }
 

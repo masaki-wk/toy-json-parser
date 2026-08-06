@@ -1,3 +1,4 @@
+use std::fmt;
 use std::iter::Peekable;
 
 use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value, ValueKind};
@@ -16,9 +17,9 @@ pub enum ParseError {
     ExtraTokenAtTheEnd(CodeLocation),
 }
 
-impl std::fmt::Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{self:?}")
     }
 }
 
