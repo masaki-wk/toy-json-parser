@@ -30,7 +30,7 @@ impl<T> Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    /// Creates a new lexer.
+    /// Creates a new [`Lexer`].
     pub fn new(chars: T) -> Self {
         Self {
             chars: chars.locate().peekable(),
