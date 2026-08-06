@@ -83,7 +83,7 @@ impl fmt::Display for TokenKind {
         match self {
             Self::Delimiter(delim) => delim.fmt(f),
             Self::Literal(lit) => lit.fmt(f),
-            Self::Invalid(s) => write!(f, "{}", s),
+            Self::Invalid(s) => write!(f, "{s}"),
         }
     }
 }
