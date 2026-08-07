@@ -58,7 +58,7 @@ impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Number(s) => write!(f, "{s}"),
-            Self::String(s) => write!(f, "\"{s}\""),
+            Self::String(s) => write!(f, r#""{s}""#),
             Self::Boolean(b) => write!(f, "{b}"),
             Self::Null => write!(f, "null"),
         }
