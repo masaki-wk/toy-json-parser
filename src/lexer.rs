@@ -252,7 +252,7 @@ where
         })();
         match status {
             Some(true) => (TokenKind::Literal(Literal::String(buf)), loc),
-            Some(false) => (TokenKind::Invalid(format!("\"{buf}\"")), loc),
+            Some(false) => (TokenKind::Invalid(format!(r#""{buf}""#)), loc),
             None => (TokenKind::Invalid('"'.to_string() + &buf), loc),
         }
     }
