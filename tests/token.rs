@@ -65,7 +65,7 @@ fn display_token_literal_number() -> Result<()> {
 #[test]
 fn display_token_literal_string() -> Result<()> {
     let s = "foo";
-    let expected = format!("\"{s}\"");
+    let expected = format!(r#""{s}""#);
     let kind = TokenKind::Literal(Literal::String(s.to_string()));
     do_display_token_test(kind, &expected)
 }
