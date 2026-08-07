@@ -36,7 +36,7 @@ impl ValueKind {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "\"{k}\": ")?;
+            write!(f, r#""{k}": "#)?;
             v.fmt(f)?;
         }
         write!(f, "}}")
