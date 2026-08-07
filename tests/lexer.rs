@@ -147,19 +147,19 @@ fn tokenize_number_negative_exponential_notation_large() -> Result<()> {
 #[test]
 fn tokenize_string_without_escaped() -> Result<()> {
     let s = "foo";
-    do_tokenize_single_token(&format!("\"{s}\""), TokenKind::Literal(Literal::String(s.to_string())))
+    do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
 }
 
 #[test]
 fn tokenize_string_with_escaped_char() -> Result<()> {
-    let s = "\\\" \\\\ \\/ \\b \\f \\n \\r \\t";
-    do_tokenize_single_token(&format!("\"{s}\""), TokenKind::Literal(Literal::String(s.to_string())))
+    let s = r#"\" \\ \/ \b \f \n \r \t"#;
+    do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
 }
 
 #[test]
 fn tokenize_string_with_escaped_unicode() -> Result<()> {
-    let s = "\\u048c";
-    do_tokenize_single_token(&format!("\"{s}\""), TokenKind::Literal(Literal::String(s.to_string())))
+    let s = r#"\u048c"#;
+    do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
 }
 
 #[test]
@@ -216,18 +216,18 @@ fn tokenize_invalid_number_bad_char_in_exponent_component() -> Result<()> {
 
 #[test]
 fn tokenize_invalid_quoted_string_with_escaped_char() -> Result<()> {
-    let s = "\"\\c\"";
+    let s = r#""\c""#;
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
 }
 
 #[test]
 fn tokenize_invalid_quoted_string_with_escaped_unicode() -> Result<()> {
-    let s = "\"\\u000x\"";
+    let s = r#""\u000x""#;
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
 }
 
 #[test]
 fn tokenize_invalid_quoted_string_unterminated() -> Result<()> {
-    let s = "\"foo";
+    let s = r#""foo"#;
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
 }
