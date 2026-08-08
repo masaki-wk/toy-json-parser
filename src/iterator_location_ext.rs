@@ -8,7 +8,7 @@ pub struct LocatedIterator<T> {
 }
 
 impl<T> LocatedIterator<T> {
-    // Creates a new `LocatedIterator` from a mutable reference implementing `Iterator`.
+    // Creates a new `LocatedIterator` from an instance implementing `Iterator`.
     const fn new(inner: T) -> Self {
         Self {
             inner,
