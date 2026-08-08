@@ -51,7 +51,7 @@ impl<T> Parser<T>
 where
     T: Iterator<Item = Token>,
 {
-    /// Creates a new parser.
+    /// Creates a new [`Parser`].
     pub fn new(lexer: T) -> Self {
         Self { lexer: lexer.peekable() }
     }

@@ -11,6 +11,7 @@ pub enum ValueKind {
 }
 
 impl ValueKind {
+    // Helper for formatting `ValueKind::Array`.
     fn fmt_array<'a, I>(f: &mut fmt::Formatter, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a Box<Value>>,
@@ -25,6 +26,7 @@ impl ValueKind {
         write!(f, "]")
     }
 
+    // Helper for formatting `ValueKind::Object`.
     fn fmt_object<'a, I>(f: &mut fmt::Formatter, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
@@ -34,16 +36,18 @@ impl ValueKind {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "\"{k}\": ")?;
+            write!(f, r#""{k}": "#)?;
             v.fmt(f)?;
         }
         write!(f, "}}")
     }
 
+    // Helper for formatting `ValueKind::Literal`.
     fn fmt_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
         lit.fmt(f)
     }
 
+    // Implementation of `fmt` for ValueKind.
     fn fmt_impl(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Array(vec) => ValueKind::fmt_array(f, vec.iter()),
@@ -67,7 +71,7 @@ pub struct Value {
 }
 
 impl Value {
-    /// Creates a new Value.
+    /// Creates a new [`Value`].
     pub const fn new(kind: ValueKind, span: CodeSpan) -> Self {
         Self { kind, span }
     }

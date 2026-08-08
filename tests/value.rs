@@ -56,7 +56,7 @@ fn display_value_object_empty() -> Result<()> {
 
 #[test]
 fn display_value_object_single_item() -> Result<()> {
-    let expected = "{\"a\": null}";
+    let expected = r#"{"a": null}"#;
     let name = "a".to_string();
     let loc = CodeLocation::new(1, 1);
     let span = CodeSpan::new(loc, loc);
@@ -67,7 +67,7 @@ fn display_value_object_single_item() -> Result<()> {
 
 #[test]
 fn display_value_object_multiple_item() -> Result<()> {
-    let expected = "{\"a\": null, \"b\": null}";
+    let expected = r#"{"a": null, "b": null}"#;
     let name0 = "a".to_string();
     let name1 = "b".to_string();
     let loc = CodeLocation::new(1, 1);

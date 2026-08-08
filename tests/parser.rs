@@ -46,7 +46,7 @@ fn parse_number() -> Result<()> {
 #[test]
 fn parse_string() -> Result<()> {
     let input = "foo";
-    let code = format!("\"{input}\"");
+    let code = format!(r#""{input}""#);
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + code.chars().count());
     let kind = ValueKind::Literal(Literal::String(input.to_string()));
@@ -148,7 +148,7 @@ fn parse_object_empty() -> Result<()> {
 
 #[test]
 fn parse_object_single_pair() -> Result<()> {
-    let input = "{\"a\": 0}";
+    let input = r#"{"a": 0}"#;
     let start = CodeLocation::new(1, 1);
     let name_start = CodeLocation::new(start.line, start.column + 1);
     let name_end = CodeLocation::new(name_start.line, name_start.column + 3);
@@ -170,7 +170,7 @@ fn parse_object_single_pair() -> Result<()> {
 
 #[test]
 fn parse_object_multiple_pair() -> Result<()> {
-    let input = "{\"a\": 0, \"b\": 1}";
+    let input = r#"{"a": 0, "b": 1}"#;
     let start = CodeLocation::new(1, 1);
     let name1_start = CodeLocation::new(start.line, start.column + 1);
     let name1_end = CodeLocation::new(name1_start.line, name1_start.column + 3);
@@ -264,7 +264,7 @@ fn parse_illegal_unfinished_object_no_name() -> Result<()> {
 
 #[test]
 fn parse_illegal_unfinished_object_lacks_next_colon() -> Result<()> {
-    let input = "{\"foo\"";
+    let input = r#"{"foo""#;
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
     do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator(start, end))
@@ -272,7 +272,7 @@ fn parse_illegal_unfinished_object_lacks_next_colon() -> Result<()> {
 
 #[test]
 fn parse_illegal_unfinished_object_lacks_next_value() -> Result<()> {
-    let input = "{\"foo\":";
+    let input = r#"{"foo":"#;
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
     do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue(start, end))
@@ -280,7 +280,7 @@ fn parse_illegal_unfinished_object_lacks_next_value() -> Result<()> {
 
 #[test]
 fn parse_illegal_unfinished_object_lacks_next_comma() -> Result<()> {
-    let input = "{\"foo\": 0";
+    let input = r#"{"foo": 0"#;
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
     do_parse_illegal_code(input, ParseError::UnfinishedObject(start, end))

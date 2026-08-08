@@ -30,7 +30,7 @@ impl<T> Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    /// Creates a new lexer.
+    /// Creates a new [`Lexer`].
     pub fn new(chars: T) -> Self {
         Self {
             chars: chars.locate().peekable(),
@@ -252,7 +252,7 @@ where
         })();
         match status {
             Some(true) => (TokenKind::Literal(Literal::String(buf)), loc),
-            Some(false) => (TokenKind::Invalid(format!("\"{buf}\"")), loc),
+            Some(false) => (TokenKind::Invalid(format!(r#""{buf}""#)), loc),
             None => (TokenKind::Invalid('"'.to_string() + &buf), loc),
         }
     }
