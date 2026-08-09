@@ -126,7 +126,7 @@ where
         let mut loc = loc_start;
         let mut failed = false;
         let mut has_integer_component = !is_negative;
-        let mut firstchar_already_read = firstchar_is_zero;
+        let mut firstchar_already_read = !is_negative;
         loop {
             match self.chars.peek() {
                 Some((_, ch)) if ch.is_ascii_digit() => {
