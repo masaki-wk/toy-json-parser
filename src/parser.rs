@@ -12,6 +12,7 @@ pub enum ParseError {
     UnfinishedArray(CodeLocation, CodeLocation),
     UnfinishedObject(CodeLocation, CodeLocation),
     ArrayLacksSeparator(CodeLocation, CodeLocation),
+    ObjectLacksSeparator(CodeLocation, CodeLocation),
     NameOfObjectMemberIsNotString(Literal, CodeLocation),
     ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
@@ -162,7 +163,13 @@ where
                         Ok(())
                     }
                 }
-                _ => Ok(()),
+                _ => {
+                    if buf.is_empty() {
+                        Ok(())
+                    } else {
+                        Err(ParseError::ObjectLacksSeparator(begin_object_token_span.start, token_loc))
+                    }
+                }
             }?;
             let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(begin_object_token_span, token_span)?;
             buf.push((name_pair, Box::new(value)));

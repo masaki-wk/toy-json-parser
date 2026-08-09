@@ -297,6 +297,16 @@ fn parse_illegal_unfinished_object_lacks_next_comma() -> Result<()> {
 }
 
 #[test]
+fn parse_illegal_object_lacks_separator() -> Result<()> {
+    let pre = r#"{"foo": 0"#;
+    let post = r#" "bar": 1}"#;
+    let input = &format!("{pre}{post}");
+    let start = CodeLocation::new(1, 1);
+    let end = CodeLocation::new(start.line, start.column + pre.chars().count());
+    do_parse_illegal_code(input, ParseError::ObjectLacksSeparator(start, end))
+}
+
+#[test]
 fn parse_illegal_object_name_is_not_string() -> Result<()> {
     let pre = "{";
     let name = "0";
