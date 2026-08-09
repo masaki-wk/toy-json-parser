@@ -16,6 +16,10 @@ mod app {
         #[arg(default_value = "-")]
         file: String,
 
+        /// Indent width
+        #[arg(short, long, default_value_t = 4)]
+        indent_width: usize,
+
         /// Verbosely output
         #[arg(short, long)]
         verbose: bool,
@@ -36,9 +40,9 @@ mod app {
         let mut parser = Parser::new(lexer);
         let value = parser.parse()?;
         if args.verbose {
-            println!("{value:?}");
+            println!("{value:#?}");
         } else {
-            println!("{value}");
+            println!("{}", value.display(args.indent_width));
         }
         Ok(())
     }
