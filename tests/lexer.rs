@@ -201,6 +201,18 @@ fn tokenize_invalid_number_minus_only() -> Result<()> {
 }
 
 #[test]
+fn tokenize_invalid_number_leading_zero_without_minus() -> Result<()> {
+    let s = "01";
+    do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+}
+
+#[test]
+fn tokenize_invalid_number_leading_zero_with_minus() -> Result<()> {
+    let s = "-01";
+    do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+}
+
+#[test]
 fn tokenize_invalid_number_bad_char_in_fraction_component() -> Result<()> {
     let body = "0.";
     let rest = "a";
