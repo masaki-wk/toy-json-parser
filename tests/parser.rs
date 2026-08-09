@@ -255,6 +255,16 @@ fn parse_illegal_unfinished_array_lacks_next_value() -> Result<()> {
 }
 
 #[test]
+fn parse_illegal_array_lacks_separator() -> Result<()> {
+    let pre = "[0";
+    let post = " 1]";
+    let input = &format!("{pre}{post}");
+    let start = CodeLocation::new(1, 1);
+    let end = CodeLocation::new(start.line, start.column + pre.chars().count());
+    do_parse_illegal_code(input, ParseError::ArrayLacksSeparator(start, end))
+}
+
+#[test]
 fn parse_illegal_unfinished_object_no_name() -> Result<()> {
     let input = "{";
     let start = CodeLocation::new(1, 1);

@@ -11,6 +11,7 @@ pub enum ParseError {
     DelimiterInWrongPlace(Delimiter, CodeLocation),
     UnfinishedArray(CodeLocation, CodeLocation),
     UnfinishedObject(CodeLocation, CodeLocation),
+    ArrayLacksSeparator(CodeLocation, CodeLocation),
     NameOfObjectMemberIsNotString(Literal, CodeLocation),
     ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
@@ -115,7 +116,13 @@ where
                         Ok(())
                     }
                 }
-                _ => Ok(()),
+                _ => {
+                    if buf.is_empty() {
+                        Ok(())
+                    } else {
+                        Err(ParseError::ArrayLacksSeparator(begin_array_token_span.start, token_loc))
+                    }
+                }
             }?;
             let (item, last_token_span_new) = self.parse_value().map_err(|e| match e {
                 ParseError::NoToken => ParseError::UnfinishedArray(begin_array_token_span.start, token_span.end),
