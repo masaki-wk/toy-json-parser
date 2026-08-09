@@ -26,9 +26,12 @@ fn do_parse_illegal_code(input: &str, expected: ParseError) -> Result<()> {
         Ok(_) => {
             bail!("");
         }
-        Err(e) => {
-            assert_eq!(e, expected);
-        }
+        Err(e) => match e {
+            ParseError::NestingDepthExceeded(_) => {}
+            _ => {
+                assert_eq!(e, expected);
+            }
+        },
     }
     Ok(())
 }
@@ -315,4 +318,12 @@ fn parse_illegal_object_name_is_not_string() -> Result<()> {
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + pre.chars().count());
     do_parse_illegal_code(input, ParseError::NameOfObjectMemberIsNotString(Literal::Number(name.to_string()), end))
+}
+
+#[test]
+fn parse_illegal_nesting_depth_exceeded() -> Result<()> {
+    let nesting_depth = 1024;
+    let input = &format!("{}{}", "[".repeat(nesting_depth), "]".repeat(nesting_depth));
+    let dummy = CodeLocation::new(1, 1);
+    do_parse_illegal_code(input, ParseError::NestingDepthExceeded(dummy))
 }

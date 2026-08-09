@@ -17,6 +17,7 @@ pub enum ParseError {
     ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
     ExtraTokenAtTheEnd(CodeLocation),
+    NestingDepthExceeded(CodeLocation),
 }
 
 impl fmt::Display for ParseError {
@@ -47,6 +48,7 @@ where
     T: Iterator<Item = Token>,
 {
     lexer: Peekable<T>,
+    max_depth: usize,
 }
 
 impl<T> Parser<T>
@@ -55,12 +57,15 @@ where
 {
     /// Creates a new [`Parser`].
     pub fn new(lexer: T) -> Self {
-        Self { lexer: lexer.peekable() }
+        Self {
+            lexer: lexer.peekable(),
+            max_depth: 512,
+        }
     }
 
     /// Parses a code.
     pub fn parse(&mut self) -> Result<Value, ParseError> {
-        let (value, _) = self.parse_value()?;
+        let (value, _) = self.parse_value(0)?;
         match self.lexer.next() {
             Some(token) => Err(ParseError::ExtraTokenAtTheEnd(token.span.start)),
             None => Ok(value),
@@ -68,7 +73,7 @@ where
     }
 
     // Parses a value and then returns the value and the span of the last token.
-    fn parse_value(&mut self) -> Result<(Value, CodeSpan), ParseError> {
+    fn parse_value(&mut self, current_depth: usize) -> Result<(Value, CodeSpan), ParseError> {
         enum TokenCategory {
             BeginArray,
             BeginObject,
@@ -85,9 +90,12 @@ where
         } else {
             Err(ParseError::NoToken)
         }?;
+        if current_depth > self.max_depth {
+            return Err(ParseError::NestingDepthExceeded(token_span.start));
+        }
         match token_category {
-            TokenCategory::BeginArray => self.parse_rest_of_array(token_span),
-            TokenCategory::BeginObject => self.parse_rest_of_object(token_span),
+            TokenCategory::BeginArray => self.parse_rest_of_array(current_depth, token_span),
+            TokenCategory::BeginObject => self.parse_rest_of_object(current_depth, token_span),
             TokenCategory::Literal(lit) => {
                 let kind = ValueKind::Literal(lit);
                 Ok((Value::new(kind, token_span), token_span))
@@ -96,7 +104,7 @@ where
     }
 
     // Parses a rest of the array.
-    fn parse_rest_of_array(&mut self, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
+    fn parse_rest_of_array(&mut self, current_depth: usize, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
         let mut last_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
@@ -125,7 +133,7 @@ where
                     }
                 }
             }?;
-            let (item, last_token_span_new) = self.parse_value().map_err(|e| match e {
+            let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
                 ParseError::NoToken => ParseError::UnfinishedArray(begin_array_token_span.start, token_span.end),
                 _ => e,
             })?;
@@ -139,7 +147,7 @@ where
     }
 
     // Parses a rest of the object.
-    fn parse_rest_of_object(&mut self, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
+    fn parse_rest_of_object(&mut self, current_depth: usize, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
         let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
@@ -171,7 +179,7 @@ where
                     }
                 }
             }?;
-            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(begin_object_token_span, token_span)?;
+            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(current_depth, begin_object_token_span, token_span)?;
             buf.push((name_pair, Box::new(value)));
             last_token_span = last_token_span_new;
         };
@@ -184,6 +192,7 @@ where
     // Parses a pair of the object.
     fn parse_pair_for_object(
         &mut self,
+        current_depth: usize,
         begin_object_token_span: CodeSpan,
         last_token_span: CodeSpan,
     ) -> Result<((String, CodeSpan), Value, CodeSpan), ParseError> {
@@ -209,7 +218,7 @@ where
                 token_for_colon.span.start,
             )),
         }?;
-        let (value, last_token_span) = self.parse_value().map_err(|e| match e {
+        let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
             ParseError::NoToken => ParseError::ObjectMemberLacksValue(begin_object_token_span.start, token_for_colon.span.end),
             _ => e,
         })?;
