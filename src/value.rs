@@ -11,8 +11,8 @@ pub enum ValueKind {
 }
 
 impl ValueKind {
-    // Helper for formatting `ValueKind::Array`.
-    fn fmt_array<'a, I>(f: &mut fmt::Formatter, iter: I) -> fmt::Result
+    // Displays `ValueKind::Array`.
+    fn disp_array<'a, I>(f: &mut fmt::Formatter, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a Box<Value>>,
     {
@@ -26,8 +26,8 @@ impl ValueKind {
         write!(f, "]")
     }
 
-    // Helper for formatting `ValueKind::Object`.
-    fn fmt_object<'a, I>(f: &mut fmt::Formatter, iter: I) -> fmt::Result
+    // Displays `ValueKind::Object`.
+    fn disp_object<'a, I>(f: &mut fmt::Formatter, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
     {
@@ -42,24 +42,24 @@ impl ValueKind {
         write!(f, "}}")
     }
 
-    // Helper for formatting `ValueKind::Literal`.
-    fn fmt_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
+    // Displays `ValueKind::Literal`.
+    fn disp_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
         lit.fmt(f)
     }
 
-    // Implementation of `fmt` for ValueKind.
-    fn fmt_impl(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    // Displays `ValueKind`.
+    fn disp(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Array(vec) => ValueKind::fmt_array(f, vec.iter()),
-            Self::Object(vec) => ValueKind::fmt_object(f, vec.iter()),
-            Self::Literal(lit) => ValueKind::fmt_literal(f, lit),
+            Self::Array(vec) => Self::disp_array(f, vec.iter()),
+            Self::Object(vec) => Self::disp_object(f, vec.iter()),
+            Self::Literal(lit) => Self::disp_literal(f, lit),
         }
     }
 }
 
 impl fmt::Display for ValueKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.fmt_impl(f)
+        self.disp(f)
     }
 }
 
