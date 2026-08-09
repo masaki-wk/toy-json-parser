@@ -21,7 +21,7 @@ impl ValueKind {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            v.fmt(f)?
+            v.kind.disp(f)?;
         }
         write!(f, "]")
     }
@@ -37,7 +37,7 @@ impl ValueKind {
                 write!(f, ", ")?;
             }
             write!(f, r#""{k}": "#)?;
-            v.fmt(f)?;
+            v.kind.disp(f)?;
         }
         write!(f, "}}")
     }
