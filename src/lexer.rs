@@ -117,30 +117,41 @@ where
 
     // Reads a number.
     fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
-        let (is_negative, skip_integer_component) = match firstchar {
+        let (is_negative, mut firstchar_is_zero) = match firstchar {
             '-' => (true, false),
             '0' => (false, true),
             _ => (false, false),
         };
         let mut buf = firstchar.to_string();
         let mut loc = loc_start;
-        if !skip_integer_component {
-            let mut has_integer_component = !is_negative;
-            loop {
-                match self.chars.peek() {
-                    Some((_, ch)) if ch.is_ascii_digit() => {
-                        buf.push(*ch);
-                        loc = self.chars.next().unwrap().0;
-                        has_integer_component = true;
+        let mut failed = false;
+        let mut has_integer_component = !is_negative;
+        let mut firstchar_already_read = !is_negative;
+        loop {
+            match self.chars.peek() {
+                Some((_, ch)) if ch.is_ascii_digit() => {
+                    if !firstchar_already_read {
+                        if *ch == '0' {
+                            firstchar_is_zero = true;
+                        }
+                        firstchar_already_read = true;
+                    } else {
+                        if firstchar_is_zero {
+                            // Leading zero detected
+                            failed = true;
+                        }
                     }
-                    _ => {
-                        break;
-                    }
+                    buf.push(*ch);
+                    loc = self.chars.next().unwrap().0;
+                    has_integer_component = true;
+                }
+                _ => {
+                    break;
                 }
             }
-            if !has_integer_component {
-                return (TokenKind::Invalid(buf), loc);
-            }
+        }
+        if !has_integer_component {
+            failed = true;
         }
         let has_decimal_point = match self.chars.peek() {
             Some((_, ch)) if *ch == '.' => {
@@ -165,7 +176,7 @@ where
                 }
             }
             if !has_fraction_component {
-                return (TokenKind::Invalid(buf), loc);
+                failed = true;
             }
         }
         let has_exponent_char = match self.chars.peek() {
@@ -198,10 +209,14 @@ where
                 }
             }
             if !has_exponent_component {
-                return (TokenKind::Invalid(buf), loc);
+                failed = true;
             }
         }
-        (TokenKind::Literal(Literal::Number(buf)), loc)
+        if !failed {
+            (TokenKind::Literal(Literal::Number(buf)), loc)
+        } else {
+            (TokenKind::Invalid(buf), loc)
+        }
     }
 
     // Reads a quoted string.
