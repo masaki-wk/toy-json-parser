@@ -105,11 +105,10 @@ fn parse_array_single_item() -> Result<()> {
     let literal_start = CodeLocation::new(start.line, start.column + 1);
     let literal_end = CodeLocation::new(literal_start.line, literal_start.column + 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    let mut buf = Vec::new();
-    buf.push(Box::new(Value::new(
+    let buf = vec![Box::new(Value::new(
         ValueKind::Literal(Literal::Number("0".to_string())),
         CodeSpan::new(literal_start, literal_end),
-    )));
+    ))];
     let kind = ValueKind::Array(buf);
     let span = CodeSpan::new(start, end);
     do_parse_legal_code(input, Value::new(kind, span))
@@ -124,15 +123,16 @@ fn parse_array_multiple_item() -> Result<()> {
     let literal2_start = CodeLocation::new(literal1_end.line, literal1_end.column + 2);
     let literal2_end = CodeLocation::new(literal2_start.line, literal2_start.column + 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    let mut buf = Vec::new();
-    buf.push(Box::new(Value::new(
-        ValueKind::Literal(Literal::Number("0".to_string())),
-        CodeSpan::new(literal1_start, literal1_end),
-    )));
-    buf.push(Box::new(Value::new(
-        ValueKind::Literal(Literal::Number("1".to_string())),
-        CodeSpan::new(literal2_start, literal2_end),
-    )));
+    let buf = vec![
+        Box::new(Value::new(
+            ValueKind::Literal(Literal::Number("0".to_string())),
+            CodeSpan::new(literal1_start, literal1_end),
+        )),
+        Box::new(Value::new(
+            ValueKind::Literal(Literal::Number("1".to_string())),
+            CodeSpan::new(literal2_start, literal2_end),
+        )),
+    ];
     let kind = ValueKind::Array(buf);
     let span = CodeSpan::new(start, end);
     do_parse_legal_code(input, Value::new(kind, span))
@@ -158,14 +158,13 @@ fn parse_object_single_pair() -> Result<()> {
     let value_start = CodeLocation::new(name_end.line, name_end.column + 2);
     let value_end = CodeLocation::new(value_start.line, value_start.column + 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    let mut buf = Vec::new();
-    buf.push((
+    let buf = vec![(
         ("a".to_string(), CodeSpan::new(name_start, name_end)),
         Box::new(Value::new(
             ValueKind::Literal(Literal::Number("0".to_string())),
             CodeSpan::new(value_start, value_end),
         )),
-    ));
+    )];
     let kind = ValueKind::Object(buf);
     let span = CodeSpan::new(start, end);
     do_parse_legal_code(input, Value::new(kind, span))
@@ -184,21 +183,22 @@ fn parse_object_multiple_pair() -> Result<()> {
     let value2_start = CodeLocation::new(name2_end.line, name2_end.column + 2);
     let value2_end = CodeLocation::new(value2_start.line, value2_start.column + 1);
     let end = CodeLocation::new(start.line, start.column + input.chars().count());
-    let mut buf = Vec::new();
-    buf.push((
-        ("a".to_string(), CodeSpan::new(name1_start, name1_end)),
-        Box::new(Value::new(
-            ValueKind::Literal(Literal::Number("0".to_string())),
-            CodeSpan::new(value1_start, value1_end),
-        )),
-    ));
-    buf.push((
-        ("b".to_string(), CodeSpan::new(name2_start, name2_end)),
-        Box::new(Value::new(
-            ValueKind::Literal(Literal::Number("1".to_string())),
-            CodeSpan::new(value2_start, value2_end),
-        )),
-    ));
+    let buf = vec![
+        (
+            ("a".to_string(), CodeSpan::new(name1_start, name1_end)),
+            Box::new(Value::new(
+                ValueKind::Literal(Literal::Number("0".to_string())),
+                CodeSpan::new(value1_start, value1_end),
+            )),
+        ),
+        (
+            ("b".to_string(), CodeSpan::new(name2_start, name2_end)),
+            Box::new(Value::new(
+                ValueKind::Literal(Literal::Number("1".to_string())),
+                CodeSpan::new(value2_start, value2_end),
+            )),
+        ),
+    ];
     let kind = ValueKind::Object(buf);
     let span = CodeSpan::new(start, end);
     do_parse_legal_code(input, Value::new(kind, span))
