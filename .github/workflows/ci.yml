@@ -11,6 +11,10 @@ jobs:
   verify-format:
     runs-on: ubuntu-latest
     steps:
+    - name: Update toolchain
+      run: rustup update stable && rustup default stable
+    - name: Install required tools
+      run: rustup component add rustfmt
     - name: Show version information of tools
       run: |
         cargo --version
@@ -23,6 +27,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+    - name: Update toolchain
+      run: rustup update stable && rustup default stable
+    - name: Install required tools
+      run: rustup component add clippy
     - name: Show version information of tools
       run: |
         cargo --version
@@ -35,6 +43,10 @@ jobs:
   verify-doc:
     runs-on: ubuntu-latest
     steps:
+    - name: Update toolchain
+      run: rustup update stable && rustup default stable
+    - name: Install required tools
+      run: rustup component add rust-docs
     - name: Show version information of tools
       run: |
         cargo --version
@@ -47,6 +59,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+    - name: Update toolchain
+      run: rustup update stable && rustup default stable
+    - name: Install required tools
+      run: rustup component add rustc
     - name: Show version information of tools
       run: |
         cargo --version
