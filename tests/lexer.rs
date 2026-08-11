@@ -198,6 +198,32 @@ fn tokenize_true_with_space_suffix() -> Result<()> {
 }
 
 #[test]
+fn tokenize_number_with_space_prefix() -> Result<()> {
+    let s = "123";
+    do_tokenize_single_token_with_whitespace_prefix(" ", s, TokenKind::Literal(Literal::Number(s.to_string())), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_number_with_space_suffix() -> Result<()> {
+    let s = "123";
+    do_tokenize_single_token_with_trailing_chars(s, " ", TokenKind::Literal(Literal::Number(s.to_string())))
+}
+
+#[test]
+fn tokenize_string_with_space_prefix() -> Result<()> {
+    let s = "foo";
+    let input = &format!(r#""{s}""#);
+    do_tokenize_single_token_with_whitespace_prefix(" ", input, TokenKind::Literal(Literal::String(s.to_string())), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_string_with_space_suffix() -> Result<()> {
+    let s = "foo";
+    let input = &format!(r#""{s}""#);
+    do_tokenize_single_token_with_trailing_chars(input, " ", TokenKind::Literal(Literal::String(s.to_string())))
+}
+
+#[test]
 fn tokenize_invalid_char() -> Result<()> {
     let s = ".";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
