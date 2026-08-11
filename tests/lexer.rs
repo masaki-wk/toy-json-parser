@@ -163,23 +163,64 @@ fn tokenize_string_with_escaped_unicode() -> Result<()> {
 }
 
 #[test]
-fn skip_space() -> Result<()> {
+fn tokenize_colon_with_space_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
 }
 
 #[test]
-fn skip_tab() -> Result<()> {
+fn tokenize_colon_with_tab_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
 }
 
 #[test]
-fn skip_line_feed() -> Result<()> {
+fn tokenize_colon_with_line_feed_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(2, 1))
 }
 
 #[test]
-fn skip_carriage_return() -> Result<()> {
+fn tokenize_colon_with_carriage_return_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_colon_with_space_suffix() -> Result<()> {
+    do_tokenize_single_token_with_trailing_chars(":", " ", TokenKind::Delimiter(Delimiter::Colon))
+}
+
+#[test]
+fn tokenize_true_with_space_prefix() -> Result<()> {
+    do_tokenize_single_token_with_whitespace_prefix(" ", "true", TokenKind::Literal(Literal::Boolean(true)), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_true_with_space_suffix() -> Result<()> {
+    do_tokenize_single_token_with_trailing_chars("true", " ", TokenKind::Literal(Literal::Boolean(true)))
+}
+
+#[test]
+fn tokenize_number_with_space_prefix() -> Result<()> {
+    let s = "123";
+    do_tokenize_single_token_with_whitespace_prefix(" ", s, TokenKind::Literal(Literal::Number(s.to_string())), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_number_with_space_suffix() -> Result<()> {
+    let s = "123";
+    do_tokenize_single_token_with_trailing_chars(s, " ", TokenKind::Literal(Literal::Number(s.to_string())))
+}
+
+#[test]
+fn tokenize_string_with_space_prefix() -> Result<()> {
+    let s = "foo";
+    let input = &format!(r#""{s}""#);
+    do_tokenize_single_token_with_whitespace_prefix(" ", input, TokenKind::Literal(Literal::String(s.to_string())), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_string_with_space_suffix() -> Result<()> {
+    let s = "foo";
+    let input = &format!(r#""{s}""#);
+    do_tokenize_single_token_with_trailing_chars(input, " ", TokenKind::Literal(Literal::String(s.to_string())))
 }
 
 #[test]

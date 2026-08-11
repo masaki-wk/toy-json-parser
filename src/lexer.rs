@@ -87,10 +87,10 @@ where
         let mut buf = firstchar.to_string();
         let mut loc = loc_start;
         while let Some((ch_loc, ch)) = self.chars.peek().copied() {
-            loc = ch_loc;
             if ch.is_ascii_alphanumeric() || ch == '_' {
                 self.chars.next();
                 buf.push(ch);
+                loc = ch_loc;
             } else {
                 break;
             }
