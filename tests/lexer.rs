@@ -163,22 +163,22 @@ fn tokenize_string_with_escaped_unicode() -> Result<()> {
 }
 
 #[test]
-fn skip_space() -> Result<()> {
+fn tokenize_colon_with_space_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
 }
 
 #[test]
-fn skip_tab() -> Result<()> {
+fn tokenize_colon_with_tab_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
 }
 
 #[test]
-fn skip_line_feed() -> Result<()> {
+fn tokenize_colon_with_line_feed_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(2, 1))
 }
 
 #[test]
-fn skip_carriage_return() -> Result<()> {
+fn tokenize_colon_with_carriage_return_prefix() -> Result<()> {
     do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
 }
 
