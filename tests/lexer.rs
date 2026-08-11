@@ -183,6 +183,11 @@ fn tokenize_colon_with_carriage_return_prefix() -> Result<()> {
 }
 
 #[test]
+fn tokenize_colon_with_space_suffix() -> Result<()> {
+    do_tokenize_single_token_with_trailing_chars(":", " ", TokenKind::Delimiter(Delimiter::Colon))
+}
+
+#[test]
 fn tokenize_invalid_char() -> Result<()> {
     let s = ".";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
