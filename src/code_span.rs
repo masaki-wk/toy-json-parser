@@ -1,16 +1,6 @@
-/// Represents a code location.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct CodeLocation {
-    pub line: usize,
-    pub column: usize,
-}
+use std::fmt;
 
-impl CodeLocation {
-    /// Creates a new [`CodeLocation`].
-    pub const fn new(line: usize, column: usize) -> Self {
-        Self { line, column }
-    }
-}
+use crate::CodeLocation;
 
 /// Represents a code span.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
@@ -23,5 +13,13 @@ impl CodeSpan {
     /// Creates a new [`CodeSpan`].
     pub const fn new(start: CodeLocation, end: CodeLocation) -> Self {
         Self { start, end }
+    }
+}
+
+impl fmt::Display for CodeSpan {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let start = self.start;
+        let end = self.end;
+        write!(f, "{start}..{end}")
     }
 }
