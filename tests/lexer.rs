@@ -188,6 +188,16 @@ fn tokenize_colon_with_space_suffix() -> Result<()> {
 }
 
 #[test]
+fn tokenize_true_with_space_prefix() -> Result<()> {
+    do_tokenize_single_token_with_whitespace_prefix(" ", "true", TokenKind::Literal(Literal::Boolean(true)), CodeLocation::new(1, 2))
+}
+
+#[test]
+fn tokenize_true_with_space_suffix() -> Result<()> {
+    do_tokenize_single_token_with_trailing_chars("true", " ", TokenKind::Literal(Literal::Boolean(true)))
+}
+
+#[test]
 fn tokenize_invalid_char() -> Result<()> {
     let s = ".";
     do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
