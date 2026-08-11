@@ -11,7 +11,7 @@ pub enum ValueKind {
 }
 
 // Helper enum for `ValueKind::disp()`
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum ValueKindDisplayMode {
     ToString,
     PrettyPrint(usize),
@@ -19,7 +19,7 @@ enum ValueKindDisplayMode {
 
 impl ValueKind {
     // Returns a padding string for `disp()`.
-    fn padding(mode: ValueKindDisplayMode, depth: usize) -> String {
+    fn padding(mode: &ValueKindDisplayMode, depth: usize) -> String {
         match mode {
             ValueKindDisplayMode::ToString => String::new(),
             ValueKindDisplayMode::PrettyPrint(indent_width) => {
@@ -35,7 +35,7 @@ impl ValueKind {
     }
 
     // Displays a separator of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_separator(mode: ValueKindDisplayMode, pad: &str, is_first_item: bool, f: &mut fmt::Formatter) -> fmt::Result {
+    fn disp_separator(mode: &ValueKindDisplayMode, pad: &str, is_first_item: bool, f: &mut fmt::Formatter) -> fmt::Result {
         match mode {
             ValueKindDisplayMode::ToString => {
                 if !is_first_item {
@@ -55,7 +55,7 @@ impl ValueKind {
     }
 
     // Displays the footer of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_footer(mode: ValueKindDisplayMode, ch: char, pad: &str, is_empty: bool, f: &mut fmt::Formatter) -> fmt::Result {
+    fn disp_footer(mode: &ValueKindDisplayMode, ch: char, pad: &str, is_empty: bool, f: &mut fmt::Formatter) -> fmt::Result {
         match mode {
             ValueKindDisplayMode::ToString => {}
             ValueKindDisplayMode::PrettyPrint(_) => {
@@ -69,7 +69,7 @@ impl ValueKind {
     }
 
     // Displays `ValueKind::Array`.
-    fn disp_array<'a, I>(mode: ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter, iter: I) -> fmt::Result
+    fn disp_array<'a, I>(mode: &ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a Box<Value>>,
     {
@@ -86,7 +86,7 @@ impl ValueKind {
     }
 
     // Displays `ValueKind::Object`.
-    fn disp_object<'a, I>(mode: ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter, iter: I) -> fmt::Result
+    fn disp_object<'a, I>(mode: &ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
     {
@@ -109,7 +109,7 @@ impl ValueKind {
     }
 
     // Displays `ValueKind`.
-    fn disp(&self, mode: ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter) -> fmt::Result {
+    fn disp(&self, mode: &ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Array(vec) => Self::disp_array(mode, current_depth, f, vec.iter()),
             Self::Object(vec) => Self::disp_object(mode, current_depth, f, vec.iter()),
@@ -120,7 +120,7 @@ impl ValueKind {
 
 impl fmt::Display for ValueKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.disp(ValueKindDisplayMode::ToString, 0, f)
+        self.disp(&ValueKindDisplayMode::ToString, 0, f)
     }
 }
 
@@ -139,7 +139,7 @@ pub struct ValueKindDisplay<'a> {
 
 impl<'a> fmt::Display for ValueKindDisplay<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.kind.disp(ValueKindDisplayMode::PrettyPrint(self.indent_width), 0, f)
+        self.kind.disp(&ValueKindDisplayMode::PrettyPrint(self.indent_width), 0, f)
     }
 }
 
