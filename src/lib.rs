@@ -1,5 +1,8 @@
+mod code_location;
+pub use code_location::CodeLocation;
+
 mod code_span;
-pub use code_span::{CodeLocation, CodeSpan};
+pub use code_span::CodeSpan;
 
 mod iterator_location_ext;
 pub use iterator_location_ext::{IteratorLocationExt, LocatedIterator};
