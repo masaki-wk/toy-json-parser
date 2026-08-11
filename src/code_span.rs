@@ -35,3 +35,11 @@ impl CodeSpan {
         Self { start, end }
     }
 }
+
+impl fmt::Display for CodeSpan {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let start = self.start;
+        let end = self.end;
+        write!(f, "{start}..{end}")
+    }
+}
