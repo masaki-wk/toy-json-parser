@@ -35,7 +35,9 @@ mod app {
         let lexer = Lexer::new(reader.chars());
         if args.verbose {
             for token in lexer {
-                println!("{token:?}")
+                let kind = &token.kind;
+                let span = &token.span;
+                println!("{token}: {kind:?}, {span}")
             }
         } else {
             for (i, token) in lexer.enumerate() {
