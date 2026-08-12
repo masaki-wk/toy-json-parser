@@ -12,8 +12,8 @@ pub enum ValueKind {
 
 impl ValueKind {
     /// Displays [`ValueKind`] via returning the helper struct `ValueDisplay`.
-    pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
-        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), self, None)
+    pub const fn display(&self, indent_width: usize, show_span: bool) -> ValueDisplay<'_> {
+        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width, show_span), self, None)
     }
 }
 
@@ -38,8 +38,8 @@ impl Value {
     }
 
     /// Displays [`Value`] via returning the helper struct `ValueDisplay`.
-    pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
-        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), &self.kind, Some(&self.span))
+    pub const fn display(&self, indent_width: usize, show_span: bool) -> ValueDisplay<'_> {
+        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width, show_span), &self.kind, Some(&self.span))
     }
 }
 
@@ -54,7 +54,7 @@ impl fmt::Display for Value {
 #[derive(Debug, Clone)]
 enum ValueDisplayMode {
     ToString,
-    PrettyPrint(usize),
+    PrettyPrint(usize, bool),
 }
 
 /// Helper struct for printing [`Value`].
@@ -71,12 +71,18 @@ impl<'a> ValueDisplay<'a> {
     }
 
     // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_header(f: &mut fmt::Formatter, mode: &ValueDisplayMode, ch: char, is_empty: bool) -> fmt::Result {
+    fn disp_header(f: &mut fmt::Formatter, mode: &ValueDisplayMode, span: Option<&'a CodeSpan>, ch: char, is_empty: bool) -> fmt::Result {
         write!(f, "{ch}")?;
         match mode {
             ValueDisplayMode::ToString => {}
-            ValueDisplayMode::PrettyPrint(_) => {
+            ValueDisplayMode::PrettyPrint(_, show_span) => {
                 if !is_empty {
+                    if let Some(span) = span
+                        && *show_span
+                    {
+                        let start = span.start;
+                        write!(f, " {start}")?;
+                    }
                     writeln!(f)?;
                 }
             }
@@ -88,7 +94,7 @@ impl<'a> ValueDisplay<'a> {
     fn disp_indent(f: &mut fmt::Formatter, mode: &ValueDisplayMode, depth: usize) -> fmt::Result {
         match mode {
             ValueDisplayMode::ToString => {}
-            ValueDisplayMode::PrettyPrint(indent_width) => {
+            ValueDisplayMode::PrettyPrint(indent_width, _) => {
                 let pad_width = indent_width * depth;
                 let pad = " ".repeat(pad_width);
                 write!(f, "{pad}")?;
@@ -105,7 +111,7 @@ impl<'a> ValueDisplay<'a> {
                     write!(f, ", ")?;
                 }
             }
-            ValueDisplayMode::PrettyPrint(_) => {
+            ValueDisplayMode::PrettyPrint(_, _) => {
                 if !is_last_item {
                     writeln!(f, ",")?;
                 } else {
@@ -125,11 +131,11 @@ impl<'a> ValueDisplay<'a> {
     }
 
     // Displays `ValueKind::Array`.
-    fn disp_array<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, _span: &Option<&'a CodeSpan>, depth: usize, len: usize, iter: I) -> fmt::Result
+    fn disp_array<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, span: Option<&'a CodeSpan>, depth: usize, len: usize, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a Box<Value>>,
     {
-        Self::disp_header(f, mode, '[', len == 0)?;
+        Self::disp_header(f, mode, span, '[', len == 0)?;
         for (i, v) in iter.enumerate() {
             Self::disp_indent(f, mode, depth + 1)?;
             let sub = ValueDisplay::new(mode.clone(), &v.kind, Some(&v.span));
@@ -140,11 +146,11 @@ impl<'a> ValueDisplay<'a> {
     }
 
     // Displays `ValueKind::Object`.
-    fn disp_object<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, _span: &Option<&'a CodeSpan>, depth: usize, len: usize, iter: I) -> fmt::Result
+    fn disp_object<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, span: Option<&'a CodeSpan>, depth: usize, len: usize, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
     {
-        Self::disp_header(f, mode, '{', len == 0)?;
+        Self::disp_header(f, mode, span, '{', len == 0)?;
         for (i, ((k, _), v)) in iter.enumerate() {
             Self::disp_indent(f, mode, depth + 1)?;
             write!(f, r#""{k}": "#)?;
@@ -166,8 +172,8 @@ impl<'a> ValueDisplay<'a> {
         'b: 'a,
     {
         match self.kind {
-            ValueKind::Array(vec) => Self::disp_array(f, &self.mode, &self.span, depth, vec.len(), vec.iter()),
-            ValueKind::Object(vec) => Self::disp_object(f, &self.mode, &self.span, depth, vec.len(), vec.iter()),
+            ValueKind::Array(vec) => Self::disp_array(f, &self.mode, self.span, depth, vec.len(), vec.iter()),
+            ValueKind::Object(vec) => Self::disp_object(f, &self.mode, self.span, depth, vec.len(), vec.iter()),
             ValueKind::Literal(lit) => Self::disp_literal(f, lit),
         }
     }

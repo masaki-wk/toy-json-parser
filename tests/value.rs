@@ -10,7 +10,7 @@ fn do_display_value_test(kind: ValueKind, expected_tostring: &str, expected_pret
     let span = CodeSpan::new(start, end);
     let target = Value::new(kind, span);
     assert_eq!(&target.to_string(), expected_tostring);
-    assert_eq!(&format!("{}", target.display(4)), expected_prettyprint);
+    assert_eq!(&format!("{}", target.display(4, false)), expected_prettyprint);
     Ok(())
 }
 
