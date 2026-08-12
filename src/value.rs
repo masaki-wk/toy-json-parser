@@ -63,18 +63,13 @@ pub struct ValueDisplay<'a> {
     kind: &'a ValueKind,
 }
 
-impl<'a> ValueDisplay<'a> {
-    // Creates a new `ValueDisplay`.
-    const fn new(mode: ValueDisplayMode, kind: &'a ValueKind) -> Self {
-        Self { mode, kind }
-    }
-
+impl ValueDisplayMode {
     // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_header(f: &mut fmt::Formatter, mode: &ValueDisplayMode, ch: char, is_empty: bool) -> fmt::Result {
+    fn disp_header(&self, f: &mut fmt::Formatter, ch: char, is_empty: bool) -> fmt::Result {
         write!(f, "{ch}")?;
-        match mode {
-            ValueDisplayMode::ToString => {}
-            ValueDisplayMode::PrettyPrint(_) => {
+        match self {
+            Self::ToString => {}
+            Self::PrettyPrint(_) => {
                 if !is_empty {
                     writeln!(f)?;
                 }
@@ -84,10 +79,10 @@ impl<'a> ValueDisplay<'a> {
     }
 
     // Displays indent.
-    fn disp_indent(f: &mut fmt::Formatter, mode: &ValueDisplayMode, depth: usize) -> fmt::Result {
-        match mode {
-            ValueDisplayMode::ToString => {}
-            ValueDisplayMode::PrettyPrint(indent_width) => {
+    fn disp_indent(&self, f: &mut fmt::Formatter, depth: usize) -> fmt::Result {
+        match self {
+            Self::ToString => {}
+            Self::PrettyPrint(indent_width) => {
                 let pad_width = indent_width * depth;
                 let pad = " ".repeat(pad_width);
                 write!(f, "{pad}")?;
@@ -97,14 +92,14 @@ impl<'a> ValueDisplay<'a> {
     }
 
     // Displays suffix of an item of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_item_suffix(f: &mut fmt::Formatter, mode: &ValueDisplayMode, is_last_item: bool) -> fmt::Result {
-        match mode {
-            ValueDisplayMode::ToString => {
+    fn disp_item_suffix(&self, f: &mut fmt::Formatter, is_last_item: bool) -> fmt::Result {
+        match self {
+            Self::ToString => {
                 if !is_last_item {
                     write!(f, ", ")?;
                 }
             }
-            ValueDisplayMode::PrettyPrint(_) => {
+            Self::PrettyPrint(_) => {
                 if !is_last_item {
                     writeln!(f, ",")?;
                 } else {
@@ -116,64 +111,66 @@ impl<'a> ValueDisplay<'a> {
     }
 
     // Displays a footer of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_footer(f: &mut fmt::Formatter, mode: &ValueDisplayMode, ch: char, depth: usize, is_empty: bool) -> fmt::Result {
+    fn disp_footer(&self, f: &mut fmt::Formatter, ch: char, depth: usize, is_empty: bool) -> fmt::Result {
         if !is_empty {
-            Self::disp_indent(f, mode, depth)?;
+            self.disp_indent(f, depth)?;
         }
         write!(f, "{ch}")
     }
 
     // Displays `ValueKind::Array`.
-    fn disp_array<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, depth: usize, len: usize, iter: I) -> fmt::Result
+    fn disp_array<'a, I>(&self, f: &mut fmt::Formatter, depth: usize, len: usize, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a Box<Value>>,
     {
-        Self::disp_header(f, mode, '[', len == 0)?;
+        self.disp_header(f, '[', len == 0)?;
         for (i, v) in iter.enumerate() {
-            Self::disp_indent(f, mode, depth + 1)?;
-            let sub = ValueDisplay::new(mode.clone(), &v.kind);
-            sub.disp(f, depth + 1)?;
-            Self::disp_item_suffix(f, mode, i + 1 == len)?;
+            self.disp_indent(f, depth + 1)?;
+            self.disp(f, depth + 1, &v.kind)?;
+            self.disp_item_suffix(f, i + 1 == len)?;
         }
-        Self::disp_footer(f, mode, ']', depth, len == 0)
+        self.disp_footer(f, ']', depth, len == 0)
     }
 
     // Displays `ValueKind::Object`.
-    fn disp_object<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, depth: usize, len: usize, iter: I) -> fmt::Result
+    fn disp_object<'a, I>(&self, f: &mut fmt::Formatter, depth: usize, len: usize, iter: I) -> fmt::Result
     where
         I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
     {
-        Self::disp_header(f, mode, '{', len == 0)?;
+        self.disp_header(f, '{', len == 0)?;
         for (i, ((k, _), v)) in iter.enumerate() {
-            Self::disp_indent(f, mode, depth + 1)?;
+            self.disp_indent(f, depth + 1)?;
             write!(f, r#""{k}": "#)?;
-            let sub = ValueDisplay::new(mode.clone(), &v.kind);
-            sub.disp(f, depth + 1)?;
-            Self::disp_item_suffix(f, mode, i + 1 == len)?;
+            self.disp(f, depth + 1, &v.kind)?;
+            self.disp_item_suffix(f, i + 1 == len)?;
         }
-        Self::disp_footer(f, mode, '}', depth, len == 0)
+        self.disp_footer(f, '}', depth, len == 0)
     }
 
     // Displays `ValueKind::Literal`.
-    fn disp_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
+    fn disp_literal(&self, f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
         lit.fmt(f)
     }
 
     // Displays `ValueKind`.
-    fn disp<'b>(&'b self, f: &mut fmt::Formatter, depth: usize) -> fmt::Result
-    where
-        'b: 'a,
-    {
-        match self.kind {
-            ValueKind::Array(vec) => Self::disp_array(f, &self.mode, depth, vec.len(), vec.iter()),
-            ValueKind::Object(vec) => Self::disp_object(f, &self.mode, depth, vec.len(), vec.iter()),
-            ValueKind::Literal(lit) => Self::disp_literal(f, lit),
+    fn disp(&self, f: &mut fmt::Formatter, depth: usize, kind: &ValueKind) -> fmt::Result {
+        match kind {
+            ValueKind::Array(vec) => self.disp_array(f, depth, vec.len(), vec.iter()),
+            ValueKind::Object(vec) => self.disp_object(f, depth, vec.len(), vec.iter()),
+            ValueKind::Literal(lit) => self.disp_literal(f, lit),
         }
+    }
+}
+
+impl<'a> ValueDisplay<'a> {
+    // Creates a new `ValueDisplay`.
+    const fn new(mode: ValueDisplayMode, kind: &'a ValueKind) -> Self {
+        Self { mode, kind }
     }
 }
 
 impl<'a> fmt::Display for ValueDisplay<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.disp(f, 0)
+        self.mode.disp(f, 0, self.kind)
     }
 }
