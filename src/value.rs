@@ -67,28 +67,21 @@ impl ValueDisplayMode {
     // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
     fn disp_header(&self, f: &mut fmt::Formatter, ch: char, is_empty: bool) -> fmt::Result {
         write!(f, "{ch}")?;
-        match self {
-            Self::ToString => {}
-            Self::PrettyPrint(_) => {
-                if !is_empty {
-                    writeln!(f)?;
-                }
-            }
+        if matches!(self, Self::PrettyPrint(_)) && !is_empty {
+            writeln!(f)?;
         }
         Ok(())
     }
 
     // Displays indent.
     fn disp_indent(&self, f: &mut fmt::Formatter, depth: usize) -> fmt::Result {
-        match self {
-            Self::ToString => {}
-            Self::PrettyPrint(indent_width) => {
-                let pad_width = indent_width * depth;
-                let pad = " ".repeat(pad_width);
-                write!(f, "{pad}")?;
-            }
+        if let Self::PrettyPrint(indent_width) = self {
+            let pad_width = indent_width * depth;
+            let pad = " ".repeat(pad_width);
+            write!(f, "{pad}")
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     // Displays suffix of an item of `ValueKind::Array` or `ValueKind::Object`.
@@ -111,7 +104,7 @@ impl ValueDisplayMode {
     }
 
     // Displays a footer of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_footer(&self, f: &mut fmt::Formatter, ch: char, depth: usize, is_empty: bool) -> fmt::Result {
+    fn disp_footer(&self, f: &mut fmt::Formatter, depth: usize, ch: char, is_empty: bool) -> fmt::Result {
         if !is_empty {
             self.disp_indent(f, depth)?;
         }
@@ -129,7 +122,7 @@ impl ValueDisplayMode {
             self.disp(f, depth + 1, &v.kind)?;
             self.disp_item_suffix(f, i + 1 == len)?;
         }
-        self.disp_footer(f, ']', depth, len == 0)
+        self.disp_footer(f, depth, ']', len == 0)
     }
 
     // Displays `ValueKind::Object`.
@@ -144,7 +137,7 @@ impl ValueDisplayMode {
             self.disp(f, depth + 1, &v.kind)?;
             self.disp_item_suffix(f, i + 1 == len)?;
         }
-        self.disp_footer(f, '}', depth, len == 0)
+        self.disp_footer(f, depth, '}', len == 0)
     }
 
     // Displays `ValueKind::Literal`.
