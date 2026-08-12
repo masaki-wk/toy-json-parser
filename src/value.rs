@@ -97,8 +97,8 @@ impl<'a> ValueDisplay<'a> {
         Ok(())
     }
 
-    // Displays a separator of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_separator(f: &mut fmt::Formatter, mode: &ValueDisplayMode, is_last_item: bool) -> fmt::Result {
+    // Displays suffix of an item of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_item_suffix(f: &mut fmt::Formatter, mode: &ValueDisplayMode, is_last_item: bool) -> fmt::Result {
         match mode {
             ValueDisplayMode::ToString => {
                 if !is_last_item {
@@ -134,7 +134,7 @@ impl<'a> ValueDisplay<'a> {
             Self::disp_indent(f, mode, depth + 1)?;
             let sub = ValueDisplay::new(mode.clone(), &v.kind, Some(&v.span));
             sub.disp(f, depth + 1)?;
-            Self::disp_separator(f, mode, i + 1 == len)?;
+            Self::disp_item_suffix(f, mode, i + 1 == len)?;
         }
         Self::disp_footer(f, mode, ']', depth, len == 0)
     }
@@ -150,7 +150,7 @@ impl<'a> ValueDisplay<'a> {
             write!(f, r#""{k}": "#)?;
             let sub = ValueDisplay::new(mode.clone(), &v.kind, Some(&v.span));
             sub.disp(f, depth + 1)?;
-            Self::disp_separator(f, mode, i + 1 == len)?;
+            Self::disp_item_suffix(f, mode, i + 1 == len)?;
         }
         Self::disp_footer(f, mode, '}', depth, len == 0)
     }
