@@ -10,134 +10,17 @@ pub enum ValueKind {
     Literal(Literal),
 }
 
-// Helper enum for `ValueKind::disp()`
-#[derive(Debug, Clone)]
-enum ValueKindDisplayMode {
-    ToString,
-    PrettyPrint(usize),
-}
-
 impl ValueKind {
-    // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_header(f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, ch: char, is_empty: bool) -> fmt::Result {
-        write!(f, "{ch}")?;
-        match mode {
-            ValueKindDisplayMode::ToString => {}
-            ValueKindDisplayMode::PrettyPrint(_) => {
-                if !is_empty {
-                    writeln!(f)?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    // Displays indent.
-    fn disp_indent(f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, depth: usize) -> fmt::Result {
-        match mode {
-            ValueKindDisplayMode::ToString => {}
-            ValueKindDisplayMode::PrettyPrint(indent_width) => {
-                let pad_width = indent_width * depth;
-                let pad = " ".repeat(pad_width);
-                write!(f, "{pad}")?;
-            }
-        }
-        Ok(())
-    }
-
-    // Displays a separator of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_separator(f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, is_last_item: bool) -> fmt::Result {
-        match mode {
-            ValueKindDisplayMode::ToString => {
-                if !is_last_item {
-                    write!(f, ", ")?;
-                }
-            }
-            ValueKindDisplayMode::PrettyPrint(_) => {
-                if !is_last_item {
-                    writeln!(f, ",")?;
-                } else {
-                    writeln!(f)?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    // Displays a footer of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_footer(f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, ch: char, depth: usize, is_empty: bool) -> fmt::Result {
-        if !is_empty {
-            Self::disp_indent(f, mode, depth)?;
-        }
-        write!(f, "{ch}")
-    }
-
-    // Displays `ValueKind::Array`.
-    fn disp_array<'a, I>(f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, depth: usize, len: usize, iter: I) -> fmt::Result
-    where
-        I: Iterator<Item = &'a Box<Value>>,
-    {
-        Self::disp_header(f, mode, '[', len == 0)?;
-        for (i, v) in iter.enumerate() {
-            Self::disp_indent(f, mode, depth + 1)?;
-            v.kind.disp(f, mode, depth + 1)?;
-            Self::disp_separator(f, mode, i + 1 == len)?;
-        }
-        Self::disp_footer(f, mode, ']', depth, len == 0)
-    }
-
-    // Displays `ValueKind::Object`.
-    fn disp_object<'a, I>(f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, depth: usize, len: usize, iter: I) -> fmt::Result
-    where
-        I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
-    {
-        Self::disp_header(f, mode, '{', len == 0)?;
-        for (i, ((k, _), v)) in iter.enumerate() {
-            Self::disp_indent(f, mode, depth + 1)?;
-            write!(f, r#""{k}": "#)?;
-            v.kind.disp(f, mode, depth + 1)?;
-            Self::disp_separator(f, mode, i + 1 == len)?;
-        }
-        Self::disp_footer(f, mode, '}', depth, len == 0)
-    }
-
-    // Displays `ValueKind::Literal`.
-    fn disp_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
-        lit.fmt(f)
-    }
-
-    // Displays `ValueKind`.
-    fn disp(&self, f: &mut fmt::Formatter, mode: &ValueKindDisplayMode, depth: usize) -> fmt::Result {
-        match self {
-            Self::Array(vec) => Self::disp_array(f, mode, depth, vec.len(), vec.iter()),
-            Self::Object(vec) => Self::disp_object(f, mode, depth, vec.len(), vec.iter()),
-            Self::Literal(lit) => Self::disp_literal(f, lit),
-        }
+    /// Displays [`ValueKind`] via returning the helper struct `ValueDisplay`.
+    pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
+        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), self, None)
     }
 }
 
 impl fmt::Display for ValueKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.disp(f, &ValueKindDisplayMode::ToString, 0)
-    }
-}
-
-impl ValueKind {
-    /// Displays [`ValueKind`] via returning the helper struct `ValueKindDisplay`.
-    pub const fn display(&self, indent_width: usize) -> ValueKindDisplay<'_> {
-        ValueKindDisplay { kind: self, indent_width }
-    }
-}
-
-/// Helper struct for printing [`ValueKind`].
-pub struct ValueKindDisplay<'a> {
-    kind: &'a ValueKind,
-    indent_width: usize,
-}
-
-impl<'a> fmt::Display for ValueKindDisplay<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.kind.disp(f, &ValueKindDisplayMode::PrettyPrint(self.indent_width), 0)
+        let disp = ValueDisplay::new(ValueDisplayMode::ToString, self, None);
+        disp.fmt(f)
     }
 }
 
@@ -154,14 +37,144 @@ impl Value {
         Self { kind, span }
     }
 
-    /// Displays [`Value`].
-    pub const fn display(&self, indent_width: usize) -> ValueKindDisplay<'_> {
-        self.kind.display(indent_width)
+    /// Displays [`Value`] via returning the helper struct `ValueDisplay`.
+    pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
+        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), &self.kind, Some(&self.span))
     }
 }
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.kind.fmt(f)
+        let disp = ValueDisplay::new(ValueDisplayMode::ToString, &self.kind, Some(&self.span));
+        disp.fmt(f)
+    }
+}
+
+// Helper enum for `ValueDisplay`
+#[derive(Debug, Clone)]
+enum ValueDisplayMode {
+    ToString,
+    PrettyPrint(usize),
+}
+
+/// Helper struct for printing [`Value`].
+pub struct ValueDisplay<'a> {
+    mode: ValueDisplayMode,
+    kind: &'a ValueKind,
+    span: Option<&'a CodeSpan>,
+}
+
+impl<'a> ValueDisplay<'a> {
+    // Creates a new `ValueDisplay`.
+    const fn new(mode: ValueDisplayMode, kind: &'a ValueKind, span: Option<&'a CodeSpan>) -> Self {
+        Self { mode, kind, span }
+    }
+
+    // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_header(f: &mut fmt::Formatter, mode: &ValueDisplayMode, ch: char, is_empty: bool) -> fmt::Result {
+        write!(f, "{ch}")?;
+        match mode {
+            ValueDisplayMode::ToString => {}
+            ValueDisplayMode::PrettyPrint(_) => {
+                if !is_empty {
+                    writeln!(f)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    // Displays indent.
+    fn disp_indent(f: &mut fmt::Formatter, mode: &ValueDisplayMode, depth: usize) -> fmt::Result {
+        match mode {
+            ValueDisplayMode::ToString => {}
+            ValueDisplayMode::PrettyPrint(indent_width) => {
+                let pad_width = indent_width * depth;
+                let pad = " ".repeat(pad_width);
+                write!(f, "{pad}")?;
+            }
+        }
+        Ok(())
+    }
+
+    // Displays a separator of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_separator(f: &mut fmt::Formatter, mode: &ValueDisplayMode, is_last_item: bool) -> fmt::Result {
+        match mode {
+            ValueDisplayMode::ToString => {
+                if !is_last_item {
+                    write!(f, ", ")?;
+                }
+            }
+            ValueDisplayMode::PrettyPrint(_) => {
+                if !is_last_item {
+                    writeln!(f, ",")?;
+                } else {
+                    writeln!(f)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    // Displays a footer of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_footer(f: &mut fmt::Formatter, mode: &ValueDisplayMode, ch: char, depth: usize, is_empty: bool) -> fmt::Result {
+        if !is_empty {
+            Self::disp_indent(f, mode, depth)?;
+        }
+        write!(f, "{ch}")
+    }
+
+    // Displays `ValueKind::Array`.
+    fn disp_array<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, _span: &Option<&'a CodeSpan>, depth: usize, len: usize, iter: I) -> fmt::Result
+    where
+        I: Iterator<Item = &'a Box<Value>>,
+    {
+        Self::disp_header(f, mode, '[', len == 0)?;
+        for (i, v) in iter.enumerate() {
+            Self::disp_indent(f, mode, depth + 1)?;
+            let sub = ValueDisplay::new(mode.clone(), &v.kind, Some(&v.span));
+            sub.disp(f, depth + 1)?;
+            Self::disp_separator(f, mode, i + 1 == len)?;
+        }
+        Self::disp_footer(f, mode, ']', depth, len == 0)
+    }
+
+    // Displays `ValueKind::Object`.
+    fn disp_object<I>(f: &mut fmt::Formatter, mode: &'a ValueDisplayMode, _span: &Option<&'a CodeSpan>, depth: usize, len: usize, iter: I) -> fmt::Result
+    where
+        I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
+    {
+        Self::disp_header(f, mode, '{', len == 0)?;
+        for (i, ((k, _), v)) in iter.enumerate() {
+            Self::disp_indent(f, mode, depth + 1)?;
+            write!(f, r#""{k}": "#)?;
+            let sub = ValueDisplay::new(mode.clone(), &v.kind, Some(&v.span));
+            sub.disp(f, depth + 1)?;
+            Self::disp_separator(f, mode, i + 1 == len)?;
+        }
+        Self::disp_footer(f, mode, '}', depth, len == 0)
+    }
+
+    // Displays `ValueKind::Literal`.
+    fn disp_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
+        lit.fmt(f)
+    }
+
+    // Displays `ValueKind`.
+    fn disp<'b>(&'b self, f: &mut fmt::Formatter, depth: usize) -> fmt::Result
+    where
+        'b: 'a,
+    {
+        match self.kind {
+            ValueKind::Array(vec) => Self::disp_array(f, &self.mode, &self.span, depth, vec.len(), vec.iter()),
+            ValueKind::Object(vec) => Self::disp_object(f, &self.mode, &self.span, depth, vec.len(), vec.iter()),
+            ValueKind::Literal(lit) => Self::disp_literal(f, lit),
+        }
+    }
+}
+
+impl<'a> fmt::Display for ValueDisplay<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.disp(f, 0)
     }
 }
