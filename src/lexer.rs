@@ -287,31 +287,29 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::{Context as _, Result};
 
-    fn do_tokenize(input: &str, expected_kind: TokenKind, expected_span: CodeSpan, check_finished: bool) -> Result<()> {
+    fn do_tokenize(input: &str, expected_kind: TokenKind, expected_span: CodeSpan, check_finished: bool) {
         let mut lexer = Lexer::new(input.chars());
-        let token = lexer.next().with_context(|| "")?;
+        let token = lexer.next().unwrap();
         assert_eq!(token.kind, expected_kind);
         assert_eq!(token.span, expected_span);
         if check_finished {
             assert_eq!(lexer.next(), None);
         }
-        Ok(())
     }
 
-    fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) -> Result<()> {
+    fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) {
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
         do_tokenize(input, expected_kind, CodeSpan::new(start, end), true)
     }
 
-    fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: CodeLocation) -> Result<()> {
+    fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: CodeLocation) {
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
         do_tokenize(&format!("{prefix}{input}"), expected_kind, CodeSpan::new(start, end), true)
     }
 
-    fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) -> Result<()> {
+    fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) {
         let input = &format!("{body}{rest}");
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + body.chars().count());
@@ -319,253 +317,252 @@ mod tests {
     }
 
     #[test]
-    fn new() -> Result<()> {
+    fn new() {
         let _lexer = Lexer::new("".chars());
-        Ok(())
     }
 
     #[test]
-    fn tokenize_left_bracket() -> Result<()> {
+    fn tokenize_left_bracket() {
         do_tokenize_single_token("[", TokenKind::Delimiter(Delimiter::LeftBracket))
     }
 
     #[test]
-    fn tokenize_right_bracket() -> Result<()> {
+    fn tokenize_right_bracket() {
         do_tokenize_single_token("]", TokenKind::Delimiter(Delimiter::RightBracket))
     }
 
     #[test]
-    fn tokenize_left_brace() -> Result<()> {
+    fn tokenize_left_brace() {
         do_tokenize_single_token("{", TokenKind::Delimiter(Delimiter::LeftBrace))
     }
 
     #[test]
-    fn tokenize_right_brace() -> Result<()> {
+    fn tokenize_right_brace() {
         do_tokenize_single_token("}", TokenKind::Delimiter(Delimiter::RightBrace))
     }
 
     #[test]
-    fn tokenize_colon() -> Result<()> {
+    fn tokenize_colon() {
         do_tokenize_single_token(":", TokenKind::Delimiter(Delimiter::Colon))
     }
 
     #[test]
-    fn tokenize_comma() -> Result<()> {
+    fn tokenize_comma() {
         do_tokenize_single_token(",", TokenKind::Delimiter(Delimiter::Comma))
     }
 
     #[test]
-    fn tokenize_true() -> Result<()> {
+    fn tokenize_true() {
         do_tokenize_single_token("true", TokenKind::Literal(Literal::Boolean(true)))
     }
 
     #[test]
-    fn tokenize_false() -> Result<()> {
+    fn tokenize_false() {
         do_tokenize_single_token("false", TokenKind::Literal(Literal::Boolean(false)))
     }
 
     #[test]
-    fn tokenize_null() -> Result<()> {
+    fn tokenize_null() {
         do_tokenize_single_token("null", TokenKind::Literal(Literal::Null))
     }
 
     #[test]
-    fn tokenize_number_positive_zero() -> Result<()> {
+    fn tokenize_number_positive_zero() {
         let s = "0";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_negative_zero() -> Result<()> {
+    fn tokenize_number_negative_zero() {
         let s = "-0";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_positive_integer() -> Result<()> {
+    fn tokenize_number_positive_integer() {
         let s = "123";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_negative_integer() -> Result<()> {
+    fn tokenize_number_negative_integer() {
         let s = "-123";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_positive_decimal_fraction() -> Result<()> {
+    fn tokenize_number_positive_decimal_fraction() {
         let s = "12.3";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_negative_decimal_fraction() -> Result<()> {
+    fn tokenize_number_negative_decimal_fraction() {
         let s = "-12.3";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_positive_exponential_notation_small() -> Result<()> {
+    fn tokenize_number_positive_exponential_notation_small() {
         let s = "1.23e-2";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_positive_exponential_notation_large() -> Result<()> {
+    fn tokenize_number_positive_exponential_notation_large() {
         let s = "1.23e+2";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_negative_exponential_notation_small() -> Result<()> {
+    fn tokenize_number_negative_exponential_notation_small() {
         let s = "-1.23e-2";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_number_negative_exponential_notation_large() -> Result<()> {
+    fn tokenize_number_negative_exponential_notation_large() {
         let s = "-1.23e+2";
         do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_string_without_escaped() -> Result<()> {
+    fn tokenize_string_without_escaped() {
         let s = "foo";
         do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
-    fn tokenize_string_with_escaped_char() -> Result<()> {
+    fn tokenize_string_with_escaped_char() {
         let s = r#"\" \\ \/ \b \f \n \r \t"#;
         do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
-    fn tokenize_string_with_escaped_unicode() -> Result<()> {
+    fn tokenize_string_with_escaped_unicode() {
         let s = r#"\u048c"#;
         do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
-    fn tokenize_colon_with_space_prefix() -> Result<()> {
+    fn tokenize_colon_with_space_prefix() {
         do_tokenize_single_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
     }
 
     #[test]
-    fn tokenize_colon_with_tab_prefix() -> Result<()> {
+    fn tokenize_colon_with_tab_prefix() {
         do_tokenize_single_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
     }
 
     #[test]
-    fn tokenize_colon_with_line_feed_prefix() -> Result<()> {
+    fn tokenize_colon_with_line_feed_prefix() {
         do_tokenize_single_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(2, 1))
     }
 
     #[test]
-    fn tokenize_colon_with_carriage_return_prefix() -> Result<()> {
+    fn tokenize_colon_with_carriage_return_prefix() {
         do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
     }
 
     #[test]
-    fn tokenize_colon_with_space_suffix() -> Result<()> {
+    fn tokenize_colon_with_space_suffix() {
         do_tokenize_single_token_with_trailing_chars(":", " ", TokenKind::Delimiter(Delimiter::Colon))
     }
 
     #[test]
-    fn tokenize_true_with_space_prefix() -> Result<()> {
+    fn tokenize_true_with_space_prefix() {
         do_tokenize_single_token_with_whitespace_prefix(" ", "true", TokenKind::Literal(Literal::Boolean(true)), CodeLocation::new(1, 2))
     }
 
     #[test]
-    fn tokenize_true_with_space_suffix() -> Result<()> {
+    fn tokenize_true_with_space_suffix() {
         do_tokenize_single_token_with_trailing_chars("true", " ", TokenKind::Literal(Literal::Boolean(true)))
     }
 
     #[test]
-    fn tokenize_number_with_space_prefix() -> Result<()> {
+    fn tokenize_number_with_space_prefix() {
         let s = "123";
         do_tokenize_single_token_with_whitespace_prefix(" ", s, TokenKind::Literal(Literal::Number(s.to_string())), CodeLocation::new(1, 2))
     }
 
     #[test]
-    fn tokenize_number_with_space_suffix() -> Result<()> {
+    fn tokenize_number_with_space_suffix() {
         let s = "123";
         do_tokenize_single_token_with_trailing_chars(s, " ", TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
-    fn tokenize_string_with_space_prefix() -> Result<()> {
+    fn tokenize_string_with_space_prefix() {
         let s = "foo";
         let input = &format!(r#""{s}""#);
         do_tokenize_single_token_with_whitespace_prefix(" ", input, TokenKind::Literal(Literal::String(s.to_string())), CodeLocation::new(1, 2))
     }
 
     #[test]
-    fn tokenize_string_with_space_suffix() -> Result<()> {
+    fn tokenize_string_with_space_suffix() {
         let s = "foo";
         let input = &format!(r#""{s}""#);
         do_tokenize_single_token_with_trailing_chars(input, " ", TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
-    fn tokenize_invalid_char() -> Result<()> {
+    fn tokenize_invalid_char() {
         let s = ".";
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_raw_string() -> Result<()> {
+    fn tokenize_invalid_raw_string() {
         let s = "invalid";
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_number_minus_only() -> Result<()> {
+    fn tokenize_invalid_number_minus_only() {
         let s = "-";
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_number_leading_zero_without_minus() -> Result<()> {
+    fn tokenize_invalid_number_leading_zero_without_minus() {
         let s = "01";
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_number_leading_zero_with_minus() -> Result<()> {
+    fn tokenize_invalid_number_leading_zero_with_minus() {
         let s = "-01";
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_number_bad_char_in_fraction_component() -> Result<()> {
+    fn tokenize_invalid_number_bad_char_in_fraction_component() {
         let body = "0.";
         let rest = "a";
         do_tokenize_single_token_with_trailing_chars(body, rest, TokenKind::Invalid(body.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_number_bad_char_in_exponent_component() -> Result<()> {
+    fn tokenize_invalid_number_bad_char_in_exponent_component() {
         let body = "0e";
         let rest = "a";
         do_tokenize_single_token_with_trailing_chars(body, rest, TokenKind::Invalid(body.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_with_escaped_char() -> Result<()> {
+    fn tokenize_invalid_quoted_string_with_escaped_char() {
         let s = r#""\c""#;
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_with_escaped_unicode() -> Result<()> {
+    fn tokenize_invalid_quoted_string_with_escaped_unicode() {
         let s = r#""\u000x""#;
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_unterminated() -> Result<()> {
+    fn tokenize_invalid_quoted_string_unterminated() {
         let s = r#""foo"#;
         do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
     }
