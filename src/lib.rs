@@ -19,6 +19,7 @@ pub use lexer::Lexer;
 
 mod value;
 pub use value::Value;
+pub use value::ValueDisplay;
 pub use value::ValueKind;
 
 mod parser;
