@@ -1,35 +1,32 @@
 // Tests for Value
 
-use anyhow::Result;
-
 use toy_json_parser::{CodeLocation, CodeSpan, Literal, Value, ValueKind};
 
-fn do_display_value_test(kind: ValueKind, expected_tostring: &str, expected_prettyprint: &str) -> Result<()> {
+fn do_display_value_test(kind: ValueKind, expected_tostring: &str, expected_prettyprint: &str) {
     let start = CodeLocation::new(1, 1);
     let end = CodeLocation::new(start.line, start.column + expected_tostring.chars().count());
     let span = CodeSpan::new(start, end);
     let target = Value::new(kind, span);
     assert_eq!(&target.to_string(), expected_tostring);
     assert_eq!(&format!("{}", target.display(4)), expected_prettyprint);
-    Ok(())
 }
 
 #[test]
-fn display_value_literal_null() -> Result<()> {
+fn display_value_literal_null() {
     let expected = "null";
     let kind = ValueKind::Literal(Literal::Null);
     do_display_value_test(kind, expected, expected)
 }
 
 #[test]
-fn display_value_array_empty() -> Result<()> {
+fn display_value_array_empty() {
     let expected = "[]";
     let kind = ValueKind::Array(vec![]);
     do_display_value_test(kind, expected, expected)
 }
 
 #[test]
-fn display_value_array_single_item() -> Result<()> {
+fn display_value_array_single_item() {
     let expected_tostring = "[null]";
     let expected_prettyprint = r"[
     null
@@ -42,7 +39,7 @@ fn display_value_array_single_item() -> Result<()> {
 }
 
 #[test]
-fn display_value_array_multiple_item() -> Result<()> {
+fn display_value_array_multiple_item() {
     let expected_tostring = "[null, null]";
     let expected_prettyprint = r"[
     null,
@@ -56,14 +53,14 @@ fn display_value_array_multiple_item() -> Result<()> {
 }
 
 #[test]
-fn display_value_object_empty() -> Result<()> {
+fn display_value_object_empty() {
     let expected = "{}";
     let kind = ValueKind::Object(vec![]);
     do_display_value_test(kind, expected, expected)
 }
 
 #[test]
-fn display_value_object_single_item() -> Result<()> {
+fn display_value_object_single_item() {
     let expected_tostring = r#"{"a": null}"#;
     let expected_prettyprint = r#"{
     "a": null
@@ -77,7 +74,7 @@ fn display_value_object_single_item() -> Result<()> {
 }
 
 #[test]
-fn display_value_object_multiple_item() -> Result<()> {
+fn display_value_object_multiple_item() {
     let expected_tostring = r#"{"a": null, "b": null}"#;
     let expected_prettyprint = r#"{
     "a": null,
