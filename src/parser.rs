@@ -230,22 +230,20 @@ where
 mod tests {
     use super::*;
     use crate::Lexer;
-    use anyhow::{Result, bail};
 
-    fn do_parse_legal_code(input: &str, expected: Value) -> Result<()> {
+    fn do_parse_legal_code(input: &str, expected: Value) {
         let lexer = Lexer::new(input.chars());
         let mut parser = Parser::new(lexer);
-        let value = parser.parse()?;
+        let value = parser.parse().unwrap();
         assert_eq!(value, expected);
-        Ok(())
     }
 
-    fn do_parse_illegal_code(input: &str, expected: ParseError) -> Result<()> {
+    fn do_parse_illegal_code(input: &str, expected: ParseError) {
         let lexer = Lexer::new(input.chars());
         let mut parser = Parser::new(lexer);
         match parser.parse() {
             Ok(_) => {
-                bail!("");
+                panic!();
             }
             Err(e) => match e {
                 ParseError::NestingDepthExceeded(_) => {}
@@ -254,18 +252,16 @@ mod tests {
                 }
             },
         }
-        Ok(())
     }
 
     #[test]
-    fn new() -> Result<()> {
+    fn new() {
         let lexer = Lexer::new("".chars());
         let _parser = Parser::new(lexer);
-        Ok(())
     }
 
     #[test]
-    fn parse_number() -> Result<()> {
+    fn parse_number() {
         let input = "123";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -275,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_string() -> Result<()> {
+    fn parse_string() {
         let input = "foo";
         let code = format!(r#""{input}""#);
         let start = CodeLocation::new(1, 1);
@@ -286,7 +282,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_true() -> Result<()> {
+    fn parse_true() {
         let input = "true";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -296,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_false() -> Result<()> {
+    fn parse_false() {
         let input = "false";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -306,7 +302,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_null() -> Result<()> {
+    fn parse_null() {
         let input = "null";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -316,7 +312,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_array_empty() -> Result<()> {
+    fn parse_array_empty() {
         let input = "[]";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -327,7 +323,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_array_single_item() -> Result<()> {
+    fn parse_array_single_item() {
         let input = "[0]";
         let start = CodeLocation::new(1, 1);
         let literal_start = CodeLocation::new(start.line, start.column + 1);
@@ -343,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_array_multiple_item() -> Result<()> {
+    fn parse_array_multiple_item() {
         let input = "[0, 1]";
         let start = CodeLocation::new(1, 1);
         let literal1_start = CodeLocation::new(start.line, start.column + 1);
@@ -367,7 +363,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_object_empty() -> Result<()> {
+    fn parse_object_empty() {
         let input = "{}";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -378,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_object_single_pair() -> Result<()> {
+    fn parse_object_single_pair() {
         let input = r#"{"a": 0}"#;
         let start = CodeLocation::new(1, 1);
         let name_start = CodeLocation::new(start.line, start.column + 1);
@@ -399,7 +395,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_object_multiple_pair() -> Result<()> {
+    fn parse_object_multiple_pair() {
         let input = r#"{"a": 0, "b": 1}"#;
         let start = CodeLocation::new(1, 1);
         let name1_start = CodeLocation::new(start.line, start.column + 1);
@@ -433,27 +429,27 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_no_token() -> Result<()> {
+    fn parse_illegal_no_token() {
         let input = "";
         do_parse_illegal_code(input, ParseError::NoToken)
     }
 
     #[test]
-    fn parse_illegal_invalid_token() -> Result<()> {
+    fn parse_illegal_invalid_token() {
         let input = "_";
         let loc = CodeLocation::new(1, 1);
         do_parse_illegal_code(input, ParseError::InvalidToken(input.to_string(), loc))
     }
 
     #[test]
-    fn parse_illegal_delimiter_in_wrong_place() -> Result<()> {
+    fn parse_illegal_delimiter_in_wrong_place() {
         let input = ",";
         let loc = CodeLocation::new(1, 1);
         do_parse_illegal_code(input, ParseError::DelimiterInWrongPlace(Delimiter::Comma, loc))
     }
 
     #[test]
-    fn parse_illegal_extra_token_at_the_end() -> Result<()> {
+    fn parse_illegal_extra_token_at_the_end() {
         let body = "0 ";
         let extra = "1";
         let input = &format!("{body}{extra}");
@@ -462,7 +458,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_array_no_value() -> Result<()> {
+    fn parse_illegal_unfinished_array_no_value() {
         let input = "[";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -470,7 +466,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_array_lacks_next_comma() -> Result<()> {
+    fn parse_illegal_unfinished_array_lacks_next_comma() {
         let input = "[0";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -478,7 +474,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_array_lacks_next_value() -> Result<()> {
+    fn parse_illegal_unfinished_array_lacks_next_value() {
         let input = "[0,";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -486,7 +482,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_array_lacks_separator() -> Result<()> {
+    fn parse_illegal_array_lacks_separator() {
         let pre = "[0";
         let post = " 1]";
         let input = &format!("{pre}{post}");
@@ -496,7 +492,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_no_name() -> Result<()> {
+    fn parse_illegal_unfinished_object_no_name() {
         let input = "{";
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -504,7 +500,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_lacks_next_colon() -> Result<()> {
+    fn parse_illegal_unfinished_object_lacks_next_colon() {
         let input = r#"{"foo""#;
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -512,7 +508,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_lacks_next_value() -> Result<()> {
+    fn parse_illegal_unfinished_object_lacks_next_value() {
         let input = r#"{"foo":"#;
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -520,7 +516,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_lacks_next_comma() -> Result<()> {
+    fn parse_illegal_unfinished_object_lacks_next_comma() {
         let input = r#"{"foo": 0"#;
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
@@ -528,7 +524,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_object_lacks_separator() -> Result<()> {
+    fn parse_illegal_object_lacks_separator() {
         let pre = r#"{"foo": 0"#;
         let post = r#" "bar": 1}"#;
         let input = &format!("{pre}{post}");
@@ -538,7 +534,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_object_name_is_not_string() -> Result<()> {
+    fn parse_illegal_object_name_is_not_string() {
         let pre = "{";
         let name = "0";
         let post = ": 0}";
@@ -549,7 +545,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_nesting_depth_exceeded() -> Result<()> {
+    fn parse_illegal_nesting_depth_exceeded() {
         let nesting_depth = 1024;
         let input = &format!("{}{}", "[".repeat(nesting_depth), "]".repeat(nesting_depth));
         let dummy = CodeLocation::new(1, 1);
