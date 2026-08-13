@@ -40,9 +40,9 @@ mod app {
         let mut parser = Parser::new(lexer);
         let value = parser.parse()?;
         if args.verbose {
-            println!("{value:#?}");
-        } else {
             println!("{}", value.display(args.indent_width));
+        } else {
+            println!("{value}");
         }
         Ok(())
     }

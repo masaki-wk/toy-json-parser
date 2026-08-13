@@ -10,136 +10,17 @@ pub enum ValueKind {
     Literal(Literal),
 }
 
-// Helper enum for `ValueKind::disp()`
-#[derive(Debug, Clone, Copy)]
-enum ValueKindDisplayMode {
-    ToString,
-    PrettyPrint(usize),
-}
-
 impl ValueKind {
-    // Returns a padding string for `disp()`.
-    fn padding(mode: ValueKindDisplayMode, depth: usize) -> String {
-        match mode {
-            ValueKindDisplayMode::ToString => String::new(),
-            ValueKindDisplayMode::PrettyPrint(indent_width) => {
-                let pad_width = indent_width * depth;
-                " ".repeat(pad_width)
-            }
-        }
-    }
-
-    // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_header(ch: char, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{ch}")
-    }
-
-    // Displays a separator of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_separator(mode: ValueKindDisplayMode, pad: &str, is_first_item: bool, f: &mut fmt::Formatter) -> fmt::Result {
-        match mode {
-            ValueKindDisplayMode::ToString => {
-                if !is_first_item {
-                    write!(f, ", ")?;
-                }
-            }
-            ValueKindDisplayMode::PrettyPrint(_) => {
-                if is_first_item {
-                    writeln!(f)?;
-                } else {
-                    writeln!(f, ",")?;
-                }
-                write!(f, "{pad}")?;
-            }
-        }
-        Ok(())
-    }
-
-    // Displays the footer of `ValueKind::Array` or `ValueKind::Object`.
-    fn disp_footer(mode: ValueKindDisplayMode, ch: char, pad: &str, is_empty: bool, f: &mut fmt::Formatter) -> fmt::Result {
-        match mode {
-            ValueKindDisplayMode::ToString => {}
-            ValueKindDisplayMode::PrettyPrint(_) => {
-                if !is_empty {
-                    writeln!(f)?;
-                    write!(f, "{pad}")?;
-                }
-            }
-        }
-        write!(f, "{ch}")
-    }
-
-    // Displays `ValueKind::Array`.
-    fn disp_array<'a, I>(mode: ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter, iter: I) -> fmt::Result
-    where
-        I: Iterator<Item = &'a Box<Value>>,
-    {
-        let pad_curr = Self::padding(mode, current_depth);
-        let pad_sub = Self::padding(mode, current_depth + 1);
-        let mut is_empty = true;
-        Self::disp_header('[', f)?;
-        for (i, v) in iter.enumerate() {
-            Self::disp_separator(mode, &pad_sub, i == 0, f)?;
-            v.kind.disp(mode, current_depth + 1, f)?;
-            is_empty = false;
-        }
-        Self::disp_footer(mode, ']', &pad_curr, is_empty, f)
-    }
-
-    // Displays `ValueKind::Object`.
-    fn disp_object<'a, I>(mode: ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter, iter: I) -> fmt::Result
-    where
-        I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
-    {
-        let pad_curr = Self::padding(mode, current_depth);
-        let pad_sub = Self::padding(mode, current_depth + 1);
-        let mut is_empty = true;
-        Self::disp_header('{', f)?;
-        for (i, ((k, _), v)) in iter.enumerate() {
-            Self::disp_separator(mode, &pad_sub, i == 0, f)?;
-            write!(f, r#""{k}": "#)?;
-            v.kind.disp(mode, current_depth + 1, f)?;
-            is_empty = false;
-        }
-        Self::disp_footer(mode, '}', &pad_curr, is_empty, f)
-    }
-
-    // Displays `ValueKind::Literal`.
-    fn disp_literal(f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
-        lit.fmt(f)
-    }
-
-    // Displays `ValueKind`.
-    fn disp(&self, mode: ValueKindDisplayMode, current_depth: usize, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Array(vec) => Self::disp_array(mode, current_depth, f, vec.iter()),
-            Self::Object(vec) => Self::disp_object(mode, current_depth, f, vec.iter()),
-            Self::Literal(lit) => Self::disp_literal(f, lit),
-        }
+    /// Displays [`ValueKind`] via returning the helper struct `ValueDisplay`.
+    pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
+        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), self)
     }
 }
 
 impl fmt::Display for ValueKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.disp(ValueKindDisplayMode::ToString, 0, f)
-    }
-}
-
-impl ValueKind {
-    /// Displays [`ValueKind`] via returning the helper struct `ValueKindDisplay`.
-    pub const fn display(&self, indent_width: usize) -> ValueKindDisplay<'_> {
-        ValueKindDisplay { kind: self, indent_width }
-    }
-}
-
-/// Helper struct for printing [`ValueKind`].
-pub struct ValueKindDisplay<'a> {
-    kind: &'a ValueKind,
-    indent_width: usize,
-}
-
-impl<'a> fmt::Display for ValueKindDisplay<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.kind.disp(ValueKindDisplayMode::PrettyPrint(self.indent_width), 0, f)
+        let disp = ValueDisplay::new(ValueDisplayMode::ToString, self);
+        disp.fmt(f)
     }
 }
 
@@ -156,14 +37,133 @@ impl Value {
         Self { kind, span }
     }
 
-    /// Displays [`Value`].
-    pub const fn display(&self, indent_width: usize) -> ValueKindDisplay<'_> {
-        self.kind.display(indent_width)
+    /// Displays [`Value`] via returning the helper struct `ValueDisplay`.
+    pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
+        ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), &self.kind)
     }
 }
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.kind.fmt(f)
+        let disp = ValueDisplay::new(ValueDisplayMode::ToString, &self.kind);
+        disp.fmt(f)
+    }
+}
+
+// Helper enum for `ValueDisplay`
+#[derive(Debug, Clone)]
+enum ValueDisplayMode {
+    ToString,
+    PrettyPrint(usize),
+}
+
+/// Helper struct for printing [`Value`].
+pub struct ValueDisplay<'a> {
+    mode: ValueDisplayMode,
+    kind: &'a ValueKind,
+}
+
+impl ValueDisplayMode {
+    // Displays a header of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_header(&self, f: &mut fmt::Formatter, ch: char, is_empty: bool) -> fmt::Result {
+        write!(f, "{ch}")?;
+        if matches!(self, Self::PrettyPrint(_)) && !is_empty {
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+
+    // Displays indent.
+    fn disp_indent(&self, f: &mut fmt::Formatter, depth: usize) -> fmt::Result {
+        if let Self::PrettyPrint(indent_width) = self {
+            let pad_width = indent_width * depth;
+            let pad = " ".repeat(pad_width);
+            write!(f, "{pad}")
+        } else {
+            Ok(())
+        }
+    }
+
+    // Displays suffix of an item of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_item_suffix(&self, f: &mut fmt::Formatter, is_last_item: bool) -> fmt::Result {
+        match self {
+            Self::ToString => {
+                if !is_last_item {
+                    write!(f, ", ")?;
+                }
+            }
+            Self::PrettyPrint(_) => {
+                if !is_last_item {
+                    writeln!(f, ",")?;
+                } else {
+                    writeln!(f)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    // Displays a footer of `ValueKind::Array` or `ValueKind::Object`.
+    fn disp_footer(&self, f: &mut fmt::Formatter, depth: usize, ch: char, is_empty: bool) -> fmt::Result {
+        if !is_empty {
+            self.disp_indent(f, depth)?;
+        }
+        write!(f, "{ch}")
+    }
+
+    // Displays `ValueKind::Array`.
+    fn disp_array<'a, I>(&self, f: &mut fmt::Formatter, depth: usize, len: usize, iter: I) -> fmt::Result
+    where
+        I: Iterator<Item = &'a Box<Value>>,
+    {
+        self.disp_header(f, '[', len == 0)?;
+        for (i, v) in iter.enumerate() {
+            self.disp_indent(f, depth + 1)?;
+            self.disp(f, depth + 1, &v.kind)?;
+            self.disp_item_suffix(f, i + 1 == len)?;
+        }
+        self.disp_footer(f, depth, ']', len == 0)
+    }
+
+    // Displays `ValueKind::Object`.
+    fn disp_object<'a, I>(&self, f: &mut fmt::Formatter, depth: usize, len: usize, iter: I) -> fmt::Result
+    where
+        I: Iterator<Item = &'a ((String, CodeSpan), Box<Value>)>,
+    {
+        self.disp_header(f, '{', len == 0)?;
+        for (i, ((k, _), v)) in iter.enumerate() {
+            self.disp_indent(f, depth + 1)?;
+            write!(f, r#""{k}": "#)?;
+            self.disp(f, depth + 1, &v.kind)?;
+            self.disp_item_suffix(f, i + 1 == len)?;
+        }
+        self.disp_footer(f, depth, '}', len == 0)
+    }
+
+    // Displays `ValueKind::Literal`.
+    fn disp_literal(&self, f: &mut fmt::Formatter, lit: &Literal) -> fmt::Result {
+        lit.fmt(f)
+    }
+
+    // Displays `ValueKind`.
+    fn disp(&self, f: &mut fmt::Formatter, depth: usize, kind: &ValueKind) -> fmt::Result {
+        match kind {
+            ValueKind::Array(vec) => self.disp_array(f, depth, vec.len(), vec.iter()),
+            ValueKind::Object(vec) => self.disp_object(f, depth, vec.len(), vec.iter()),
+            ValueKind::Literal(lit) => self.disp_literal(f, lit),
+        }
+    }
+}
+
+impl<'a> ValueDisplay<'a> {
+    // Creates a new `ValueDisplay`.
+    const fn new(mode: ValueDisplayMode, kind: &'a ValueKind) -> Self {
+        Self { mode, kind }
+    }
+}
+
+impl<'a> fmt::Display for ValueDisplay<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.mode.disp(f, 0, self.kind)
     }
 }
