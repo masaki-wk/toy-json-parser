@@ -21,3 +21,22 @@ impl fmt::Display for CodeLocation {
         write!(f, "[Ln {line}, Col {column}]")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        let _loc = CodeLocation::new(1, 1);
+    }
+
+    #[test]
+    fn display() {
+        let line = 1;
+        let column = 2;
+        let loc = CodeLocation::new(line, column);
+        let expected = format!("[Ln {line}, Col {column}]");
+        assert_eq!(loc.to_string(), expected);
+    }
+}
