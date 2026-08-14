@@ -76,8 +76,10 @@ jobs:
               echo "value=${{ matrix.toolchain }}" >> "$GITHUB_OUTPUT"
               ;;
           esac
-      - name: Install Rust toolchain
-        run: rustup toolchain install "${{ steps.resolve-toolchain-version.outputs.value }}"
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "${{ steps.resolve-toolchain-version.outputs.value }}"
       - name: Show version information of tools
         run: |
           cargo --version
