@@ -15,6 +15,9 @@ categories = [
     "encoding",
     "parser-implementations",
 ]
+exclude = [
+    "/.github/",
+]
 
 [dev-dependencies]
 anyhow = "1.0"
