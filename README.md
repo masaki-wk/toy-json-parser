@@ -25,7 +25,7 @@ for token in lexer {
 
 Outputs the following:
 
-```text
+```
 Delimiter(LeftBracket): [Ln 1, Col 1]..[Ln 1, Col 2]
 Literal(String("foo")): [Ln 1, Col 2]..[Ln 1, Col 7]
 Delimiter(RightBracket): [Ln 1, Col 7]..[Ln 1, Col 8]
@@ -48,7 +48,7 @@ println!("{}", value.display(4));
 
 Outputs the following:
 
-```text
+```
 {
     "foo": null,
     "bar": [
