@@ -1,9 +1,9 @@
 # toy-json-parser
 
-`toy-json-parser` is a Rust crate that implements a toy JSON lexer and parser
-as a study exercise on how to build a lexer and parser.
+A toy JSON lexer and parser implementation as a study exercise on how to build
+a lexer and parser.
 
-- `Lexer` splits JSON source text into `Token` values.
+- `Lexer` tokenizes JSON source text into `Token` values.
 - `Parser` consumes those tokens and builds a tree of `Value` objects.
 - Both tokens and parsed values carry source position information.
 
@@ -22,6 +22,8 @@ for token in lexer {
     println!("{:?}: {}", token.kind, token.span);
 }
 ```
+
+Outputs the following:
 
 ```text
 Delimiter(LeftBracket): [Ln 1, Col 1]..[Ln 1, Col 2]
@@ -43,6 +45,8 @@ let mut parser = Parser::new(lexer);
 let value = parser.parse()?;
 println!("{:#?}", value);
 ```
+
+Outputs the following:
 
 ```text
 {
