@@ -90,6 +90,7 @@ impl fmt::Display for TokenKind {
 
 /// Represents a JSON token.
 #[derive(Debug, PartialEq, Clone)]
+#[allow(missing_docs)]
 pub struct Token {
     pub kind: TokenKind,
     pub span: CodeSpan,

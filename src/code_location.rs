@@ -2,6 +2,7 @@ use std::fmt;
 
 /// Represents a code location.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[allow(missing_docs)]
 pub struct CodeLocation {
     pub line: usize,
     pub column: usize,
