@@ -61,7 +61,10 @@ mod tests {
     #[test]
     fn test() -> Result<()> {
         let input = String::from("{[]}");
-        let mut child = Command::new("cargo").args(["run", "--bin", "json-tokenize"]).stdin(Stdio::piped()).spawn()?;
+        let mut child = Command::new("cargo")
+            .args(["run", "--example", "json-tokenize"])
+            .stdin(Stdio::piped())
+            .spawn()?;
         child.stdin.as_mut().unwrap().write_all(input.as_bytes())?;
         let status = child.wait()?;
         ensure!(status.success());
