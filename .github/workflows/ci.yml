@@ -12,6 +12,7 @@ env:
 
 jobs:
   verify-format:
+    name: Verify format
     runs-on: ubuntu-latest
     steps:
       - name: Install required tools
@@ -26,6 +27,7 @@ jobs:
         run: cargo fmt --all --check --verbose
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Install required tools
@@ -40,6 +42,7 @@ jobs:
         run: cargo clippy --no-deps --all-targets --all-features -- --deny warnings
 
   verify-doc:
+    name: Verify document
     runs-on: ubuntu-latest
     steps:
       - name: Install required tools
