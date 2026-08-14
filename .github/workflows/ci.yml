@@ -57,6 +57,7 @@ jobs:
     name: Test with Rust-${{ matrix.toolchain }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         toolchain: [stable, nightly, msrv]
     steps:
