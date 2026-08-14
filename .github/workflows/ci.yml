@@ -54,8 +54,30 @@ jobs:
         run: cargo doc --no-deps --all-features
 
   test:
+    name: Test with Rust-${{ matrix.toolchain }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, nightly, msrv]
     steps:
+      - name: Resolve toolchain version
+        id: resolve-toolchain-version
+        shell: bash
+        run: |
+          case "${{ matrix.toolchain }}" in
+            stable)
+              echo "value=stable" >> "$GITHUB_OUTPUT"
+              ;;
+            nightly)
+              echo "value=nightly" >> "$GITHUB_OUTPUT"
+              ;;
+            msrv)
+              value=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+              echo "value=${value}" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+      - name: Install Rust toolchain
+        run: rustup toolchain install "${{ steps.resolve-toolchain-version.outputs.value }}"
       - name: Show version information of tools
         run: |
           cargo --version
