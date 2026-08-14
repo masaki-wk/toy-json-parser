@@ -68,15 +68,12 @@ jobs:
         shell: bash
         run: |
           case "${{ matrix.toolchain }}" in
-            stable)
-              echo "value=stable" >> "$GITHUB_OUTPUT"
-              ;;
-            nightly)
-              echo "value=nightly" >> "$GITHUB_OUTPUT"
-              ;;
             msrv)
               value=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
               echo "value=${value}" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "value=${{ matrix.toolchain }}" >> "$GITHUB_OUTPUT"
               ;;
           esac
       - name: Install Rust toolchain
