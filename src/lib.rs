@@ -61,6 +61,8 @@
 //! }
 //! ```
 
+#![warn(rustdoc::missing_crate_level_docs)]
+
 mod code_location;
 pub use code_location::CodeLocation;
 
