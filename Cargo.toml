@@ -2,7 +2,19 @@
 name = "toy-json-parser"
 version = "0.0.0"
 edition = "2024"
+rust-version = "1.85"
+description = "A toy JSON lexer and parser as a study exercise"
+repository = "https://github.com/masaki-wk/toy-json-parser"
 license = "MIT OR Apache-2.0"
+keywords = [
+    "json",
+    "lexer",
+    "parser",
+]
+categories = [
+    "encoding",
+    "parser-implementations",
+]
 
 [dev-dependencies]
 anyhow = "1.0"
