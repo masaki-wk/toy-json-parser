@@ -43,7 +43,7 @@ let input = r#"{
 let lexer = Lexer::new(input.chars());
 let mut parser = Parser::new(lexer);
 let value = parser.parse()?;
-println!("{:#?}", value);
+println!("{}", value.display(4));
 ```
 
 Outputs the following:
