@@ -9,6 +9,9 @@ pub enum ParseError {
     /// No token found.
     NoToken,
 
+    /// Unexpected trailing token found at [`CodeLocation`] after the JSON text has ended.
+    TrailingToken(CodeLocation),
+
     /// Invalid token found ([`String`], [`CodeLocation`]).
     InvalidToken(String, CodeLocation),
 
@@ -59,9 +62,6 @@ pub enum ParseError {
     /// - The error is reported at the missing or invalid position at the second enum argument.
     ///
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
-
-    /// Unexpected trailing token found at [`CodeLocation`] after the JSON text has ended.
-    TrailingToken(CodeLocation),
 
     /// Maximum nesting depth exceeded at [`CodeLocation`].
     NestingDepthExceeded(CodeLocation),
@@ -479,6 +479,15 @@ mod tests {
     }
 
     #[test]
+    fn parse_illegal_trailing_token() {
+        let body = "0 ";
+        let extra = "1";
+        let input = &format!("{body}{extra}");
+        let loc = CodeLocation::new(1, 1 + body.chars().count());
+        do_parse_illegal_code(input, ParseError::TrailingToken(loc))
+    }
+
+    #[test]
     fn parse_illegal_invalid_token() {
         let input = "_";
         let loc = CodeLocation::new(1, 1);
@@ -490,15 +499,6 @@ mod tests {
         let input = ",";
         let loc = CodeLocation::new(1, 1);
         do_parse_illegal_code(input, ParseError::DelimiterInWrongPlace(Delimiter::Comma, loc))
-    }
-
-    #[test]
-    fn parse_illegal_trailing_token() {
-        let body = "0 ";
-        let extra = "1";
-        let input = &format!("{body}{extra}");
-        let loc = CodeLocation::new(1, 1 + body.chars().count());
-        do_parse_illegal_code(input, ParseError::TrailingToken(loc))
     }
 
     #[test]
