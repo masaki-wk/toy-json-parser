@@ -4,6 +4,7 @@ use crate::CodeLocation;
 
 /// Represents a code span.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[allow(missing_docs)]
 pub struct CodeSpan {
     pub start: CodeLocation,
     pub end: CodeLocation,

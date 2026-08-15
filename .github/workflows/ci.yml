@@ -46,15 +46,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install required tools
-        run: rustup component add rust-docs
+        run: |
+          rustup component add rust-docs
+          cargo install cargo-readme
       - name: Show version information of tools
         run: |
           cargo --version
           rustdoc --version
+          cargo readme --version
       - name: Checkout
         uses: actions/checkout@v7
       - name: Build the document
         run: cargo doc --no-deps --all-features
+      - name: Verify README.md
+        run: cargo readme | cmp README.md -
 
   test:
     name: Test with Rust-${{ matrix.toolchain }}

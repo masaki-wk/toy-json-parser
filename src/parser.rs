@@ -5,6 +5,7 @@ use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value,
 
 /// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
+#[allow(missing_docs)]
 pub enum ParseError {
     NoToken,
     InvalidToken(String, CodeLocation),

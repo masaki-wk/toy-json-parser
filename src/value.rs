@@ -4,6 +4,7 @@ use crate::{CodeSpan, Literal};
 
 /// Represents a kind of JSON value.
 #[derive(Debug, PartialEq, Clone)]
+#[allow(missing_docs)]
 pub enum ValueKind {
     Array(Vec<Box<Value>>),
     Object(Vec<((String, CodeSpan), Box<Value>)>),
@@ -26,6 +27,7 @@ impl fmt::Display for ValueKind {
 
 /// Represents a JSON value.
 #[derive(Debug, PartialEq, Clone)]
+#[allow(missing_docs)]
 pub struct Value {
     pub kind: ValueKind,
     pub span: CodeSpan,
