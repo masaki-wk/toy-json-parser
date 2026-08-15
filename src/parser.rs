@@ -51,7 +51,7 @@ pub enum ParseError {
     ObjectLacksSeparator(CodeLocation, CodeLocation),
 
     /// Object member name is not a string ([`Literal`], [`CodeLocation`]).
-    NameOfObjectMemberIsNotString(Literal, CodeLocation),
+    ObjectMemberNameIsNotString(Literal, CodeLocation),
 
     /// Object member is missing the colon separator.
     ///
@@ -255,7 +255,7 @@ where
             .ok_or(ParseError::UnfinishedObject(begin_object_token_span.start, last_token_span.end))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
-            TokenKind::Literal(lit) => Err(ParseError::NameOfObjectMemberIsNotString(lit, token_for_name.span.start)),
+            TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameIsNotString(lit, token_for_name.span.start)),
             TokenKind::Delimiter(delim) => Err(ParseError::DelimiterInWrongPlace(delim, token_for_name.span.start)),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_name.span.start)),
         }?;
@@ -593,7 +593,7 @@ mod tests {
         let input = &format!("{pre}{name}{post}");
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::NameOfObjectMemberIsNotString(Literal::Number(name.to_string()), end))
+        do_parse_illegal_code(input, ParseError::ObjectMemberNameIsNotString(Literal::Number(name.to_string()), end))
     }
 
     #[test]
