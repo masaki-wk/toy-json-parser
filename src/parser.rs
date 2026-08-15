@@ -9,40 +9,44 @@ pub enum ParseError {
     /// No token found.
     NoToken,
 
-    /// Unexpected trailing token found at [`CodeLocation`] after the JSON text has ended.
+    /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON text.
     TrailingToken(CodeLocation),
 
-    /// Invalid token found ([`String`], [`CodeLocation`]).
+    /// Invalid token encountered ([`String`], [`CodeLocation`]).
     InvalidToken(String, CodeLocation),
 
-    /// [`Delimiter`] found in the wrong place at [`CodeLocation`].
+    /// [`Delimiter`] found in an invalid location at [`CodeLocation`].
     DelimiterInWrongPlace(Delimiter, CodeLocation),
 
     /// Array is unfinished.
     ///
-    /// - The array starts at the opening `[` at the first enum argument.
-    /// - The error is reported at the missing or invalid position at the second enum argument.
+    /// - The array begins at the opening `[` in the first enum argument.
+    /// - The error is reported at the position where parsing expected more input or a valid closing token,
+    ///   as given by the second enum argument.
     ///
     UnfinishedArray(CodeLocation, CodeLocation),
 
     /// Object is unfinished.
     ///
-    /// - The object starts at the opening `{` at the first enum argument.
-    /// - The error is reported at the missing or invalid position at the second enum argument.
+    /// - The object begins at the opening `{` in the first enum argument.
+    /// - The error is reported at the position where parsing expected more input or a valid closing token,
+    ///   as given by the second enum argument.
     ///
     UnfinishedObject(CodeLocation, CodeLocation),
 
-    /// The last array element is missing the trailing comma separator.
+    /// A comma separator is missing between array elements.
     ///
-    /// - The array starts at the opening `[` at the first enum argument.
-    /// - The error is reported at the missing or invalid position at the second enum argument.
+    /// - The array begins at the opening `[` in the first enum argument.
+    /// - The error is reported at the position where the separator was expected,
+    ///   as given by the second enum argument.
     ///
     ArrayLacksSeparator(CodeLocation, CodeLocation),
 
-    /// The last object member is missing the trailing comma separator.
+    /// A comma separator is missing between object members.
     ///
-    /// - The object starts at the opening `{` at the first enum argument.
-    /// - The error is reported at the missing or invalid position at the second enum argument.
+    /// - The object begins at the opening `{` in the first enum argument.
+    /// - The error is reported at the position where the separator was expected,
+    ///   as given by the second enum argument.
     ///
     ObjectLacksSeparator(CodeLocation, CodeLocation),
 
@@ -51,15 +55,17 @@ pub enum ParseError {
 
     /// Object member is missing the colon separator.
     ///
-    /// - The object member starts from the first enum argument.
-    /// - The error is reported at the missing or invalid position at the second enum argument.
+    /// - The object member begins at the first enum argument.
+    /// - The error is reported at the position where the separator was expected,
+    ///   as given by the second enum argument.
     ///
     ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
 
     /// Object member is missing its value.
     ///
-    /// - The object member starts from the first enum argument.
-    /// - The error is reported at the missing or invalid position at the second enum argument.
+    /// - The object member begins at the first enum argument.
+    /// - The error is reported at the position where the value was expected,
+    ///   as given by the second enum argument.
     ///
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
 
