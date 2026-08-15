@@ -217,7 +217,7 @@ where
             _ => Err(ParseError::ObjectMemberLacksSeparator(token_for_name.span.start, token_for_colon.span.start)),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
-            ParseError::NoToken => ParseError::ObjectMemberLacksValue(begin_object_token_span.start, token_for_colon.span.end),
+            ParseError::NoToken => ParseError::ObjectMemberLacksValue(token_for_name.span.start, token_for_colon.span.end),
             _ => e,
         })?;
         Ok(((name, token_for_name.span), value, last_token_span))
@@ -510,8 +510,9 @@ mod tests {
     fn parse_illegal_unfinished_object_lacks_next_value() {
         let input = r#"{"foo":"#;
         let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue(start, end))
+        let member_start = CodeLocation::new(start.line, start.column + 1);
+        let member_end = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue(member_start, member_end))
     }
 
     #[test]
