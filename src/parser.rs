@@ -5,19 +5,65 @@ use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value,
 
 /// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub enum ParseError {
+    /// No token found.
     NoToken,
+
+    /// Invalid token found ([`String`], [`CodeLocation`]).
     InvalidToken(String, CodeLocation),
+
+    /// [`Delimiter`] found in the wrong place at [`CodeLocation`].
     DelimiterInWrongPlace(Delimiter, CodeLocation),
+
+    /// Array is unfinished.
+    ///
+    /// - The array starts at the opening `[` at the first enum argument.
+    /// - The error is reported at the missing or invalid position at the second enum argument.
+    ///
     UnfinishedArray(CodeLocation, CodeLocation),
+
+    /// Object is unfinished.
+    ///
+    /// - The object starts at the opening `{` at the first enum argument.
+    /// - The error is reported at the missing or invalid position at the second enum argument.
+    ///
     UnfinishedObject(CodeLocation, CodeLocation),
+
+    /// The last array element is missing the trailing comma separator.
+    ///
+    /// - The array starts at the opening `[` at the first enum argument.
+    /// - The error is reported at the missing or invalid position at the second enum argument.
+    ///
     ArrayLacksSeparator(CodeLocation, CodeLocation),
+
+    /// The last object member is missing the trailing comma separator.
+    ///
+    /// - The object starts at the opening `{` at the first enum argument.
+    /// - The error is reported at the missing or invalid position at the second enum argument.
+    ///
     ObjectLacksSeparator(CodeLocation, CodeLocation),
+
+    /// Object member name is not a string ([`Literal`], [`CodeLocation`]).
     NameOfObjectMemberIsNotString(Literal, CodeLocation),
+
+    /// Object member is missing the colon separator.
+    ///
+    /// - The object member starts from the first enum argument.
+    /// - The error is reported at the missing or invalid position at the second enum argument.
+    ///
     ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
+
+    /// Object member is missing its value.
+    ///
+    /// - The object member starts from the first enum argument.
+    /// - The error is reported at the missing or invalid position at the second enum argument.
+    ///
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
+
+    /// Extra token found at [`CodeLocation`] after the JSON text has ended.
     ExtraTokenAtTheEnd(CodeLocation),
+
+    /// Maximum nesting depth exceeded at [`CodeLocation`].
     NestingDepthExceeded(CodeLocation),
 }
 
