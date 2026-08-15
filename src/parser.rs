@@ -210,14 +210,11 @@ where
         let token_for_colon = self
             .lexer
             .next()
-            .ok_or(ParseError::ObjectMemberLacksSeparator(begin_object_token_span.start, token_for_name.span.end))?;
+            .ok_or(ParseError::ObjectMemberLacksSeparator(token_for_name.span.start, token_for_name.span.end))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_colon.span.start)),
-            _ => Err(ParseError::ObjectMemberLacksSeparator(
-                begin_object_token_span.start,
-                token_for_colon.span.start,
-            )),
+            _ => Err(ParseError::ObjectMemberLacksSeparator(token_for_name.span.start, token_for_colon.span.start)),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
             ParseError::NoToken => ParseError::ObjectMemberLacksValue(begin_object_token_span.start, token_for_colon.span.end),
@@ -504,8 +501,9 @@ mod tests {
     fn parse_illegal_unfinished_object_lacks_next_colon() {
         let input = r#"{"foo""#;
         let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator(start, end))
+        let member_start = CodeLocation::new(start.line, start.column + 1);
+        let member_end = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator(member_start, member_end))
     }
 
     #[test]
