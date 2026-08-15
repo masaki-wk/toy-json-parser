@@ -60,8 +60,8 @@ pub enum ParseError {
     ///
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
 
-    /// Extra token found at [`CodeLocation`] after the JSON text has ended.
-    ExtraTokenAtTheEnd(CodeLocation),
+    /// Unexpected trailing token found at [`CodeLocation`] after the JSON text has ended.
+    TrailingToken(CodeLocation),
 
     /// Maximum nesting depth exceeded at [`CodeLocation`].
     NestingDepthExceeded(CodeLocation),
@@ -114,7 +114,7 @@ where
     pub fn parse(&mut self) -> Result<Value, ParseError> {
         let (value, _) = self.parse_value(0)?;
         match self.lexer.next() {
-            Some(token) => Err(ParseError::ExtraTokenAtTheEnd(token.span.start)),
+            Some(token) => Err(ParseError::TrailingToken(token.span.start)),
             None => Ok(value),
         }
     }
@@ -493,12 +493,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_extra_token_at_the_end() {
+    fn parse_illegal_trailing_token() {
         let body = "0 ";
         let extra = "1";
         let input = &format!("{body}{extra}");
         let loc = CodeLocation::new(1, 1 + body.chars().count());
-        do_parse_illegal_code(input, ParseError::ExtraTokenAtTheEnd(loc))
+        do_parse_illegal_code(input, ParseError::TrailingToken(loc))
     }
 
     #[test]
