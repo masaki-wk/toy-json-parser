@@ -15,8 +15,8 @@ pub enum ParseError {
     /// Invalid token encountered ([`String`], [`CodeLocation`]).
     InvalidToken(String, CodeLocation),
 
-    /// [`Delimiter`] found in an invalid location at [`CodeLocation`].
-    DelimiterInWrongPlace(Delimiter, CodeLocation),
+    /// Unexpected [`Delimiter`] found at [`CodeLocation`].
+    UnexpectedDelimiter(Delimiter, CodeLocation),
 
     /// Array is unfinished.
     ///
@@ -136,7 +136,7 @@ where
             match token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.span)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.span)),
-                TokenKind::Delimiter(delim) => Err(ParseError::DelimiterInWrongPlace(delim, token.span.start)),
+                TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token.span.start)),
                 TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.span)),
                 TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token.span.start)),
             }
@@ -172,7 +172,7 @@ where
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
-                        Err(ParseError::DelimiterInWrongPlace(Delimiter::Comma, token.span.start))
+                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, token.span.start))
                     } else {
                         self.lexer.next();
                         Ok(())
@@ -218,7 +218,7 @@ where
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
-                        Err(ParseError::DelimiterInWrongPlace(Delimiter::Comma, token.span.start))
+                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, token.span.start))
                     } else {
                         self.lexer.next();
                         Ok(())
@@ -256,7 +256,7 @@ where
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
             TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameIsNotString(lit, token_for_name.span.start)),
-            TokenKind::Delimiter(delim) => Err(ParseError::DelimiterInWrongPlace(delim, token_for_name.span.start)),
+            TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token_for_name.span.start)),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_name.span.start)),
         }?;
         let token_for_colon = self
@@ -501,10 +501,10 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_delimiter_in_wrong_place() {
+    fn parse_illegal_unexpected_delimiter() {
         let input = ",";
         let loc = CodeLocation::new(1, 1);
-        do_parse_illegal_code(input, ParseError::DelimiterInWrongPlace(Delimiter::Comma, loc))
+        do_parse_illegal_code(input, ParseError::UnexpectedDelimiter(Delimiter::Comma, loc))
     }
 
     #[test]
