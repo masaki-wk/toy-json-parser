@@ -12,60 +12,61 @@ pub enum ParseError {
     /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON text.
     TrailingToken(CodeLocation),
 
-    /// Invalid token encountered ([`String`], [`CodeLocation`]).
+    /// Invalid token [`String`] found at [`CodeLocation`].
     InvalidToken(String, CodeLocation),
 
     /// Unexpected [`Delimiter`] found at [`CodeLocation`].
     UnexpectedDelimiter(Delimiter, CodeLocation),
 
-    /// Array is unfinished.
+    /// Unfinished array.
     ///
-    /// - The array begins at the opening `[` in the first enum argument.
+    /// - The array starts with `[` at the first field.
     /// - The error is reported at the position where parsing expected more input or a valid closing token,
-    ///   as given by the second enum argument.
+    ///   as given by the second field.
     ///
     UnfinishedArray(CodeLocation, CodeLocation),
 
-    /// Object is unfinished.
+    /// Unfinished object.
     ///
-    /// - The object begins at the opening `{` in the first enum argument.
+    /// - The object starts with `{` at the first field.
     /// - The error is reported at the position where parsing expected more input or a valid closing token,
-    ///   as given by the second enum argument.
+    ///   as given by the second field.
     ///
     UnfinishedObject(CodeLocation, CodeLocation),
 
     /// A comma separator is missing between array elements.
     ///
-    /// - The array begins at the opening `[` in the first enum argument.
+    /// - The array starts with `[` at the first field.
     /// - The error is reported at the position where the separator was expected,
-    ///   as given by the second enum argument.
+    ///   as given by the second field.
     ///
     ArrayLacksSeparator(CodeLocation, CodeLocation),
 
     /// A comma separator is missing between object members.
     ///
-    /// - The object begins at the opening `{` in the first enum argument.
+    /// - The object starts with `{` at the first field.
     /// - The error is reported at the position where the separator was expected,
-    ///   as given by the second enum argument.
+    ///   as given by the second field.
     ///
     ObjectLacksSeparator(CodeLocation, CodeLocation),
 
-    /// Object member name is not a string ([`Literal`], [`CodeLocation`]).
+    /// Object member name is not a string.
+    /// The offending literal and its location are given by the first and second fields.
     ObjectMemberNameIsNotString(Literal, CodeLocation),
 
     /// Object member is missing the colon separator.
     ///
-    /// - The object member begins at the first enum argument.
+    /// - The object member starts at the first field.
     /// - The error is reported at the position where the separator was expected,
-    ///   as given by the second enum argument.
+    ///   as given by the second field.
     ///
     ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
 
     /// Object member is missing its value.
     ///
-    /// - The object member begins at the first enum argument.
+    /// - The object member starts at the first field.
     /// - The error is reported at the position where the value was expected,
-    ///   as given by the second enum argument.
+    ///   as given by the second field.
     ///
     ObjectMemberLacksValue(CodeLocation, CodeLocation),
 
