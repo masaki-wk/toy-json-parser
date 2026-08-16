@@ -7,6 +7,7 @@ use std::io::BufReader;
 use std::path::Path;
 use toy_json_parser::{BufReadCharsExt as _, Lexer, Parser, TokenKind};
 
+// The test function for `Lexer` and `Parser`.
 fn do_parser_test(filename: &str, expected_pasing_result: bool, contains_invalid_token: bool) -> Result<()> {
     let file = File::open(Path::new(filename))?;
     let reader = BufReader::new(file);
@@ -19,6 +20,7 @@ fn do_parser_test(filename: &str, expected_pasing_result: bool, contains_invalid
     Ok(())
 }
 
+// Macro to define test functions.
 macro_rules! generate_parser_tests {
     (
         $prefix:ident, $expected_parsing_result:expr; $(
@@ -39,6 +41,7 @@ macro_rules! generate_parser_tests {
     };
 }
 
+// Tests for the patterns that must be accepted.
 generate_parser_tests! {parser_accept_pattern, true;
     pass1:  pattern,                   false,
     pass2:  pattern,                   false,
@@ -47,6 +50,7 @@ generate_parser_tests! {parser_accept_pattern, true;
     fail18: too_deep_but_regal,        false,
 }
 
+// Tests for the patterns that must be rejected.
 generate_parser_tests! {parser_reject_pattern, false;
     fail2:  unclosed_array,                     false,
     fail3:  unquoted_key,                       true,
