@@ -47,7 +47,7 @@ generate_parser_tests! {parser_accept_pattern, true;
     fail18: too_deep_but_regal,        false,
 }
 
-generate_parser_tests! {parser_deny_pattern, false;
+generate_parser_tests! {parser_reject_pattern, false;
     fail2:  unclosed_array,                     false,
     fail3:  unquoted_key,                       true,
     fail4:  extra_comma_in_array,               false,
