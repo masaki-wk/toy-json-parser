@@ -5,19 +5,48 @@ use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value,
 
 /// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub enum ParseError {
+    /// No token was found at the beginning of the input.
     NoToken,
+
+    /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON input.
+    TrailingToken(CodeLocation),
+
+    /// Invalid token string encountered at [`CodeLocation`].
     InvalidToken(String, CodeLocation),
-    DelimiterInWrongPlace(Delimiter, CodeLocation),
-    UnfinishedArray(CodeLocation, CodeLocation),
-    UnfinishedObject(CodeLocation, CodeLocation),
-    ArrayLacksSeparator(CodeLocation, CodeLocation),
-    ObjectLacksSeparator(CodeLocation, CodeLocation),
-    NameOfObjectMemberIsNotString(Literal, CodeLocation),
-    ObjectMemberLacksSeparator(CodeLocation, CodeLocation),
-    ObjectMemberLacksValue(CodeLocation, CodeLocation),
-    ExtraTokenAtTheEnd(CodeLocation),
+
+    /// Unexpected delimiter encountered at [`CodeLocation`].
+    UnexpectedDelimiter(Delimiter, CodeLocation),
+
+    /// Array is missing its closing `]`.
+    #[allow(missing_docs)]
+    UnfinishedArray { array_start: CodeLocation, error_detected: CodeLocation },
+
+    /// Object is missing its closing `}`.
+    #[allow(missing_docs)]
+    UnfinishedObject { object_start: CodeLocation, error_detected: CodeLocation },
+
+    /// Missing `,` separator between array elements.
+    #[allow(missing_docs)]
+    ArrayLacksSeparator { array_start: CodeLocation, error_detected: CodeLocation },
+
+    /// Missing `,` separator between object members.
+    #[allow(missing_docs)]
+    ObjectLacksSeparator { object_start: CodeLocation, error_detected: CodeLocation },
+
+    /// Object member name is not a string.
+    /// The offending literal and its location are reported in the first and second fields.
+    ObjectMemberNameIsNotString(Literal, CodeLocation),
+
+    /// Object member is missing the `:` separator after the member name.
+    #[allow(missing_docs)]
+    ObjectMemberLacksSeparator { member_start: CodeLocation, error_detected: CodeLocation },
+
+    /// Object member value is missing after the `:`.
+    #[allow(missing_docs)]
+    ObjectMemberLacksValue { member_start: CodeLocation, error_detected: CodeLocation },
+
+    /// Maximum nesting depth exceeded at [`CodeLocation`].
     NestingDepthExceeded(CodeLocation),
 }
 
@@ -68,7 +97,7 @@ where
     pub fn parse(&mut self) -> Result<Value, ParseError> {
         let (value, _) = self.parse_value(0)?;
         match self.lexer.next() {
-            Some(token) => Err(ParseError::ExtraTokenAtTheEnd(token.span.start)),
+            Some(token) => Err(ParseError::TrailingToken(token.span.start)),
             None => Ok(value),
         }
     }
@@ -84,7 +113,7 @@ where
             match token.kind {
                 TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.span)),
                 TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.span)),
-                TokenKind::Delimiter(delim) => Err(ParseError::DelimiterInWrongPlace(delim, token.span.start)),
+                TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token.span.start)),
                 TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.span)),
                 TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token.span.start)),
             }
@@ -110,7 +139,10 @@ where
         let mut last_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end;
-            let token = self.lexer.peek().ok_or(ParseError::UnfinishedArray(begin_array_token_span.start, token_loc))?;
+            let token = self.lexer.peek().ok_or(ParseError::UnfinishedArray {
+                array_start: begin_array_token_span.start,
+                error_detected: token_loc,
+            })?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
@@ -120,7 +152,7 @@ where
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
-                        Err(ParseError::DelimiterInWrongPlace(Delimiter::Comma, token.span.start))
+                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, token.span.start))
                     } else {
                         self.lexer.next();
                         Ok(())
@@ -130,12 +162,18 @@ where
                     if buf.is_empty() {
                         Ok(())
                     } else {
-                        Err(ParseError::ArrayLacksSeparator(begin_array_token_span.start, token_loc))
+                        Err(ParseError::ArrayLacksSeparator {
+                            array_start: begin_array_token_span.start,
+                            error_detected: token_loc,
+                        })
                     }
                 }
             }?;
             let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
-                ParseError::NoToken => ParseError::UnfinishedArray(begin_array_token_span.start, token_span.end),
+                ParseError::NoToken => ParseError::UnfinishedArray {
+                    array_start: begin_array_token_span.start,
+                    error_detected: token_span.end,
+                },
                 _ => e,
             })?;
             buf.push(Box::new(item));
@@ -153,10 +191,10 @@ where
         let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end;
-            let token = self
-                .lexer
-                .peek()
-                .ok_or(ParseError::UnfinishedObject(begin_object_token_span.start, token_loc))?;
+            let token = self.lexer.peek().ok_or(ParseError::UnfinishedObject {
+                object_start: begin_object_token_span.start,
+                error_detected: token_loc,
+            })?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
@@ -166,7 +204,7 @@ where
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
-                        Err(ParseError::DelimiterInWrongPlace(Delimiter::Comma, token.span.start))
+                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, token.span.start))
                     } else {
                         self.lexer.next();
                         Ok(())
@@ -176,7 +214,10 @@ where
                     if buf.is_empty() {
                         Ok(())
                     } else {
-                        Err(ParseError::ObjectLacksSeparator(begin_object_token_span.start, token_loc))
+                        Err(ParseError::ObjectLacksSeparator {
+                            object_start: begin_object_token_span.start,
+                            error_detected: token_loc,
+                        })
                     }
                 }
             }?;
@@ -197,30 +238,33 @@ where
         begin_object_token_span: CodeSpan,
         last_token_span: CodeSpan,
     ) -> Result<((String, CodeSpan), Value, CodeSpan), ParseError> {
-        let token_for_name = self
-            .lexer
-            .next()
-            .ok_or(ParseError::UnfinishedObject(begin_object_token_span.start, last_token_span.end))?;
+        let token_for_name = self.lexer.next().ok_or(ParseError::UnfinishedObject {
+            object_start: begin_object_token_span.start,
+            error_detected: last_token_span.end,
+        })?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
-            TokenKind::Literal(lit) => Err(ParseError::NameOfObjectMemberIsNotString(lit, token_for_name.span.start)),
-            TokenKind::Delimiter(delim) => Err(ParseError::DelimiterInWrongPlace(delim, token_for_name.span.start)),
+            TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameIsNotString(lit, token_for_name.span.start)),
+            TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token_for_name.span.start)),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_name.span.start)),
         }?;
-        let token_for_colon = self
-            .lexer
-            .next()
-            .ok_or(ParseError::ObjectMemberLacksSeparator(begin_object_token_span.start, token_for_name.span.end))?;
+        let token_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberLacksSeparator {
+            member_start: token_for_name.span.start,
+            error_detected: token_for_name.span.end,
+        })?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_colon.span.start)),
-            _ => Err(ParseError::ObjectMemberLacksSeparator(
-                begin_object_token_span.start,
-                token_for_colon.span.start,
-            )),
+            _ => Err(ParseError::ObjectMemberLacksSeparator {
+                member_start: token_for_name.span.start,
+                error_detected: token_for_colon.span.start,
+            }),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
-            ParseError::NoToken => ParseError::ObjectMemberLacksValue(begin_object_token_span.start, token_for_colon.span.end),
+            ParseError::NoToken => ParseError::ObjectMemberLacksValue {
+                member_start: token_for_name.span.start,
+                error_detected: token_for_colon.span.end,
+            },
             _ => e,
         })?;
         Ok(((name, token_for_name.span), value, last_token_span))
@@ -436,6 +480,15 @@ mod tests {
     }
 
     #[test]
+    fn parse_illegal_trailing_token() {
+        let body = "0 ";
+        let extra = "1";
+        let input = &format!("{body}{extra}");
+        let loc = CodeLocation::new(1, 1 + body.chars().count());
+        do_parse_illegal_code(input, ParseError::TrailingToken(loc))
+    }
+
+    #[test]
     fn parse_illegal_invalid_token() {
         let input = "_";
         let loc = CodeLocation::new(1, 1);
@@ -443,43 +496,34 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_delimiter_in_wrong_place() {
+    fn parse_illegal_unexpected_delimiter() {
         let input = ",";
         let loc = CodeLocation::new(1, 1);
-        do_parse_illegal_code(input, ParseError::DelimiterInWrongPlace(Delimiter::Comma, loc))
-    }
-
-    #[test]
-    fn parse_illegal_extra_token_at_the_end() {
-        let body = "0 ";
-        let extra = "1";
-        let input = &format!("{body}{extra}");
-        let loc = CodeLocation::new(1, 1 + body.chars().count());
-        do_parse_illegal_code(input, ParseError::ExtraTokenAtTheEnd(loc))
+        do_parse_illegal_code(input, ParseError::UnexpectedDelimiter(Delimiter::Comma, loc))
     }
 
     #[test]
     fn parse_illegal_unfinished_array_no_value() {
         let input = "[";
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedArray(start, end))
+        let array_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnfinishedArray { array_start, error_detected })
     }
 
     #[test]
     fn parse_illegal_unfinished_array_lacks_next_comma() {
         let input = "[0";
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedArray(start, end))
+        let array_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnfinishedArray { array_start, error_detected })
     }
 
     #[test]
     fn parse_illegal_unfinished_array_lacks_next_value() {
         let input = "[0,";
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedArray(start, end))
+        let array_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnfinishedArray { array_start, error_detected })
     }
 
     #[test]
@@ -487,41 +531,43 @@ mod tests {
         let pre = "[0";
         let post = " 1]";
         let input = &format!("{pre}{post}");
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::ArrayLacksSeparator(start, end))
+        let array_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ArrayLacksSeparator { array_start, error_detected })
     }
 
     #[test]
     fn parse_illegal_unfinished_object_no_name() {
         let input = "{";
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedObject(start, end))
+        let object_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnfinishedObject { object_start, error_detected })
     }
 
     #[test]
     fn parse_illegal_unfinished_object_lacks_next_colon() {
         let input = r#"{"foo""#;
         let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator(start, end))
+        let member_start = CodeLocation::new(start.line, start.column + 1);
+        let error_detected = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator { member_start, error_detected })
     }
 
     #[test]
     fn parse_illegal_unfinished_object_lacks_next_value() {
         let input = r#"{"foo":"#;
         let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue(start, end))
+        let member_start = CodeLocation::new(start.line, start.column + 1);
+        let error_detected = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue { member_start, error_detected })
     }
 
     #[test]
     fn parse_illegal_unfinished_object_lacks_next_comma() {
         let input = r#"{"foo": 0"#;
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedObject(start, end))
+        let object_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnfinishedObject { object_start, error_detected })
     }
 
     #[test]
@@ -529,9 +575,9 @@ mod tests {
         let pre = r#"{"foo": 0"#;
         let post = r#" "bar": 1}"#;
         let input = &format!("{pre}{post}");
-        let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectLacksSeparator(start, end))
+        let object_start = CodeLocation::new(1, 1);
+        let error_detected = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectLacksSeparator { object_start, error_detected })
     }
 
     #[test]
@@ -542,7 +588,7 @@ mod tests {
         let input = &format!("{pre}{name}{post}");
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::NameOfObjectMemberIsNotString(Literal::Number(name.to_string()), end))
+        do_parse_illegal_code(input, ParseError::ObjectMemberNameIsNotString(Literal::Number(name.to_string()), end))
     }
 
     #[test]
