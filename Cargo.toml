@@ -22,3 +22,4 @@ exclude = [
 [dev-dependencies]
 anyhow = "1.0"
 clap = { version = "4.6", features = ["derive"] }
+paste = "1.0"
