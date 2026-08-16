@@ -6,43 +6,43 @@ use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value,
 /// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {
-    /// No token found.
+    /// No token was found at the beginning of the input.
     NoToken,
 
-    /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON text.
+    /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON input.
     TrailingToken(CodeLocation),
 
-    /// Invalid token [`String`] found at [`CodeLocation`].
+    /// Invalid token string encountered at [`CodeLocation`].
     InvalidToken(String, CodeLocation),
 
-    /// Unexpected [`Delimiter`] found at [`CodeLocation`].
+    /// Unexpected delimiter encountered at [`CodeLocation`].
     UnexpectedDelimiter(Delimiter, CodeLocation),
 
-    /// Unfinished array.
+    /// Array is missing its closing `]`.
     #[allow(missing_docs)]
     UnfinishedArray { array_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Unfinished object.
+    /// Object is missing its closing `}`.
     #[allow(missing_docs)]
     UnfinishedObject { object_start: CodeLocation, error_detected: CodeLocation },
 
-    /// A comma separator is missing between array elements.
+    /// Missing `,` separator between array elements.
     #[allow(missing_docs)]
     ArrayLacksSeparator { array_start: CodeLocation, error_detected: CodeLocation },
 
-    /// A comma separator is missing between object members.
+    /// Missing `,` separator between object members.
     #[allow(missing_docs)]
     ObjectLacksSeparator { object_start: CodeLocation, error_detected: CodeLocation },
 
     /// Object member name is not a string.
-    /// The offending literal and its location are given by the first and second fields.
+    /// The offending literal and its location are reported in the first and second fields.
     ObjectMemberNameIsNotString(Literal, CodeLocation),
 
-    /// Object member is missing the colon separator.
+    /// Object member is missing the `:` separator after the member name.
     #[allow(missing_docs)]
     ObjectMemberLacksSeparator { member_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Object member is missing its value.
+    /// Object member value is missing after the `:`.
     #[allow(missing_docs)]
     ObjectMemberLacksValue { member_start: CodeLocation, error_detected: CodeLocation },
 
