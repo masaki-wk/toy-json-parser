@@ -1,4 +1,4 @@
-// Tests with the test suite from [JSON_checker](https://json.org/JSON_checker/)
+// Tests using the test suite from [JSON_checker](https://json.org/JSON_checker/)
 
 use anyhow::{Result, ensure};
 use paste::paste;
