@@ -7,16 +7,23 @@ a lexer and parser.
 - `Parser` consumes those tokens and builds a tree of `Value` objects.
 - Both tokens and parsed values carry source position information.
 
-Position tracking makes it easier to understand where tokens and values come
-from in the original source text, which is useful for diagnostics, debugging,
-and learning parser design.
+Both tokens and parsed values track their source location as `CodeSpan`, which contains:
+
+- Line and column numbers (1-indexed)
+- Start and end positions in the source text
+
+The `Parser` returns `ParseError` if the JSON is invalid.
+Errors include the location where parsing failed, making debugging easier.
 
 ## Example of `Lexer`
 
 ```rust
 use toy_json_parser::Lexer;
 
-let input = r#"["foo"]"#;
+let input = r#"{
+    "foo": null,
+    "bar": [0, 1]
+}"#;
 let mut lexer = Lexer::new(input.chars());
 for token in lexer {
     println!("{:?}: {}", token.kind, token.span);
@@ -26,9 +33,19 @@ for token in lexer {
 Outputs the following:
 
 ```
-Delimiter(LeftBracket): [Ln 1, Col 1]..[Ln 1, Col 2]
-Literal(String("foo")): [Ln 1, Col 2]..[Ln 1, Col 7]
-Delimiter(RightBracket): [Ln 1, Col 7]..[Ln 1, Col 8]
+Delimiter(LeftBrace): [Ln 1, Col 1]..[Ln 1, Col 2]
+Literal(String("foo")): [Ln 2, Col 5]..[Ln 2, Col 10]
+Delimiter(Colon): [Ln 2, Col 10]..[Ln 2, Col 11]
+Literal(Null): [Ln 2, Col 12]..[Ln 2, Col 16]
+Delimiter(Comma): [Ln 2, Col 16]..[Ln 2, Col 17]
+Literal(String("bar")): [Ln 3, Col 5]..[Ln 3, Col 10]
+Delimiter(Colon): [Ln 3, Col 10]..[Ln 3, Col 11]
+Delimiter(LeftBracket): [Ln 3, Col 12]..[Ln 3, Col 13]
+Literal(Number("0")): [Ln 3, Col 13]..[Ln 3, Col 14]
+Delimiter(Comma): [Ln 3, Col 14]..[Ln 3, Col 15]
+Literal(Number("1")): [Ln 3, Col 16]..[Ln 3, Col 17]
+Delimiter(RightBracket): [Ln 3, Col 17]..[Ln 3, Col 18]
+Delimiter(RightBrace): [Ln 4, Col 1]..[Ln 4, Col 2]
 ```
 
 ## Example of `Parser`
@@ -38,7 +55,7 @@ use toy_json_parser::{Lexer, Parser};
 
 let input = r#"{
     "foo": null,
-    "bar": [0, 1, 2]
+    "bar": [0, 1]
 }"#;
 let lexer = Lexer::new(input.chars());
 let mut parser = Parser::new(lexer);
@@ -53,8 +70,7 @@ Outputs the following:
     "foo": null,
     "bar": [
         0,
-        1,
-        2
+        1
     ]
 }
 ```
