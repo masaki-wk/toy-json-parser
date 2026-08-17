@@ -23,9 +23,8 @@ fn do_parser_test(filename: &str, expected_pasing_result: bool, contains_invalid
 // Macro to define test functions.
 macro_rules! generate_parser_tests {
     (
-        $prefix:ident, $expected_parsing_result:expr; $(
-            $basefilename:ident: $description:ident, $contains_invalid_token:expr
-        ),* $(,)?) => {
+        $prefix:ident, $expected_parsing_result:expr; $($basefilename:ident: $description:ident, $contains_invalid_token:expr),* $(,)?
+    ) => {
         $(
             paste! {
                 #[test]
