@@ -4,16 +4,30 @@ use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal
 
 /// Represents a JSON lexer.
 ///
+/// [`Lexer`] is instantiated using the [`new`] method, which takes an iterator of characters (e.g. `string.chars()`).
+/// [`Lexer`] implements the [`Iterator`] trait for [`Token`], so you can call [`next()`] to retrieve tokens sequentially.
+///
+/// [`new`]: Lexer::new
+/// [`next()`]: Iterator::next
+///
 /// # Examples
 ///
 /// ```
 /// # use toy_json_parser::{Delimiter, Lexer, TokenKind};
 /// # fn test() -> Option<()> {
 /// let mut lexer = Lexer::new("[]".chars());
+///
+/// // Get the first token `[`
 /// let token1 = lexer.next()?;
 /// assert_eq!(token1.kind, TokenKind::Delimiter(Delimiter::LeftBracket));
+///
+/// // Get the second token `]`
 /// let token2 = lexer.next()?;
 /// assert_eq!(token2.kind, TokenKind::Delimiter(Delimiter::RightBracket));
+///
+/// // No more tokens
+/// assert_eq!(lexer.next(), None);
+///
 /// # Some(())
 /// # }
 /// ```
