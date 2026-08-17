@@ -5,6 +5,14 @@
 //! - `Parser` consumes those tokens and builds a tree of `Value` objects.
 //! - Both tokens and parsed values carry source position information.
 //!
+//! Both tokens and parsed values track their source location as `CodeSpan`, which contains:
+//!
+//! - Line and column numbers (1-indexed)
+//! - Start and end positions in the source text
+//!
+//! The `Parser` returns `ParseError` if the JSON is invalid.
+//! Errors include the location where parsing failed, making debugging easier.
+//!
 //! # Example of `Lexer`
 //!
 //! ```rust
@@ -68,18 +76,6 @@
 //!     ]
 //! }
 //! ```
-//!
-//! # Position tracking
-//!
-//! Both tokens and parsed values track their source location as `CodeSpan`, which contains:
-//!
-//! - Line and column numbers (1-indexed)
-//! - Start and end positions in the source text
-//!
-//! # Error handling
-//!
-//! The `Parser` returns `ParseError` if the JSON is invalid.
-//! Errors include the location where parsing failed, making debugging easier.
 
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
