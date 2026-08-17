@@ -11,9 +11,9 @@ use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal
 /// # fn test() -> Option<()> {
 /// let mut lexer = Lexer::new("[]".chars());
 /// let token1 = lexer.next()?;
-/// assert_eq!(token1.kind, TokenKind::Delimiter(Delimiter::LeftBrace));
+/// assert_eq!(token1.kind, TokenKind::Delimiter(Delimiter::LeftBracket));
 /// let token2 = lexer.next()?;
-/// assert_eq!(token2.kind, TokenKind::Delimiter(Delimiter::RightBrace));
+/// assert_eq!(token2.kind, TokenKind::Delimiter(Delimiter::RightBracket));
 /// # Some(())
 /// # }
 /// ```
