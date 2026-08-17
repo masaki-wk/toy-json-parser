@@ -2,7 +2,7 @@
 name = "toy-json-parser"
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.86.0"
 description = "A toy JSON lexer and parser as a study exercise"
 repository = "https://github.com/masaki-wk/toy-json-parser"
 license = "MIT OR Apache-2.0"
@@ -22,4 +22,16 @@ exclude = [
 [dev-dependencies]
 anyhow = "1.0"
 clap = { version = "4.6", features = ["derive"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 paste = "1.0"
+# Note for rust version:
+# - this crate requires edition 2024
+# - edition 2024 requires rust-1.85.0
+# - anyhow 1.0.104 requires rust-1.68
+# - clap 4.6.6 requires rust-1.85
+# - criterion 0.8.2 requires rust-1.86
+# - paste 1.0.15 requires rust-1.31
+
+[[bench]]
+name = "benchmark"
+harness = false
