@@ -22,4 +22,9 @@ exclude = [
 [dev-dependencies]
 anyhow = "1.0"
 clap = { version = "4.6", features = ["derive"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 paste = "1.0"
+
+[[bench]]
+name = "benchmark"
+harness = false
