@@ -30,8 +30,10 @@ macro_rules! generate_benchmarks {
 }
 
 generate_benchmarks! {
+    canada,
     citm_catalog,
+    twitter,
 }
 
-criterion_group!(benches, benchmark_citm_catalog);
+criterion_group!(benches, benchmark_canada, benchmark_citm_catalog, benchmark_twitter);
 criterion_main!(benches);
