@@ -14,7 +14,10 @@
 //! ```rust
 //! use toy_json_parser::Lexer;
 //!
-//! let input = r#"["foo"]"#;
+//! let input = r#"{
+//!     "foo": null,
+//!     "bar": [0, 1]
+//! }"#;
 //! let mut lexer = Lexer::new(input.chars());
 //! for token in lexer {
 //!     println!("{:?}: {}", token.kind, token.span);
@@ -24,9 +27,19 @@
 //! Outputs the following:
 //!
 //! ```text
-//! Delimiter(LeftBracket): [Ln 1, Col 1]..[Ln 1, Col 2]
-//! Literal(String("foo")): [Ln 1, Col 2]..[Ln 1, Col 7]
-//! Delimiter(RightBracket): [Ln 1, Col 7]..[Ln 1, Col 8]
+//! Delimiter(LeftBrace): [Ln 1, Col 1]..[Ln 1, Col 2]
+//! Literal(String("foo")): [Ln 2, Col 5]..[Ln 2, Col 10]
+//! Delimiter(Colon): [Ln 2, Col 10]..[Ln 2, Col 11]
+//! Literal(Null): [Ln 2, Col 12]..[Ln 2, Col 16]
+//! Delimiter(Comma): [Ln 2, Col 16]..[Ln 2, Col 17]
+//! Literal(String("bar")): [Ln 3, Col 5]..[Ln 3, Col 10]
+//! Delimiter(Colon): [Ln 3, Col 10]..[Ln 3, Col 11]
+//! Delimiter(LeftBracket): [Ln 3, Col 12]..[Ln 3, Col 13]
+//! Literal(Number("0")): [Ln 3, Col 13]..[Ln 3, Col 14]
+//! Delimiter(Comma): [Ln 3, Col 14]..[Ln 3, Col 15]
+//! Literal(Number("1")): [Ln 3, Col 16]..[Ln 3, Col 17]
+//! Delimiter(RightBracket): [Ln 3, Col 17]..[Ln 3, Col 18]
+//! Delimiter(RightBrace): [Ln 4, Col 1]..[Ln 4, Col 2]
 //! ```
 //!
 //! # Example of `Parser`
@@ -38,7 +51,7 @@
 //! # fn test() -> Result<(), ParseError> {
 //! let input = r#"{
 //!     "foo": null,
-//!     "bar": [0, 1, 2]
+//!     "bar": [0, 1]
 //! }"#;
 //! let lexer = Lexer::new(input.chars());
 //! let mut parser = Parser::new(lexer);
@@ -55,8 +68,7 @@
 //!     "foo": null,
 //!     "bar": [
 //!         0,
-//!         1,
-//!         2
+//!         1
 //!     ]
 //! }
 //! ```
