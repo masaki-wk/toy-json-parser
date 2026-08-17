@@ -58,17 +58,37 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-/// Represents a JSON parser.
+/// Represents a JSON parser, which parses a stream of [`Token`]s (typically from a [`Lexer`]) into a [`Value`] tree.
+///
+/// [`Parser`] is instantiated using the [`new`] method, which takes an iterator of [`Token`] values.
+/// After construction, call [`parse()`] to consume the entire token stream and return a single [`Value`].
+///
+/// The parser validates the JSON grammar incrementally and returns a [`ParseError`] when the token stream is structurally invalid.
+///
+/// [`Lexer`]: crate::Lexer
+/// [`new`]: Parser::new
+/// [`parse()`]: Parser::parse
 ///
 /// # Examples
 ///
+/// [`parse()`] expects the input to contain exactly one complete JSON value and no extra tokens.
+/// For example, the following is accepted:
+///
 /// ```
-/// # use toy_json_parser::{Lexer, Parser};
-/// # fn test() -> Option<()> {
-/// let lexer = Lexer::new("[]".chars());
+/// # use toy_json_parser::{Lexer, Parser, ParseError};
+/// # fn test() -> Result<(), ParseError> {
+/// let input = r#"{
+///     "foo": null,
+///     "bar": [0, 1]
+/// }"#;
+///
+/// // Set up `Lexer` and `Parser`
+/// let lexer = Lexer::new(input.chars());
 /// let mut parser = Parser::new(lexer);
-/// assert!(parser.parse().is_ok());
-/// # Some(())
+///
+/// // Parse the input and stores the JSON value to the variable
+/// let value = parser.parse()?;
+/// # Ok(())
 /// # }
 /// ```
 ///
