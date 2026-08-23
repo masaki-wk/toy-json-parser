@@ -18,7 +18,7 @@ pub enum LexicalErrorKind {
     /// Number has a leading zero before integer component digits.
     NumberContainsLeadingZero,
 
-    /// Number was missing integer component digits.
+    /// Number was missing integer digits.
     NumberMissingIntegerDigits,
 
     /// Number has a decimal point but no fraction digits.
