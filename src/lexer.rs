@@ -33,8 +33,8 @@ pub enum LexicalErrorKind {
     /// String contains an invalid escape sequence.
     StringContainsInvalidEscapeSequence,
 
-    /// String has a Unicode escape that was not followed by four hexadicimal digits.
-    StringHasInvalidUnicodeEscape,
+    /// String contains a `\u` escape that is not followed by four hexadecimal digits.
+    StringContainsInvalidUnicodeEscape,
 }
 
 /// Represents a lexical error by [`Lexer`].
@@ -327,7 +327,7 @@ where
                                     loc = ch_loc;
                                     buf.push(ch);
                                     if !ch.is_ascii_hexdigit() {
-                                        error = Some(LexicalErrorKind::StringHasInvalidUnicodeEscape);
+                                        error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
                                     }
                                 }
                             }
@@ -663,7 +663,7 @@ mod tests {
     #[test]
     fn tokenize_invalid_quoted_string_with_bad_unicode_escape() {
         let s = r#""\u000x""#;
-        take_single_invalid_token(s, LexicalErrorKind::StringHasInvalidUnicodeEscape)
+        take_single_invalid_token(s, LexicalErrorKind::StringContainsInvalidUnicodeEscape)
     }
 
     #[test]
