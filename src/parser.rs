@@ -34,7 +34,7 @@ pub enum ParseError {
     #[allow(missing_docs)]
     ObjectLacksSeparator { object_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Object member name is not a string.
+    /// Object member name was not a string.
     /// The offending literal and its location are reported in the first and second fields.
     ObjectMemberNameIsNotString(Literal, CodeLocation),
 
