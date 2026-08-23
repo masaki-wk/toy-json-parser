@@ -26,9 +26,9 @@ pub enum ParseError {
     #[allow(missing_docs)]
     UnclosedObject { object_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Missing `,` separator between array elements.
+    /// Array was missing `,` separator between array elements.
     #[allow(missing_docs)]
-    ArrayLacksSeparator { array_start: CodeLocation, error_detected: CodeLocation },
+    ArrayMissingSeparator { array_start: CodeLocation, error_detected: CodeLocation },
 
     /// Missing `,` separator between object members.
     #[allow(missing_docs)]
@@ -186,7 +186,7 @@ where
                     if buf.is_empty() {
                         Ok(())
                     } else {
-                        Err(ParseError::ArrayLacksSeparator {
+                        Err(ParseError::ArrayMissingSeparator {
                             array_start: begin_array_token_span.start,
                             error_detected: token_loc,
                         })
@@ -551,13 +551,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_array_lacks_separator() {
+    fn parse_illegal_array_missing_separator() {
         let pre = "[0";
         let post = " 1]";
         let input = &format!("{pre}{post}");
         let array_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::ArrayLacksSeparator { array_start, error_detected })
+        do_parse_illegal_code(input, ParseError::ArrayMissingSeparator { array_start, error_detected })
     }
 
     #[test]
