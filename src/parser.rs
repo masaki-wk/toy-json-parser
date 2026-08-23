@@ -1,19 +1,19 @@
 use std::fmt;
 use std::iter::Peekable;
 
-use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value, ValueKind};
+use crate::{CodeLocation, CodeSpan, Delimiter, LexicalError, LexicalErrorKind, Literal, Token, TokenKind, Value, ValueKind};
 
 /// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {
+    /// Lexical error occurred at [`CodeLocation`].
+    LexicalError(LexicalErrorKind, String, CodeLocation),
+
     /// The input was empty.
     EmptyInput,
 
     /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON input.
     TrailingToken(CodeLocation),
-
-    /// Invalid token string encountered at [`CodeLocation`].
-    InvalidToken(String, CodeLocation),
 
     /// Unexpected delimiter encountered at [`CodeLocation`].
     UnexpectedDelimiter(Delimiter, CodeLocation),
@@ -58,9 +58,9 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-/// Represents a JSON parser, which parses a stream of [`Token`]s (typically from a [`Lexer`]) into a [`Value`] tree.
+/// Represents a JSON parser, which parses a stream of tokens (typically from a [`Lexer`]) into a [`Value`] tree.
 ///
-/// [`Parser`] is instantiated using the [`new`] method, which takes an iterator of [`Token`] values.
+/// [`Parser`] is instantiated using the [`new`] method, which takes an iterator of `Result<Token, LexicalError>` values.
 /// After construction, call [`parse()`] to consume the entire token stream and return a single [`Value`].
 ///
 /// The parser validates the JSON grammar incrementally and returns a [`ParseError`] when the token stream is structurally invalid.
@@ -95,7 +95,7 @@ impl std::error::Error for ParseError {}
 #[derive(Debug, Clone)]
 pub struct Parser<T>
 where
-    T: Iterator<Item = Token>,
+    T: Iterator<Item = Result<Token, LexicalError>>,
 {
     lexer: Peekable<T>,
     max_depth: usize,
@@ -103,7 +103,7 @@ where
 
 impl<T> Parser<T>
 where
-    T: Iterator<Item = Token>,
+    T: Iterator<Item = Result<Token, LexicalError>>,
 {
     /// Creates a new [`Parser`].
     pub fn new(lexer: T) -> Self {
@@ -121,7 +121,10 @@ where
     pub fn parse(&mut self) -> Result<Value, ParseError> {
         let (value, _) = self.parse_value(0)?;
         match self.lexer.next() {
-            Some(token) => Err(ParseError::TrailingToken(token.span.start)),
+            Some(result) => Err(match result {
+                Ok(token) => ParseError::TrailingToken(token.span.start),
+                Err(error) => ParseError::LexicalError(error.kind, error.string, error.location),
+            }),
             None => Ok(value),
         }
     }
@@ -133,13 +136,15 @@ where
             BeginObject,
             Literal(Literal),
         }
-        let (token_category, token_span) = if let Some(token) = self.lexer.next() {
-            match token.kind {
-                TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.span)),
-                TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.span)),
-                TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token.span.start)),
-                TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.span)),
-                TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token.span.start)),
+        let (token_category, token_span) = if let Some(result) = self.lexer.next() {
+            match result {
+                Ok(token) => match token.kind {
+                    TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.span)),
+                    TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.span)),
+                    TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token.span.start)),
+                    TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.span)),
+                },
+                Err(error) => Err(ParseError::LexicalError(error.kind, error.string, error.location)),
             }
         } else {
             Err(ParseError::EmptyInput)
@@ -163,10 +168,11 @@ where
         let mut last_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end;
-            let token = self.lexer.peek().ok_or(ParseError::UnclosedArray {
+            let result = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                 array_start: begin_array_token_span.start,
                 error_at: token_loc,
             })?;
+            let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
@@ -215,10 +221,11 @@ where
         let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end;
-            let token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
+            let result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: begin_object_token_span.start,
                 error_at: token_loc,
             })?;
+            let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
@@ -262,23 +269,23 @@ where
         begin_object_token_span: CodeSpan,
         last_token_span: CodeSpan,
     ) -> Result<((String, CodeSpan), Value, CodeSpan), ParseError> {
-        let token_for_name = self.lexer.next().ok_or(ParseError::UnclosedObject {
+        let result_for_name = self.lexer.next().ok_or(ParseError::UnclosedObject {
             object_start: begin_object_token_span.start,
             error_at: last_token_span.end,
         })?;
+        let token_for_name = result_for_name.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
             TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameNotString(lit, token_for_name.span.start)),
             TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token_for_name.span.start)),
-            TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_name.span.start)),
         }?;
-        let token_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
+        let result_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
             member_start: token_for_name.span.start,
             error_at: token_for_name.span.end,
         })?;
+        let token_for_colon = result_for_colon.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
-            TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_colon.span.start)),
             _ => Err(ParseError::ObjectMemberMissingSeparator {
                 member_start: token_for_name.span.start,
                 error_at: token_for_colon.span.start,
@@ -516,7 +523,7 @@ mod tests {
     fn parse_illegal_invalid_token() {
         let input = "_";
         let loc = CodeLocation::new(1, 1);
-        do_parse_illegal_code(input, ParseError::InvalidToken(input.to_string(), loc))
+        do_parse_illegal_code(input, ParseError::LexicalError(LexicalErrorKind::UnquotedString, input.to_string(), loc))
     }
 
     #[test]

@@ -73,9 +73,6 @@ pub enum TokenKind {
 
     /// Literal
     Literal(Literal),
-
-    /// Invalid
-    Invalid(String),
 }
 
 impl fmt::Display for TokenKind {
@@ -83,7 +80,6 @@ impl fmt::Display for TokenKind {
         match self {
             Self::Delimiter(delim) => delim.fmt(f),
             Self::Literal(lit) => lit.fmt(f),
-            Self::Invalid(s) => write!(f, "{s}"),
         }
     }
 }
@@ -198,12 +194,5 @@ mod tests {
         let expected = "null";
         let kind = TokenKind::Literal(Literal::Null);
         do_display_token_test(kind, expected)
-    }
-
-    #[test]
-    fn display_token_invalid() {
-        let s = "_";
-        let kind = TokenKind::Invalid(s.to_string());
-        do_display_token_test(kind, s)
     }
 }
