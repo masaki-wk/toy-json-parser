@@ -193,7 +193,7 @@ where
         };
         let mut buf = firstchar.to_string();
         let mut loc = loc_start;
-        let mut failed = false;
+        let mut error = None;
         let mut has_integer_component = !is_negative;
         let mut firstchar_already_read = !is_negative;
         loop {
@@ -207,7 +207,7 @@ where
                     } else {
                         if firstchar_is_zero {
                             // Leading zero detected
-                            failed = true;
+                            error = Some(LexicalErrorKind::BadNumber);
                         }
                     }
                     buf.push(*ch);
@@ -220,7 +220,7 @@ where
             }
         }
         if !has_integer_component {
-            failed = true;
+            error = Some(LexicalErrorKind::BadNumber);
         }
         let has_decimal_point = match self.chars.peek() {
             Some((_, ch)) if *ch == '.' => {
@@ -245,7 +245,7 @@ where
                 }
             }
             if !has_fraction_component {
-                failed = true;
+                error = Some(LexicalErrorKind::BadNumber);
             }
         }
         let has_exponent_char = match self.chars.peek() {
@@ -278,13 +278,12 @@ where
                 }
             }
             if !has_exponent_component {
-                failed = true;
+                error = Some(LexicalErrorKind::BadNumber);
             }
         }
-        if !failed {
-            Ok((TokenKind::Literal(Literal::Number(buf)), loc))
-        } else {
-            Err((LexicalErrorKind::BadNumber, buf))
+        match error {
+            Some(kind) => Err((kind, buf)),
+            None => Ok((TokenKind::Literal(Literal::Number(buf)), loc)),
         }
     }
 
@@ -293,7 +292,7 @@ where
         let mut buf = String::new();
         let mut loc = loc_start;
         let status = (|| {
-            let mut failed = false;
+            let mut error = None;
             loop {
                 let (ch_loc, ch) = self.chars.next()?;
                 loc = ch_loc;
@@ -314,29 +313,29 @@ where
                                     loc = ch_loc;
                                     buf.push(ch);
                                     if !ch.is_ascii_hexdigit() {
-                                        failed = true;
+                                        error = Some(LexicalErrorKind::BadString);
                                     }
                                 }
                             }
                             _ => {
-                                failed = true;
+                                error = Some(LexicalErrorKind::BadString);
                             }
                         }
                     }
                     '\0'..'\x1f' => {
                         buf.push(ch);
-                        failed = true;
+                        error = Some(LexicalErrorKind::BadString);
                     }
                     _ => {
                         buf.push(ch);
                     }
                 }
             }
-            Some(!failed)
+            Some(error)
         })();
         match status {
-            Some(true) => Ok((TokenKind::Literal(Literal::String(buf)), loc)),
-            Some(false) => Err((LexicalErrorKind::BadString, format!(r#""{buf}""#))),
+            Some(None) => Ok((TokenKind::Literal(Literal::String(buf)), loc)),
+            Some(Some(kind)) => Err((kind, format!(r#""{buf}""#))),
             None => Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf)),
         }
     }
