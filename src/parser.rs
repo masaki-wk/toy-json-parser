@@ -38,9 +38,9 @@ pub enum ParseError {
     /// The offending literal and its location are reported in the first and second fields.
     ObjectMemberNameIsNotString(Literal, CodeLocation),
 
-    /// Object member is missing the `:` separator after the member name.
+    /// Object member was missing `:` separator after the member name.
     #[allow(missing_docs)]
-    ObjectMemberLacksSeparator { member_start: CodeLocation, error_detected: CodeLocation },
+    ObjectMemberMissingSeparator { member_start: CodeLocation, error_detected: CodeLocation },
 
     /// Object member value is missing after the `:`.
     #[allow(missing_docs)]
@@ -272,14 +272,14 @@ where
             TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, token_for_name.span.start)),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_name.span.start)),
         }?;
-        let token_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberLacksSeparator {
+        let token_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
             member_start: token_for_name.span.start,
             error_detected: token_for_name.span.end,
         })?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_colon.span.start)),
-            _ => Err(ParseError::ObjectMemberLacksSeparator {
+            _ => Err(ParseError::ObjectMemberMissingSeparator {
                 member_start: token_for_name.span.start,
                 error_detected: token_for_colon.span.start,
             }),
@@ -569,12 +569,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_lacks_next_colon() {
+    fn parse_illegal_unclosed_object_missing_next_colon() {
         let input = r#"{"foo""#;
         let start = CodeLocation::new(1, 1);
         let member_start = CodeLocation::new(start.line, start.column + 1);
         let error_detected = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberLacksSeparator { member_start, error_detected })
+        do_parse_illegal_code(input, ParseError::ObjectMemberMissingSeparator { member_start, error_detected })
     }
 
     #[test]
