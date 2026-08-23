@@ -24,7 +24,7 @@ pub enum LexicalErrorKind {
     /// Number has a decimal point but no fraction digits.
     NumberMissingFractionDigits,
 
-    /// Number has an exponent indicator but no  exponent digits.
+    /// Number has an exponent indicator but no exponent digits.
     NumberMissingExponentDigits,
 
     /// String contains an unescaped control character.
