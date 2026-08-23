@@ -15,6 +15,9 @@ pub enum LexicalErrorKind {
     /// String was not terminated by a closing `"`.
     UnterminatedString,
 
+    /// Number has a leading zero before integer component digits.
+    NumberHasLeadingZero,
+
     /// Bad number was found.
     BadNumber,
 
@@ -206,8 +209,7 @@ where
                         firstchar_already_read = true;
                     } else {
                         if firstchar_is_zero {
-                            // Leading zero detected
-                            error = Some(LexicalErrorKind::BadNumber);
+                            error = Some(LexicalErrorKind::NumberHasLeadingZero);
                         }
                     }
                     buf.push(*ch);
@@ -617,13 +619,13 @@ mod tests {
     #[test]
     fn tokenize_invalid_number_leading_zero_without_minus() {
         let s = "01";
-        take_single_invalid_token(s, LexicalErrorKind::BadNumber)
+        take_single_invalid_token(s, LexicalErrorKind::NumberHasLeadingZero)
     }
 
     #[test]
     fn tokenize_invalid_number_leading_zero_with_minus() {
         let s = "-01";
-        take_single_invalid_token(s, LexicalErrorKind::BadNumber)
+        take_single_invalid_token(s, LexicalErrorKind::NumberHasLeadingZero)
     }
 
     #[test]
