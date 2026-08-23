@@ -665,4 +665,10 @@ mod tests {
         let s = r#""\u000x""#;
         take_single_invalid_token(s, LexicalErrorKind::StringHasInvalidUnicodeEscape)
     }
+
+    #[test]
+    fn tokenize_invalid_quoted_string_with_unescaped_control_char() {
+        let s = "\"\n\"";
+        take_single_invalid_token(s, LexicalErrorKind::StringContainsUnescapedControlChar)
+    }
 }
