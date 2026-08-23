@@ -42,9 +42,9 @@ pub enum ParseError {
     #[allow(missing_docs)]
     ObjectMemberMissingSeparator { member_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Object member value is missing after the `:`.
+    /// Object member was missing value after `:` separator.
     #[allow(missing_docs)]
-    ObjectMemberLacksValue { member_start: CodeLocation, error_detected: CodeLocation },
+    ObjectMemberMissingValue { member_start: CodeLocation, error_detected: CodeLocation },
 
     /// Maximum nesting depth exceeded at [`CodeLocation`].
     NestingDepthExceeded(CodeLocation),
@@ -285,7 +285,7 @@ where
             }),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
-            ParseError::NoToken => ParseError::ObjectMemberLacksValue {
+            ParseError::NoToken => ParseError::ObjectMemberMissingValue {
                 member_start: token_for_name.span.start,
                 error_detected: token_for_colon.span.end,
             },
@@ -578,12 +578,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_lacks_next_value() {
+    fn parse_illegal_unclosed_object_missing_next_value() {
         let input = r#"{"foo":"#;
         let start = CodeLocation::new(1, 1);
         let member_start = CodeLocation::new(start.line, start.column + 1);
         let error_detected = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberLacksValue { member_start, error_detected })
+        do_parse_illegal_code(input, ParseError::ObjectMemberMissingValue { member_start, error_detected })
     }
 
     #[test]
