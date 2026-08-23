@@ -1,11 +1,71 @@
+use std::fmt;
 use std::iter::Peekable;
 
 use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal, LocatedIterator, Token, TokenKind};
 
+/// Represents a lexical error by [`Lexer`].
+#[derive(Debug, PartialEq, Clone)]
+pub enum LexicalErrorKind {
+    /// Unexpected character was found.
+    UnexpectedChar,
+
+    /// Unquoted string was found.
+    UnquotedString,
+
+    /// String was not terminated by a closing `"`.
+    UnterminatedString,
+
+    /// Number has a leading zero before integer component digits.
+    NumberContainsLeadingZero,
+
+    /// Number was missing integer digits.
+    NumberMissingIntegerDigits,
+
+    /// Number has a decimal point but no fraction digits.
+    NumberMissingFractionDigits,
+
+    /// Number has an exponent indicator but no exponent digits.
+    NumberMissingExponentDigits,
+
+    /// String contains an unescaped control character.
+    StringContainsUnescapedControlChar,
+
+    /// String contains an invalid escape sequence.
+    StringContainsInvalidEscapeSequence,
+
+    /// String contains a `\u` escape that is not followed by four hexadecimal digits.
+    StringContainsInvalidUnicodeEscape,
+}
+
+/// Represents a lexical error by [`Lexer`].
+#[derive(Debug, PartialEq, Clone)]
+#[allow(missing_docs)]
+pub struct LexicalError {
+    pub kind: LexicalErrorKind,
+    pub string: String,
+    pub location: CodeLocation,
+}
+
+impl LexicalError {
+    /// Creates a new [`LexicalError`].
+    pub const fn new(kind: LexicalErrorKind, string: String, location: CodeLocation) -> Self {
+        Self { kind, string, location }
+    }
+}
+
+impl fmt::Display for LexicalError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl std::error::Error for LexicalError {}
+
 /// Represents a JSON lexer.
 ///
 /// [`Lexer`] is instantiated using the [`new`] method, which takes an iterator of characters (e.g. `string.chars()`).
-/// [`Lexer`] implements the [`Iterator`] trait for [`Token`], so you can call [`next()`] to retrieve tokens sequentially.
+/// [`Lexer`] implements the [`Iterator`] trait for [`Result`] of [`Token`] or [`LexicalError`],
+/// so you can call [`next()`] to retrieve tokens sequentially.
 ///
 /// [`new`]: Lexer::new
 /// [`next()`]: Iterator::next
@@ -18,11 +78,11 @@ use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal
 /// let mut lexer = Lexer::new("[]".chars());
 ///
 /// // Get the first token `[`
-/// let token1 = lexer.next()?;
+/// let token1 = lexer.next()?.ok()?;
 /// assert_eq!(token1.kind, TokenKind::Delimiter(Delimiter::LeftBracket));
 ///
 /// // Get the second token `]`
-/// let token2 = lexer.next()?;
+/// let token2 = lexer.next()?.ok()?;
 /// assert_eq!(token2.kind, TokenKind::Delimiter(Delimiter::RightBracket));
 ///
 /// // No more tokens
@@ -52,11 +112,11 @@ where
     }
 
     // Advances the iterator and returns the next token, like `iter.next()`.
-    fn take_token(&mut self) -> Option<Token> {
+    fn take_token(&mut self) -> Option<Result<Token, LexicalError>> {
         enum TokenCategory {
             Delimiter(Delimiter),
-            RawStringKnown(Literal, &'static str),
-            RawStringUnknown,
+            UnquotedStringKnown(Literal, &'static str),
+            UnquotedStringUnknown,
             Number,
             QuotedString,
             Invalid,
@@ -71,33 +131,38 @@ where
                 '}' => Some(TokenCategory::Delimiter(Delimiter::RightBrace)),
                 ':' => Some(TokenCategory::Delimiter(Delimiter::Colon)),
                 ',' => Some(TokenCategory::Delimiter(Delimiter::Comma)),
-                't' => Some(TokenCategory::RawStringKnown(Literal::Boolean(true), "true")),
-                'f' => Some(TokenCategory::RawStringKnown(Literal::Boolean(false), "false")),
-                'n' => Some(TokenCategory::RawStringKnown(Literal::Null, "null")),
+                't' => Some(TokenCategory::UnquotedStringKnown(Literal::Boolean(true), "true")),
+                'f' => Some(TokenCategory::UnquotedStringKnown(Literal::Boolean(false), "false")),
+                'n' => Some(TokenCategory::UnquotedStringKnown(Literal::Null, "null")),
                 '"' => Some(TokenCategory::QuotedString),
                 '-' => Some(TokenCategory::Number),
                 _ if ch.is_ascii_digit() => Some(TokenCategory::Number),
-                _ if ch.is_ascii_alphabetic() || ch == '_' => Some(TokenCategory::RawStringUnknown),
+                _ if ch.is_ascii_alphabetic() || ch == '_' => Some(TokenCategory::UnquotedStringUnknown),
                 _ => Some(TokenCategory::Invalid),
             };
             if let Some(token_category) = category_candidate {
                 break (token_category, ch, loc);
             }
         };
-        let (kind, loc_last) = match category {
-            TokenCategory::Delimiter(delim) => (TokenKind::Delimiter(delim), loc_start),
-            TokenCategory::RawStringKnown(lit, s) => self.read_raw_string_known(lit, s, firstchar, loc_start),
-            TokenCategory::RawStringUnknown => self.read_raw_string_unknown(firstchar, loc_start),
+        let result = match category {
+            TokenCategory::Delimiter(delim) => Ok((TokenKind::Delimiter(delim), loc_start)),
+            TokenCategory::UnquotedStringKnown(lit, s) => self.read_unquoted_string_known(lit, s, firstchar, loc_start),
+            TokenCategory::UnquotedStringUnknown => Err(self.read_unquoted_string_unknown(firstchar, loc_start)),
             TokenCategory::Number => self.read_number(firstchar, loc_start),
             TokenCategory::QuotedString => self.read_quoted_string(loc_start),
-            TokenCategory::Invalid => (TokenKind::Invalid(firstchar.to_string()), loc_start),
+            TokenCategory::Invalid => Err((LexicalErrorKind::UnexpectedChar, firstchar.to_string())),
         };
-        let loc_end = CodeLocation::new(loc_last.line, loc_last.column + 1);
-        Some(Token::new(kind, CodeSpan::new(loc_start, loc_end)))
+        match result {
+            Ok((kind, loc_last)) => {
+                let loc_end = CodeLocation::new(loc_last.line, loc_last.column + 1);
+                Some(Ok(Token::new(kind, CodeSpan::new(loc_start, loc_end))))
+            }
+            Err((kind, s)) => Some(Err(LexicalError::new(kind, s, loc_start))),
+        }
     }
 
-    // Reads a raw string.
-    fn read_raw_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
+    // Reads an unquoted string.
+    fn read_unquoted_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
         let mut buf = firstchar.to_string();
         let mut loc = loc_start;
         while let Some((ch_loc, ch)) = self.chars.peek().copied() {
@@ -112,25 +177,30 @@ where
         (buf, loc)
     }
 
-    // Reads a known raw string.
-    fn read_raw_string_known(&mut self, expected_literal: Literal, expected_str: &str, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
-        let (s, loc) = self.read_raw_string(firstchar, loc_start);
-        let kind = if s == expected_str {
-            TokenKind::Literal(expected_literal)
+    // Reads a known unquoted string.
+    fn read_unquoted_string_known(
+        &mut self,
+        expected_literal: Literal,
+        expected_str: &str,
+        firstchar: char,
+        loc_start: CodeLocation,
+    ) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
+        let (s, loc) = self.read_unquoted_string(firstchar, loc_start);
+        if s == expected_str {
+            Ok((TokenKind::Literal(expected_literal), loc))
         } else {
-            TokenKind::Invalid(s)
-        };
-        (kind, loc)
+            Err((LexicalErrorKind::UnquotedString, s))
+        }
     }
 
-    // Reads an unknown raw string.
-    fn read_raw_string_unknown(&mut self, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
-        let (s, loc) = self.read_raw_string(firstchar, loc_start);
-        (TokenKind::Invalid(s), loc)
+    // Reads an unknown unquoted string.
+    fn read_unquoted_string_unknown(&mut self, firstchar: char, loc_start: CodeLocation) -> (LexicalErrorKind, String) {
+        let (s, _) = self.read_unquoted_string(firstchar, loc_start);
+        (LexicalErrorKind::UnquotedString, s)
     }
 
     // Reads a number.
-    fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
+    fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
         let (is_negative, mut firstchar_is_zero) = match firstchar {
             '-' => (true, false),
             '0' => (false, true),
@@ -138,8 +208,8 @@ where
         };
         let mut buf = firstchar.to_string();
         let mut loc = loc_start;
-        let mut failed = false;
-        let mut has_integer_component = !is_negative;
+        let mut error = None;
+        let mut has_integer_digits = !is_negative;
         let mut firstchar_already_read = !is_negative;
         loop {
             match self.chars.peek() {
@@ -151,21 +221,20 @@ where
                         firstchar_already_read = true;
                     } else {
                         if firstchar_is_zero {
-                            // Leading zero detected
-                            failed = true;
+                            error = Some(LexicalErrorKind::NumberContainsLeadingZero);
                         }
                     }
                     buf.push(*ch);
                     loc = self.chars.next().unwrap().0;
-                    has_integer_component = true;
+                    has_integer_digits = true;
                 }
                 _ => {
                     break;
                 }
             }
         }
-        if !has_integer_component {
-            failed = true;
+        if !has_integer_digits {
+            error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
         let has_decimal_point = match self.chars.peek() {
             Some((_, ch)) if *ch == '.' => {
@@ -176,24 +245,24 @@ where
             _ => false,
         };
         if has_decimal_point {
-            let mut has_fraction_component = false;
+            let mut has_fraction_digits = false;
             loop {
                 match self.chars.peek() {
                     Some((_, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
                         loc = self.chars.next().unwrap().0;
-                        has_fraction_component = true;
+                        has_fraction_digits = true;
                     }
                     _ => {
                         break;
                     }
                 }
             }
-            if !has_fraction_component {
-                failed = true;
+            if !has_fraction_digits {
+                error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_char = match self.chars.peek() {
+        let has_exponent_letter = match self.chars.peek() {
             Some((_, ch)) if *ch == 'e' || *ch == 'E' => {
                 buf.push(*ch);
                 loc = self.chars.next().unwrap().0;
@@ -201,7 +270,7 @@ where
             }
             _ => false,
         };
-        if has_exponent_char {
+        if has_exponent_letter {
             match self.chars.peek() {
                 Some((_, ch)) if *ch == '+' || *ch == '-' => {
                     buf.push(*ch);
@@ -209,36 +278,35 @@ where
                 }
                 _ => {}
             }
-            let mut has_exponent_component = false;
+            let mut has_exponent_digits = false;
             loop {
                 match self.chars.peek() {
                     Some((_, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
                         loc = self.chars.next().unwrap().0;
-                        has_exponent_component = true;
+                        has_exponent_digits = true;
                     }
                     _ => {
                         break;
                     }
                 }
             }
-            if !has_exponent_component {
-                failed = true;
+            if !has_exponent_digits {
+                error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
         }
-        if !failed {
-            (TokenKind::Literal(Literal::Number(buf)), loc)
-        } else {
-            (TokenKind::Invalid(buf), loc)
+        match error {
+            Some(kind) => Err((kind, buf)),
+            None => Ok((TokenKind::Literal(Literal::Number(buf)), loc)),
         }
     }
 
     // Reads a quoted string.
-    fn read_quoted_string(&mut self, loc_start: CodeLocation) -> (TokenKind, CodeLocation) {
+    fn read_quoted_string(&mut self, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
         let mut buf = String::new();
         let mut loc = loc_start;
         let status = (|| {
-            let mut failed = false;
+            let mut error = None;
             loop {
                 let (ch_loc, ch) = self.chars.next()?;
                 loc = ch_loc;
@@ -259,30 +327,30 @@ where
                                     loc = ch_loc;
                                     buf.push(ch);
                                     if !ch.is_ascii_hexdigit() {
-                                        failed = true;
+                                        error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
                                     }
                                 }
                             }
                             _ => {
-                                failed = true;
+                                error = Some(LexicalErrorKind::StringContainsInvalidEscapeSequence);
                             }
                         }
                     }
                     '\0'..'\x1f' => {
                         buf.push(ch);
-                        failed = true;
+                        error = Some(LexicalErrorKind::StringContainsUnescapedControlChar);
                     }
                     _ => {
                         buf.push(ch);
                     }
                 }
             }
-            Some(!failed)
+            Some(error)
         })();
         match status {
-            Some(true) => (TokenKind::Literal(Literal::String(buf)), loc),
-            Some(false) => (TokenKind::Invalid(format!(r#""{buf}""#)), loc),
-            None => (TokenKind::Invalid('"'.to_string() + &buf), loc),
+            Some(None) => Ok((TokenKind::Literal(Literal::String(buf)), loc)),
+            Some(Some(kind)) => Err((kind, format!(r#""{buf}""#))),
+            None => Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf)),
         }
     }
 }
@@ -291,7 +359,7 @@ impl<T> Iterator for Lexer<T>
 where
     T: Iterator<Item = char>,
 {
-    type Item = Token;
+    type Item = Result<Token, LexicalError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.take_token()
@@ -302,32 +370,49 @@ where
 mod tests {
     use super::*;
 
-    fn do_tokenize(input: &str, expected_kind: TokenKind, expected_span: CodeSpan, check_finished: bool) {
+    fn do_take_single_valid_token(input: &str, expected_kind: TokenKind, expected_span: CodeSpan) {
         let mut lexer = Lexer::new(input.chars());
-        let token = lexer.next().unwrap();
+        let token = lexer.next().unwrap().unwrap();
         assert_eq!(token.kind, expected_kind);
         assert_eq!(token.span, expected_span);
-        if check_finished {
-            assert_eq!(lexer.next(), None);
-        }
+        assert_eq!(lexer.next(), None);
     }
 
-    fn do_tokenize_single_token(input: &str, expected_kind: TokenKind) {
+    fn do_take_single_invalid_token(input: &str, expected_kind: LexicalErrorKind, expected_string: &str, to_be_finished: bool) {
+        let start = CodeLocation::new(1, 1);
+        let mut lexer = Lexer::new(input.chars());
+        let error = lexer.next().unwrap().unwrap_err();
+        assert_eq!(error.kind, expected_kind);
+        assert_eq!(error.string, expected_string);
+        assert_eq!(error.location, start);
+        assert_eq!(lexer.next().is_none(), to_be_finished);
+    }
+
+    fn take_single_valid_token(input: &str, expected_kind: TokenKind) {
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_tokenize(input, expected_kind, CodeSpan::new(start, end), true)
+        do_take_single_valid_token(input, expected_kind, CodeSpan::new(start, end))
     }
 
-    fn do_tokenize_single_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: CodeLocation) {
+    fn take_single_valid_token_with_whitespace_prefix(prefix: &str, input: &str, expected_kind: TokenKind, start: CodeLocation) {
         let end = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_tokenize(&format!("{prefix}{input}"), expected_kind, CodeSpan::new(start, end), true)
+        do_take_single_valid_token(&format!("{prefix}{input}"), expected_kind, CodeSpan::new(start, end))
     }
 
-    fn do_tokenize_single_token_with_trailing_chars(body: &str, rest: &str, expected_kind: TokenKind) {
-        let input = &format!("{body}{rest}");
+    fn take_single_valid_token_with_whitespace_suffix(input: &str, suffix: &str, expected_kind: TokenKind) {
+        let joined = &format!("{input}{suffix}");
         let start = CodeLocation::new(1, 1);
-        let end = CodeLocation::new(start.line, start.column + body.chars().count());
-        do_tokenize(input, expected_kind, CodeSpan::new(start, end), false)
+        let end = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_take_single_valid_token(joined, expected_kind, CodeSpan::new(start, end))
+    }
+
+    fn take_single_invalid_token(input: &str, expected_kind: LexicalErrorKind) {
+        do_take_single_invalid_token(input, expected_kind, input, true)
+    }
+
+    fn take_single_invalid_token_with_trailing_chars(input: &str, rest: &str, expected_kind: LexicalErrorKind) {
+        let joined = &format!("{input}{rest}");
+        do_take_single_invalid_token(joined, expected_kind, input, false)
     }
 
     #[test]
@@ -337,247 +422,253 @@ mod tests {
 
     #[test]
     fn tokenize_left_bracket() {
-        do_tokenize_single_token("[", TokenKind::Delimiter(Delimiter::LeftBracket))
+        take_single_valid_token("[", TokenKind::Delimiter(Delimiter::LeftBracket))
     }
 
     #[test]
     fn tokenize_right_bracket() {
-        do_tokenize_single_token("]", TokenKind::Delimiter(Delimiter::RightBracket))
+        take_single_valid_token("]", TokenKind::Delimiter(Delimiter::RightBracket))
     }
 
     #[test]
     fn tokenize_left_brace() {
-        do_tokenize_single_token("{", TokenKind::Delimiter(Delimiter::LeftBrace))
+        take_single_valid_token("{", TokenKind::Delimiter(Delimiter::LeftBrace))
     }
 
     #[test]
     fn tokenize_right_brace() {
-        do_tokenize_single_token("}", TokenKind::Delimiter(Delimiter::RightBrace))
+        take_single_valid_token("}", TokenKind::Delimiter(Delimiter::RightBrace))
     }
 
     #[test]
     fn tokenize_colon() {
-        do_tokenize_single_token(":", TokenKind::Delimiter(Delimiter::Colon))
+        take_single_valid_token(":", TokenKind::Delimiter(Delimiter::Colon))
     }
 
     #[test]
     fn tokenize_comma() {
-        do_tokenize_single_token(",", TokenKind::Delimiter(Delimiter::Comma))
+        take_single_valid_token(",", TokenKind::Delimiter(Delimiter::Comma))
     }
 
     #[test]
     fn tokenize_true() {
-        do_tokenize_single_token("true", TokenKind::Literal(Literal::Boolean(true)))
+        take_single_valid_token("true", TokenKind::Literal(Literal::Boolean(true)))
     }
 
     #[test]
     fn tokenize_false() {
-        do_tokenize_single_token("false", TokenKind::Literal(Literal::Boolean(false)))
+        take_single_valid_token("false", TokenKind::Literal(Literal::Boolean(false)))
     }
 
     #[test]
     fn tokenize_null() {
-        do_tokenize_single_token("null", TokenKind::Literal(Literal::Null))
+        take_single_valid_token("null", TokenKind::Literal(Literal::Null))
     }
 
     #[test]
     fn tokenize_number_positive_zero() {
         let s = "0";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_negative_zero() {
         let s = "-0";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_positive_integer() {
         let s = "123";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_negative_integer() {
         let s = "-123";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_positive_decimal_fraction() {
         let s = "12.3";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_negative_decimal_fraction() {
         let s = "-12.3";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_positive_exponential_notation_small() {
         let s = "1.23e-2";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_positive_exponential_notation_large() {
         let s = "1.23e+2";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_negative_exponential_notation_small() {
         let s = "-1.23e-2";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_number_negative_exponential_notation_large() {
         let s = "-1.23e+2";
-        do_tokenize_single_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_string_without_escaped() {
         let s = "foo";
-        do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
+        take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
     fn tokenize_string_with_escaped_char() {
         let s = r#"\" \\ \/ \b \f \n \r \t"#;
-        do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
+        take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
     fn tokenize_string_with_escaped_unicode() {
         let s = r#"\u048c"#;
-        do_tokenize_single_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
+        take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
     fn tokenize_colon_with_space_prefix() {
-        do_tokenize_single_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
+        take_single_valid_token_with_whitespace_prefix(" ", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
     }
 
     #[test]
     fn tokenize_colon_with_tab_prefix() {
-        do_tokenize_single_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
+        take_single_valid_token_with_whitespace_prefix("\t", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
     }
 
     #[test]
     fn tokenize_colon_with_line_feed_prefix() {
-        do_tokenize_single_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(2, 1))
+        take_single_valid_token_with_whitespace_prefix("\n", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(2, 1))
     }
 
     #[test]
     fn tokenize_colon_with_carriage_return_prefix() {
-        do_tokenize_single_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
+        take_single_valid_token_with_whitespace_prefix("\r", ":", TokenKind::Delimiter(Delimiter::Colon), CodeLocation::new(1, 2))
     }
 
     #[test]
     fn tokenize_colon_with_space_suffix() {
-        do_tokenize_single_token_with_trailing_chars(":", " ", TokenKind::Delimiter(Delimiter::Colon))
+        take_single_valid_token_with_whitespace_suffix(":", " ", TokenKind::Delimiter(Delimiter::Colon))
     }
 
     #[test]
     fn tokenize_true_with_space_prefix() {
-        do_tokenize_single_token_with_whitespace_prefix(" ", "true", TokenKind::Literal(Literal::Boolean(true)), CodeLocation::new(1, 2))
+        take_single_valid_token_with_whitespace_prefix(" ", "true", TokenKind::Literal(Literal::Boolean(true)), CodeLocation::new(1, 2))
     }
 
     #[test]
     fn tokenize_true_with_space_suffix() {
-        do_tokenize_single_token_with_trailing_chars("true", " ", TokenKind::Literal(Literal::Boolean(true)))
+        take_single_valid_token_with_whitespace_suffix("true", " ", TokenKind::Literal(Literal::Boolean(true)))
     }
 
     #[test]
     fn tokenize_number_with_space_prefix() {
         let s = "123";
-        do_tokenize_single_token_with_whitespace_prefix(" ", s, TokenKind::Literal(Literal::Number(s.to_string())), CodeLocation::new(1, 2))
+        take_single_valid_token_with_whitespace_prefix(" ", s, TokenKind::Literal(Literal::Number(s.to_string())), CodeLocation::new(1, 2))
     }
 
     #[test]
     fn tokenize_number_with_space_suffix() {
         let s = "123";
-        do_tokenize_single_token_with_trailing_chars(s, " ", TokenKind::Literal(Literal::Number(s.to_string())))
+        take_single_valid_token_with_whitespace_suffix(s, " ", TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
     #[test]
     fn tokenize_string_with_space_prefix() {
         let s = "foo";
         let input = &format!(r#""{s}""#);
-        do_tokenize_single_token_with_whitespace_prefix(" ", input, TokenKind::Literal(Literal::String(s.to_string())), CodeLocation::new(1, 2))
+        take_single_valid_token_with_whitespace_prefix(" ", input, TokenKind::Literal(Literal::String(s.to_string())), CodeLocation::new(1, 2))
     }
 
     #[test]
     fn tokenize_string_with_space_suffix() {
         let s = "foo";
         let input = &format!(r#""{s}""#);
-        do_tokenize_single_token_with_trailing_chars(input, " ", TokenKind::Literal(Literal::String(s.to_string())))
+        take_single_valid_token_with_whitespace_suffix(input, " ", TokenKind::Literal(Literal::String(s.to_string())))
     }
 
     #[test]
     fn tokenize_invalid_char() {
         let s = ".";
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::UnexpectedChar)
     }
 
     #[test]
-    fn tokenize_invalid_raw_string() {
+    fn tokenize_invalid_unquoted_string() {
         let s = "invalid";
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::UnquotedString)
+    }
+
+    #[test]
+    fn tokenize_invalid_unterminated_string() {
+        let s = r#""foo"#;
+        take_single_invalid_token(s, LexicalErrorKind::UnterminatedString)
     }
 
     #[test]
     fn tokenize_invalid_number_minus_only() {
         let s = "-";
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::NumberMissingIntegerDigits)
     }
 
     #[test]
     fn tokenize_invalid_number_leading_zero_without_minus() {
         let s = "01";
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::NumberContainsLeadingZero)
     }
 
     #[test]
     fn tokenize_invalid_number_leading_zero_with_minus() {
         let s = "-01";
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::NumberContainsLeadingZero)
     }
 
     #[test]
-    fn tokenize_invalid_number_bad_char_in_fraction_component() {
+    fn tokenize_invalid_number_bad_char_in_fraction_part() {
         let body = "0.";
         let rest = "a";
-        do_tokenize_single_token_with_trailing_chars(body, rest, TokenKind::Invalid(body.to_string()))
+        take_single_invalid_token_with_trailing_chars(body, rest, LexicalErrorKind::NumberMissingFractionDigits)
     }
 
     #[test]
-    fn tokenize_invalid_number_bad_char_in_exponent_component() {
+    fn tokenize_invalid_number_bad_char_in_exponent_part() {
         let body = "0e";
         let rest = "a";
-        do_tokenize_single_token_with_trailing_chars(body, rest, TokenKind::Invalid(body.to_string()))
+        take_single_invalid_token_with_trailing_chars(body, rest, LexicalErrorKind::NumberMissingExponentDigits)
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_with_escaped_char() {
+    fn tokenize_invalid_quoted_string_with_bad_escape_sequence() {
         let s = r#""\c""#;
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::StringContainsInvalidEscapeSequence)
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_with_escaped_unicode() {
+    fn tokenize_invalid_quoted_string_with_bad_unicode_escape() {
         let s = r#""\u000x""#;
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+        take_single_invalid_token(s, LexicalErrorKind::StringContainsInvalidUnicodeEscape)
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_unterminated() {
-        let s = r#""foo"#;
-        do_tokenize_single_token(s, TokenKind::Invalid(s.to_string()))
+    fn tokenize_invalid_quoted_string_with_unescaped_control_char() {
+        let s = "\"\n\"";
+        take_single_invalid_token(s, LexicalErrorKind::StringContainsUnescapedControlChar)
     }
 }

@@ -34,17 +34,30 @@ mod app {
 
         let lexer = Lexer::new(reader.chars());
         if args.verbose {
-            for token in lexer {
-                let kind = &token.kind;
-                let span = &token.span;
-                println!("{token}: {kind:?}, {span}")
+            for result in lexer {
+                match result {
+                    Ok(token) => {
+                        let kind = &token.kind;
+                        let span = &token.span;
+                        println!("{token}: {kind:?}, {span}")
+                    }
+                    Err(error) => {
+                        let kind = error.kind;
+                        let s = error.string;
+                        let loc = error.location;
+                        println!(r#"Error: {kind:?}, "{s}", {loc}"#)
+                    }
+                }
             }
         } else {
-            for (i, token) in lexer.enumerate() {
+            for (i, result) in lexer.enumerate() {
                 if i > 0 {
                     print!(" ")
                 }
-                print!("{token}")
+                match result {
+                    Ok(token) => print!("{token}"),
+                    Err(error) => print!("{error}"),
+                }
             }
             println!()
         }

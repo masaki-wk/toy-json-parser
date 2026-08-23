@@ -23,7 +23,8 @@
 //!     "bar": [0, 1]
 //! }"#;
 //! let mut lexer = Lexer::new(input.chars());
-//! for token in lexer {
+//! for result in lexer {
+//!     let token = result.unwrap();
 //!     println!("{:?}: {}", token.kind, token.span);
 //! }
 //! ```
@@ -98,6 +99,8 @@ pub use token::TokenKind;
 
 mod lexer;
 pub use lexer::Lexer;
+pub use lexer::LexicalError;
+pub use lexer::LexicalErrorKind;
 
 mod value;
 pub use value::Value;

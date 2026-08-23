@@ -5,16 +5,16 @@ use paste::paste;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use toy_json_parser::{BufReadCharsExt as _, Lexer, Parser, TokenKind};
+use toy_json_parser::{BufReadCharsExt as _, Lexer, Parser};
 
 // The test function for `Lexer` and `Parser`.
 fn do_parser_test(filename: &str, expected_pasing_result: bool, contains_invalid_token: bool) -> Result<()> {
     let file = File::open(Path::new(filename))?;
     let reader = BufReader::new(file);
     let lexer = Lexer::new(reader.chars());
-    let tokens: Vec<_> = lexer.collect();
-    ensure!(tokens.iter().any(|token| matches!(token.kind, TokenKind::Invalid(_))) == contains_invalid_token);
-    let mut parser = Parser::new(tokens.into_iter());
+    let lexer_results: Vec<_> = lexer.collect();
+    ensure!(lexer_results.iter().any(Result::is_err) == contains_invalid_token);
+    let mut parser = Parser::new(lexer_results.into_iter());
     let result = parser.parse();
     ensure!(result.is_ok() == expected_pasing_result);
     Ok(())
