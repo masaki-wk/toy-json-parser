@@ -18,9 +18,9 @@ pub enum ParseError {
     /// Unexpected delimiter encountered at [`CodeLocation`].
     UnexpectedDelimiter(Delimiter, CodeLocation),
 
-    /// Array is missing its closing `]`.
+    /// Array was missing its closing `]`.
     #[allow(missing_docs)]
-    UnfinishedArray { array_start: CodeLocation, error_detected: CodeLocation },
+    UnclosedArray { array_start: CodeLocation, error_detected: CodeLocation },
 
     /// Object is missing its closing `}`.
     #[allow(missing_docs)]
@@ -163,7 +163,7 @@ where
         let mut last_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end;
-            let token = self.lexer.peek().ok_or(ParseError::UnfinishedArray {
+            let token = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                 array_start: begin_array_token_span.start,
                 error_detected: token_loc,
             })?;
@@ -194,7 +194,7 @@ where
                 }
             }?;
             let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
-                ParseError::NoToken => ParseError::UnfinishedArray {
+                ParseError::NoToken => ParseError::UnclosedArray {
                     array_start: begin_array_token_span.start,
                     error_detected: token_span.end,
                 },
@@ -527,27 +527,27 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_array_no_value() {
+    fn parse_illegal_unclosed_array_no_value() {
         let input = "[";
         let array_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedArray { array_start, error_detected })
+        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_detected })
     }
 
     #[test]
-    fn parse_illegal_unfinished_array_lacks_next_comma() {
+    fn parse_illegal_unclosed_array_missing_next_comma() {
         let input = "[0";
         let array_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedArray { array_start, error_detected })
+        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_detected })
     }
 
     #[test]
-    fn parse_illegal_unfinished_array_lacks_next_value() {
+    fn parse_illegal_unclosed_array_missing_next_value() {
         let input = "[0,";
         let array_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedArray { array_start, error_detected })
+        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_detected })
     }
 
     #[test]
