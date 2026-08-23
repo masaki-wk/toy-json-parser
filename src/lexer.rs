@@ -27,8 +27,8 @@ pub enum LexicalErrorKind {
     /// Number has an exponent indicator but no  exponent digits.
     NumberMissingExponentDigits,
 
-    /// String has an unescaped control character.
-    StringHasUnescapedControlChar,
+    /// String contains an unescaped control character.
+    StringContainsUnescapedControlChar,
 
     /// String has an invalid escape sequence.
     StringHasInvalidEscapeSequence,
@@ -338,7 +338,7 @@ where
                     }
                     '\0'..'\x1f' => {
                         buf.push(ch);
-                        error = Some(LexicalErrorKind::StringHasUnescapedControlChar);
+                        error = Some(LexicalErrorKind::StringContainsUnescapedControlChar);
                     }
                     _ => {
                         buf.push(ch);
