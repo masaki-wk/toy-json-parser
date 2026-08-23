@@ -30,9 +30,9 @@ pub enum ParseError {
     #[allow(missing_docs)]
     ArrayMissingSeparator { array_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Missing `,` separator between object members.
+    /// Object was missing `,` separator between object members.
     #[allow(missing_docs)]
-    ObjectLacksSeparator { object_start: CodeLocation, error_detected: CodeLocation },
+    ObjectMissingSeparator { object_start: CodeLocation, error_detected: CodeLocation },
 
     /// Object member name was not a string.
     /// The offending literal and its location are reported in the first and second fields.
@@ -238,7 +238,7 @@ where
                     if buf.is_empty() {
                         Ok(())
                     } else {
-                        Err(ParseError::ObjectLacksSeparator {
+                        Err(ParseError::ObjectMissingSeparator {
                             object_start: begin_object_token_span.start,
                             error_detected: token_loc,
                         })
@@ -595,13 +595,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_object_lacks_separator() {
+    fn parse_illegal_object_missing_separator() {
         let pre = r#"{"foo": 0"#;
         let post = r#" "bar": 1}"#;
         let input = &format!("{pre}{post}");
         let object_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectLacksSeparator { object_start, error_detected })
+        do_parse_illegal_code(input, ParseError::ObjectMissingSeparator { object_start, error_detected })
     }
 
     #[test]
