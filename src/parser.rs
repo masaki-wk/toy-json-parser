@@ -20,19 +20,19 @@ pub enum ParseError {
 
     /// Array was missing its closing `]`.
     #[allow(missing_docs)]
-    UnclosedArray { array_start: CodeLocation, error_detected: CodeLocation },
+    UnclosedArray { array_start: CodeLocation, error_at: CodeLocation },
 
     /// Object was missing its closing `}`.
     #[allow(missing_docs)]
-    UnclosedObject { object_start: CodeLocation, error_detected: CodeLocation },
+    UnclosedObject { object_start: CodeLocation, error_at: CodeLocation },
 
     /// Array was missing `,` separator between array elements.
     #[allow(missing_docs)]
-    ArrayMissingSeparator { array_start: CodeLocation, error_detected: CodeLocation },
+    ArrayMissingSeparator { array_start: CodeLocation, error_at: CodeLocation },
 
     /// Object was missing `,` separator between object members.
     #[allow(missing_docs)]
-    ObjectMissingSeparator { object_start: CodeLocation, error_detected: CodeLocation },
+    ObjectMissingSeparator { object_start: CodeLocation, error_at: CodeLocation },
 
     /// Object member name was not a string.
     /// The offending literal and its location are reported in the first and second fields.
@@ -40,11 +40,11 @@ pub enum ParseError {
 
     /// Object member was missing `:` separator after the member name.
     #[allow(missing_docs)]
-    ObjectMemberMissingSeparator { member_start: CodeLocation, error_detected: CodeLocation },
+    ObjectMemberMissingSeparator { member_start: CodeLocation, error_at: CodeLocation },
 
     /// Object member was missing value after `:` separator.
     #[allow(missing_docs)]
-    ObjectMemberMissingValue { member_start: CodeLocation, error_detected: CodeLocation },
+    ObjectMemberMissingValue { member_start: CodeLocation, error_at: CodeLocation },
 
     /// Maximum nesting depth exceeded at [`CodeLocation`].
     NestingDepthExceeded(CodeLocation),
@@ -165,7 +165,7 @@ where
             let token_loc = last_token_span.end;
             let token = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                 array_start: begin_array_token_span.start,
-                error_detected: token_loc,
+                error_at: token_loc,
             })?;
             let token_span = token.span;
             match token.kind {
@@ -188,7 +188,7 @@ where
                     } else {
                         Err(ParseError::ArrayMissingSeparator {
                             array_start: begin_array_token_span.start,
-                            error_detected: token_loc,
+                            error_at: token_loc,
                         })
                     }
                 }
@@ -196,7 +196,7 @@ where
             let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
                 ParseError::EmptyInput => ParseError::UnclosedArray {
                     array_start: begin_array_token_span.start,
-                    error_detected: token_span.end,
+                    error_at: token_span.end,
                 },
                 _ => e,
             })?;
@@ -217,7 +217,7 @@ where
             let token_loc = last_token_span.end;
             let token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: begin_object_token_span.start,
-                error_detected: token_loc,
+                error_at: token_loc,
             })?;
             let token_span = token.span;
             match token.kind {
@@ -240,7 +240,7 @@ where
                     } else {
                         Err(ParseError::ObjectMissingSeparator {
                             object_start: begin_object_token_span.start,
-                            error_detected: token_loc,
+                            error_at: token_loc,
                         })
                     }
                 }
@@ -264,7 +264,7 @@ where
     ) -> Result<((String, CodeSpan), Value, CodeSpan), ParseError> {
         let token_for_name = self.lexer.next().ok_or(ParseError::UnclosedObject {
             object_start: begin_object_token_span.start,
-            error_detected: last_token_span.end,
+            error_at: last_token_span.end,
         })?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
@@ -274,20 +274,20 @@ where
         }?;
         let token_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
             member_start: token_for_name.span.start,
-            error_detected: token_for_name.span.end,
+            error_at: token_for_name.span.end,
         })?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token_for_colon.span.start)),
             _ => Err(ParseError::ObjectMemberMissingSeparator {
                 member_start: token_for_name.span.start,
-                error_detected: token_for_colon.span.start,
+                error_at: token_for_colon.span.start,
             }),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
             ParseError::EmptyInput => ParseError::ObjectMemberMissingValue {
                 member_start: token_for_name.span.start,
-                error_detected: token_for_colon.span.end,
+                error_at: token_for_colon.span.end,
             },
             _ => e,
         })?;
@@ -530,24 +530,24 @@ mod tests {
     fn parse_illegal_unclosed_array_no_value() {
         let input = "[";
         let array_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_detected })
+        let error_at = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_at })
     }
 
     #[test]
     fn parse_illegal_unclosed_array_missing_next_comma() {
         let input = "[0";
         let array_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_detected })
+        let error_at = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_at })
     }
 
     #[test]
     fn parse_illegal_unclosed_array_missing_next_value() {
         let input = "[0,";
         let array_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_detected })
+        let error_at = CodeLocation::new(array_start.line, array_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedArray { array_start, error_at })
     }
 
     #[test]
@@ -556,16 +556,16 @@ mod tests {
         let post = " 1]";
         let input = &format!("{pre}{post}");
         let array_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::ArrayMissingSeparator { array_start, error_detected })
+        let error_at = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ArrayMissingSeparator { array_start, error_at })
     }
 
     #[test]
     fn parse_illegal_unclosed_object_no_name() {
         let input = "{";
         let object_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_detected })
+        let error_at = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_at })
     }
 
     #[test]
@@ -573,8 +573,8 @@ mod tests {
         let input = r#"{"foo""#;
         let start = CodeLocation::new(1, 1);
         let member_start = CodeLocation::new(start.line, start.column + 1);
-        let error_detected = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberMissingSeparator { member_start, error_detected })
+        let error_at = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberMissingSeparator { member_start, error_at })
     }
 
     #[test]
@@ -582,16 +582,16 @@ mod tests {
         let input = r#"{"foo":"#;
         let start = CodeLocation::new(1, 1);
         let member_start = CodeLocation::new(start.line, start.column + 1);
-        let error_detected = CodeLocation::new(start.line, start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMemberMissingValue { member_start, error_detected })
+        let error_at = CodeLocation::new(start.line, start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberMissingValue { member_start, error_at })
     }
 
     #[test]
     fn parse_illegal_unclosed_object_missing_next_comma() {
         let input = r#"{"foo": 0"#;
         let object_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_detected })
+        let error_at = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_at })
     }
 
     #[test]
@@ -600,8 +600,8 @@ mod tests {
         let post = r#" "bar": 1}"#;
         let input = &format!("{pre}{post}");
         let object_start = CodeLocation::new(1, 1);
-        let error_detected = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
-        do_parse_illegal_code(input, ParseError::ObjectMissingSeparator { object_start, error_detected })
+        let error_at = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMissingSeparator { object_start, error_at })
     }
 
     #[test]
