@@ -27,8 +27,14 @@ pub enum LexicalErrorKind {
     /// Number has an exponent indicator but no  exponent digits.
     NumberMissingExponentDigits,
 
-    /// Bad string was found.
-    BadString,
+    /// String has an unescaped control character.
+    StringHasUnescapedControlChar,
+
+    /// String has an invalid escape sequence.
+    StringHasInvalidEscapeSequence,
+
+    /// String has a Unicode escape that was not followed by four hexadicimal digits.
+    StringHasInvalidUnicodeEscape,
 }
 
 /// Represents a lexical error by [`Lexer`].
@@ -321,18 +327,18 @@ where
                                     loc = ch_loc;
                                     buf.push(ch);
                                     if !ch.is_ascii_hexdigit() {
-                                        error = Some(LexicalErrorKind::BadString);
+                                        error = Some(LexicalErrorKind::StringHasInvalidUnicodeEscape);
                                     }
                                 }
                             }
                             _ => {
-                                error = Some(LexicalErrorKind::BadString);
+                                error = Some(LexicalErrorKind::StringHasInvalidEscapeSequence);
                             }
                         }
                     }
                     '\0'..'\x1f' => {
                         buf.push(ch);
-                        error = Some(LexicalErrorKind::BadString);
+                        error = Some(LexicalErrorKind::StringHasUnescapedControlChar);
                     }
                     _ => {
                         buf.push(ch);
@@ -649,14 +655,14 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_with_escaped_char() {
+    fn tokenize_invalid_quoted_string_with_bad_escape_sequence() {
         let s = r#""\c""#;
-        take_single_invalid_token(s, LexicalErrorKind::BadString)
+        take_single_invalid_token(s, LexicalErrorKind::StringHasInvalidEscapeSequence)
     }
 
     #[test]
-    fn tokenize_invalid_quoted_string_with_escaped_unicode() {
+    fn tokenize_invalid_quoted_string_with_bad_unicode_escape() {
         let s = r#""\u000x""#;
-        take_single_invalid_token(s, LexicalErrorKind::BadString)
+        take_single_invalid_token(s, LexicalErrorKind::StringHasInvalidUnicodeEscape)
     }
 }
