@@ -6,8 +6,8 @@ use crate::{CodeLocation, CodeSpan, Delimiter, Literal, Token, TokenKind, Value,
 /// Represents a parse error by [`Parser`].
 #[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {
-    /// No token was found at the beginning of the input.
-    NoToken,
+    /// The input was empty.
+    EmptyInput,
 
     /// Unexpected trailing token at [`CodeLocation`] after the end of the JSON input.
     TrailingToken(CodeLocation),
@@ -142,7 +142,7 @@ where
                 TokenKind::Invalid(s) => Err(ParseError::InvalidToken(s, token.span.start)),
             }
         } else {
-            Err(ParseError::NoToken)
+            Err(ParseError::EmptyInput)
         }?;
         if current_depth > self.max_depth {
             return Err(ParseError::NestingDepthExceeded(token_span.start));
@@ -194,7 +194,7 @@ where
                 }
             }?;
             let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
-                ParseError::NoToken => ParseError::UnclosedArray {
+                ParseError::EmptyInput => ParseError::UnclosedArray {
                     array_start: begin_array_token_span.start,
                     error_detected: token_span.end,
                 },
@@ -285,7 +285,7 @@ where
             }),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
-            ParseError::NoToken => ParseError::ObjectMemberMissingValue {
+            ParseError::EmptyInput => ParseError::ObjectMemberMissingValue {
                 member_start: token_for_name.span.start,
                 error_detected: token_for_colon.span.end,
             },
@@ -498,9 +498,9 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_no_token() {
+    fn parse_illegal_empty_input() {
         let input = "";
-        do_parse_illegal_code(input, ParseError::NoToken)
+        do_parse_illegal_code(input, ParseError::EmptyInput)
     }
 
     #[test]
