@@ -109,7 +109,7 @@ where
     pub fn new(lexer: T) -> Self {
         Self {
             lexer: lexer.peekable(),
-            max_depth: 512,
+            max_depth: 32,
         }
     }
 
