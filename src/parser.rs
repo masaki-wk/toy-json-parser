@@ -22,9 +22,9 @@ pub enum ParseError {
     #[allow(missing_docs)]
     UnclosedArray { array_start: CodeLocation, error_detected: CodeLocation },
 
-    /// Object is missing its closing `}`.
+    /// Object was missing its closing `}`.
     #[allow(missing_docs)]
-    UnfinishedObject { object_start: CodeLocation, error_detected: CodeLocation },
+    UnclosedObject { object_start: CodeLocation, error_detected: CodeLocation },
 
     /// Missing `,` separator between array elements.
     #[allow(missing_docs)]
@@ -215,7 +215,7 @@ where
         let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end;
-            let token = self.lexer.peek().ok_or(ParseError::UnfinishedObject {
+            let token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: begin_object_token_span.start,
                 error_detected: token_loc,
             })?;
@@ -262,7 +262,7 @@ where
         begin_object_token_span: CodeSpan,
         last_token_span: CodeSpan,
     ) -> Result<((String, CodeSpan), Value, CodeSpan), ParseError> {
-        let token_for_name = self.lexer.next().ok_or(ParseError::UnfinishedObject {
+        let token_for_name = self.lexer.next().ok_or(ParseError::UnclosedObject {
             object_start: begin_object_token_span.start,
             error_detected: last_token_span.end,
         })?;
@@ -561,11 +561,11 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_no_name() {
+    fn parse_illegal_unclosed_object_no_name() {
         let input = "{";
         let object_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedObject { object_start, error_detected })
+        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_detected })
     }
 
     #[test]
@@ -587,11 +587,11 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_unfinished_object_lacks_next_comma() {
+    fn parse_illegal_unclosed_object_missing_next_comma() {
         let input = r#"{"foo": 0"#;
         let object_start = CodeLocation::new(1, 1);
         let error_detected = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
-        do_parse_illegal_code(input, ParseError::UnfinishedObject { object_start, error_detected })
+        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_detected })
     }
 
     #[test]
