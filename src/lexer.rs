@@ -18,8 +18,14 @@ pub enum LexicalErrorKind {
     /// Number has a leading zero before integer component digits.
     NumberHasLeadingZero,
 
-    /// Bad number was found.
-    BadNumber,
+    /// Number was missing integer component digits.
+    NumberMissingIntegerDigits,
+
+    /// Number has a decimal point but no fraction digits.
+    NumberMissingFractionDigits,
+
+    /// Number has an exponent indicator but no  exponent digits.
+    NumberMissingExponentDigits,
 
     /// Bad string was found.
     BadString,
@@ -197,7 +203,7 @@ where
         let mut buf = firstchar.to_string();
         let mut loc = loc_start;
         let mut error = None;
-        let mut has_integer_component = !is_negative;
+        let mut has_integer_digits = !is_negative;
         let mut firstchar_already_read = !is_negative;
         loop {
             match self.chars.peek() {
@@ -214,15 +220,15 @@ where
                     }
                     buf.push(*ch);
                     loc = self.chars.next().unwrap().0;
-                    has_integer_component = true;
+                    has_integer_digits = true;
                 }
                 _ => {
                     break;
                 }
             }
         }
-        if !has_integer_component {
-            error = Some(LexicalErrorKind::BadNumber);
+        if !has_integer_digits {
+            error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
         let has_decimal_point = match self.chars.peek() {
             Some((_, ch)) if *ch == '.' => {
@@ -233,24 +239,24 @@ where
             _ => false,
         };
         if has_decimal_point {
-            let mut has_fraction_component = false;
+            let mut has_fraction_digits = false;
             loop {
                 match self.chars.peek() {
                     Some((_, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
                         loc = self.chars.next().unwrap().0;
-                        has_fraction_component = true;
+                        has_fraction_digits = true;
                     }
                     _ => {
                         break;
                     }
                 }
             }
-            if !has_fraction_component {
-                error = Some(LexicalErrorKind::BadNumber);
+            if !has_fraction_digits {
+                error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_char = match self.chars.peek() {
+        let has_exponent_letter = match self.chars.peek() {
             Some((_, ch)) if *ch == 'e' || *ch == 'E' => {
                 buf.push(*ch);
                 loc = self.chars.next().unwrap().0;
@@ -258,7 +264,7 @@ where
             }
             _ => false,
         };
-        if has_exponent_char {
+        if has_exponent_letter {
             match self.chars.peek() {
                 Some((_, ch)) if *ch == '+' || *ch == '-' => {
                     buf.push(*ch);
@@ -266,21 +272,21 @@ where
                 }
                 _ => {}
             }
-            let mut has_exponent_component = false;
+            let mut has_exponent_digits = false;
             loop {
                 match self.chars.peek() {
                     Some((_, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
                         loc = self.chars.next().unwrap().0;
-                        has_exponent_component = true;
+                        has_exponent_digits = true;
                     }
                     _ => {
                         break;
                     }
                 }
             }
-            if !has_exponent_component {
-                error = Some(LexicalErrorKind::BadNumber);
+            if !has_exponent_digits {
+                error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
         }
         match error {
@@ -613,7 +619,7 @@ mod tests {
     #[test]
     fn tokenize_invalid_number_minus_only() {
         let s = "-";
-        take_single_invalid_token(s, LexicalErrorKind::BadNumber)
+        take_single_invalid_token(s, LexicalErrorKind::NumberMissingIntegerDigits)
     }
 
     #[test]
@@ -629,17 +635,17 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_invalid_number_bad_char_in_fraction_component() {
+    fn tokenize_invalid_number_bad_char_in_fraction_part() {
         let body = "0.";
         let rest = "a";
-        take_single_invalid_token_with_trailing_chars(body, rest, LexicalErrorKind::BadNumber)
+        take_single_invalid_token_with_trailing_chars(body, rest, LexicalErrorKind::NumberMissingFractionDigits)
     }
 
     #[test]
-    fn tokenize_invalid_number_bad_char_in_exponent_component() {
+    fn tokenize_invalid_number_bad_char_in_exponent_part() {
         let body = "0e";
         let rest = "a";
-        take_single_invalid_token_with_trailing_chars(body, rest, LexicalErrorKind::BadNumber)
+        take_single_invalid_token_with_trailing_chars(body, rest, LexicalErrorKind::NumberMissingExponentDigits)
     }
 
     #[test]
