@@ -16,7 +16,7 @@ pub enum LexicalErrorKind {
     UnterminatedString,
 
     /// Number has a leading zero before integer component digits.
-    NumberHasLeadingZero,
+    NumberContainsLeadingZero,
 
     /// Number was missing integer component digits.
     NumberMissingIntegerDigits,
@@ -221,7 +221,7 @@ where
                         firstchar_already_read = true;
                     } else {
                         if firstchar_is_zero {
-                            error = Some(LexicalErrorKind::NumberHasLeadingZero);
+                            error = Some(LexicalErrorKind::NumberContainsLeadingZero);
                         }
                     }
                     buf.push(*ch);
@@ -631,13 +631,13 @@ mod tests {
     #[test]
     fn tokenize_invalid_number_leading_zero_without_minus() {
         let s = "01";
-        take_single_invalid_token(s, LexicalErrorKind::NumberHasLeadingZero)
+        take_single_invalid_token(s, LexicalErrorKind::NumberContainsLeadingZero)
     }
 
     #[test]
     fn tokenize_invalid_number_leading_zero_with_minus() {
         let s = "-01";
-        take_single_invalid_token(s, LexicalErrorKind::NumberHasLeadingZero)
+        take_single_invalid_token(s, LexicalErrorKind::NumberContainsLeadingZero)
     }
 
     #[test]
