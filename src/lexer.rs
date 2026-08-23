@@ -30,8 +30,8 @@ pub enum LexicalErrorKind {
     /// String contains an unescaped control character.
     StringContainsUnescapedControlChar,
 
-    /// String has an invalid escape sequence.
-    StringHasInvalidEscapeSequence,
+    /// String contains an invalid escape sequence.
+    StringContainsInvalidEscapeSequence,
 
     /// String has a Unicode escape that was not followed by four hexadicimal digits.
     StringHasInvalidUnicodeEscape,
@@ -332,7 +332,7 @@ where
                                 }
                             }
                             _ => {
-                                error = Some(LexicalErrorKind::StringHasInvalidEscapeSequence);
+                                error = Some(LexicalErrorKind::StringContainsInvalidEscapeSequence);
                             }
                         }
                     }
@@ -657,7 +657,7 @@ mod tests {
     #[test]
     fn tokenize_invalid_quoted_string_with_bad_escape_sequence() {
         let s = r#""\c""#;
-        take_single_invalid_token(s, LexicalErrorKind::StringHasInvalidEscapeSequence)
+        take_single_invalid_token(s, LexicalErrorKind::StringContainsInvalidEscapeSequence)
     }
 
     #[test]
