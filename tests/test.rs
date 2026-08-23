@@ -45,8 +45,8 @@ generate_parser_tests! {parser_accept_pattern, true;
     pass1:  pattern,                   false,
     pass2:  pattern,                   false,
     pass3:  pattern,                   false,
-    fail1:  only_one_string_but_regal, false,
-    fail18: too_deep_but_regal,        false,
+    fail1:  only_one_string_but_legal, false,
+    fail18: too_deep_but_legal,        false,
 }
 
 // Tests for the patterns that must be rejected.
