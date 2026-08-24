@@ -39,10 +39,14 @@ pub enum LexicalErrorKind {
 
 /// Represents a lexical error by [`Lexer`].
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub struct LexicalError {
+    /// The kind of the error.
     pub kind: LexicalErrorKind,
+
+    /// The substring of the JSON source text related to the error, stored as-is.
     pub string: String,
+
+    /// The starting location of the error.
     pub location: CodeLocation,
 }
 
