@@ -111,7 +111,7 @@ where
         }
     }
 
-    // Advances the iterator and returns the next token, like `iter.next()`.
+    // Advances the iterator and returns the next result, like `iter.next()`.
     fn take_token(&mut self) -> Option<Result<Token, LexicalError>> {
         enum TokenCategory {
             Delimiter(Delimiter),
