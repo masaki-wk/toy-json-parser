@@ -39,9 +39,11 @@ impl fmt::Display for ValueKind {
 
 /// Represents a JSON value.
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub struct Value {
+    /// The kind of the value.
     pub kind: ValueKind,
+
+    /// The span of the value in the JSON source text.
     pub span: CodeSpan,
 }
 
