@@ -25,8 +25,8 @@ clap = { version = "4.6", features = ["derive"] }
 criterion = { version = "0.8", features = ["html_reports"] }
 paste = "1.0"
 # Note for rust version:
-# - this crate requires edition 2024
-# - edition 2024 requires rust-1.85.0
+# - This crate requires edition 2024
+# - Edition 2024 requires rust-1.85.0
 # - anyhow 1.0.104 requires rust-1.68
 # - clap 4.6.6 requires rust-1.85
 # - criterion 0.8.2 requires rust-1.86
