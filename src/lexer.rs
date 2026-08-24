@@ -64,8 +64,15 @@ impl std::error::Error for LexicalError {}
 /// Represents a JSON lexer.
 ///
 /// [`Lexer`] is instantiated using the [`new`] method, which takes an iterator over [`char`]s (e.g. `string.chars()`).
-/// [`Lexer`] implements the [`Iterator`] trait for [`Result`] of [`Token`] or [`LexicalError`],
+/// [`Lexer`] implements the [`Iterator`] trait with `Item = Result<Token, LexicalError>`,
 /// so you can call [`next()`] to retrieve tokens sequentially.
+///
+/// [`next()`] returns one of the following:
+///
+/// - `Some(Ok(Token))`: A [`Token`] was successfully produced.
+/// - `Some(Err(LexicalError))`: A [`LexicalError`] occurred.
+///   Iteration may continue, and subsequent calls may return more tokens or errors.
+/// - `None`: Neither a token nor an error was produced because the underlying character iterator is exhausted.
 ///
 /// [`new`]: Lexer::new
 /// [`next()`]: Iterator::next
