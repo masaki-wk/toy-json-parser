@@ -116,7 +116,7 @@ where
     /// Parses a single JSON value from the token stream.
     ///
     /// This method consumes the entire token stream and expects exactly one complete JSON value.
-    /// If the token stream is not a valid JSON text, of if extra tokens remain after the value, a [`ParseError`] is returned.
+    /// If the token stream is not a valid JSON text, or if extra tokens remain after the value, a [`ParseError`] is returned.
     ///
     pub fn parse(&mut self) -> Result<Value, ParseError> {
         let (value, _) = self.parse_value(0)?;
