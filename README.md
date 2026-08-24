@@ -1,19 +1,16 @@
 # toy-json-parser
 
-A toy JSON lexer and parser implementation as a study exercise on how to build
-a lexer and parser.
+A toy JSON lexer and parser developed as a learning project.
 
-- `Lexer` tokenizes JSON source text into `Token` values.
-- `Parser` consumes those tokens and builds a tree of `Value` objects.
-- Both tokens and parsed values carry source position information.
+- `Lexer` tokenizes JSON source text into tokens.
+- `Parser` consumes those tokens and builds a tree of JSON values.
 
-Both tokens and parsed values track their source location as `CodeSpan`, which contains:
+Both tokens and parsed values track their spans in the source text. Each span
+contains start and end positions, and each position includes 1-indexed line and
+column numbers.
 
-- Line and column numbers (1-indexed)
-- Start and end positions in the source text
-
-The `Parser` returns `ParseError` if the JSON is invalid.
-Errors include the location where parsing failed, making debugging easier.
+`Lexer` and `Parser` return errors if the input is invalid. Errors include the
+location where lexing or parsing failed, making problems easier to diagnose.
 
 ## Example of `Lexer`
 
