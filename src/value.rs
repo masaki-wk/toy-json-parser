@@ -24,7 +24,7 @@ pub enum ValueKind {
 }
 
 impl ValueKind {
-    /// Displays [`ValueKind`] via returning the helper struct `ValueDisplay`.
+    /// Displays [`ValueKind`] via returning the helper struct [`ValueDisplay`].
     pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
         ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), self)
     }
