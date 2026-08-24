@@ -4,10 +4,22 @@ use crate::{CodeSpan, Literal};
 
 /// Represents a kind of JSON value.
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub enum ValueKind {
+    /// A JSON array value containing zero or more JSON values.
     Array(Vec<Box<Value>>),
+
+    /// A JSON object value containing zero or more name-value pairs.
+    ///
+    /// Each name is stored together with its source span.
+    ///
+    /// [`Parser`] stores pairs in the order in which they appear in the input.
+    /// It does not check for duplicate names or change their order.
+    ///
+    /// [`Parser`]: crate::Parser
+    ///
     Object(Vec<((String, CodeSpan), Box<Value>)>),
+
+    /// A JSON value represented by a literal, such as a number, string, boolean, or `null`.
     Literal(Literal),
 }
 
