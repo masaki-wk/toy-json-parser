@@ -3,7 +3,7 @@ use std::iter::Peekable;
 
 use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal, LocatedIterator, Token, TokenKind};
 
-/// Represents a lexical error by [`Lexer`].
+/// Represents a kind of lexical error by [`Lexer`].
 #[derive(Debug, PartialEq, Clone)]
 pub enum LexicalErrorKind {
     /// Unexpected character was found.
