@@ -10,7 +10,9 @@
 //! `Lexer` and `Parser` return errors if the input is invalid. Errors include the
 //! location where lexing or parsing failed, making problems easier to diagnose.
 //!
-//! # Example of `Lexer`
+//! # Examples
+//!
+//! The example code of `Lexer` shown below:
 //!
 //! ```rust
 //! use toy_json_parser::Lexer;
@@ -44,7 +46,7 @@
 //! Delimiter(RightBrace): [Ln 4, Col 1]..[Ln 4, Col 2]
 //! ```
 //!
-//! # Example of `Parser`
+//! The example code of `Lexer` and `Parser` shown below:
 //!
 //! ```rust
 //! use toy_json_parser::{Lexer, Parser};
