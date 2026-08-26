@@ -59,7 +59,7 @@ jobs:
       - name: Build the document
         run: cargo doc --no-deps --all-features
       - name: Verify README.md
-        run: cargo readme | cmp README.md -
+        run: cargo readme | ./.github/fix-readme.sh | cmp ./README.md -
 
   test:
     name: Test with Rust-${{ matrix.toolchain }}
