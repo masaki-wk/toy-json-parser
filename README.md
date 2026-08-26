@@ -9,8 +9,9 @@ Both tokens and parsed values track their spans in the source text. Each span
 contains start and end positions, and each position includes 1-indexed line and
 column numbers.
 
-`Lexer` and `Parser` return errors if the input is invalid. Errors include the
-location where lexing or parsing failed, making problems easier to diagnose.
+`Lexer` reports lexical errors, and `Parser` reports lexical or syntactic
+errors. Errors include the location where lexing or parsing failed, making
+problems easier to diagnose.
 
 ## Examples
 
