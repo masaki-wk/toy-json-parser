@@ -24,7 +24,13 @@ anyhow = "1.0"
 clap = { version = "4.6", features = ["derive"] }
 criterion = { version = "0.8", features = ["html_reports"] }
 paste = "1.0"
+#
+# Note for dev-dependencies:
+#
+# - This crate requires cargo-readme v3.4.0 to generate README.md from doc comments
+#
 # Note for rust version:
+#
 # - This crate requires edition 2024
 # - Edition 2024 requires rust-1.85.0
 # - anyhow 1.0.104 requires rust-1.68
