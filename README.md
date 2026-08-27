@@ -33,7 +33,7 @@ for result in lexer {
 
 Outputs the following:
 
-```
+```text
 Delimiter(LeftBrace): [Ln 1, Col 1]..[Ln 1, Col 2]
 Literal(String("foo")): [Ln 2, Col 5]..[Ln 2, Col 10]
 Delimiter(Colon): [Ln 2, Col 10]..[Ln 2, Col 11]
@@ -66,7 +66,7 @@ println!("{}", value.display(4));
 
 Outputs the following:
 
-```
+```text
 {
     "foo": null,
     "bar": [

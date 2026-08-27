@@ -1,5 +1,6 @@
 #! /bin/sh
 
-# - Convert `` [`FOO`] `` to `` `FOO` ``
+# - Remove links: e.g. [`FOO`] into `FOO`
+# - Convert opening ``` of bare code blocks into ```text
 #
-sed 's,\[\(`[^`]*`\)\],\1,g'
+sed -e 's/\[\(`[^`]*`\)\]/\1/g' -e '$!{N;s/^\n```$/\n```text/;P;D}'
