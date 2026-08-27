@@ -2,10 +2,10 @@
 
 A toy JSON lexer and parser developed as a learning project.
 
-- `Lexer` tokenizes JSON source text into tokens.
-- `Parser` consumes those tokens and builds a tree of JSON values.
+- `Lexer` tokenizes JSON source text into `Token`s.
+- `Parser` consumes those tokens and builds a tree of `Value`s.
 
-Both tokens and parsed values track their spans in the source text. Each span
+Both `Token`s and `Value`s track their spans in the source text. Each span
 contains start and end positions, and each position includes 1-indexed line and
 column numbers.
 
