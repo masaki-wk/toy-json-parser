@@ -20,7 +20,7 @@ mod app {
         #[arg(short, long, default_value_t = 4)]
         indent_width: usize,
 
-        /// Verbosely output
+        /// Enable Verbose output
         #[arg(short, long)]
         verbose: bool,
     }

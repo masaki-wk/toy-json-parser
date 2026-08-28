@@ -58,12 +58,12 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-/// Represents a JSON parser, which parses a stream of tokens (typically from a [`Lexer`]) into a [`Value`] tree.
+/// Represents a JSON parser, which parses a sequence of tokens (typically from a [`Lexer`]) into a [`Value`] tree.
 ///
-/// [`Parser`] is instantiated using the [`new`] method, which takes an iterator of `Result<Token, LexicalError>` values.
-/// After construction, call [`parse()`] to consume the entire token stream and return a single [`Value`].
+/// [`Parser`] is instantiated using the [`new`] method, which takes an iterator over `Result<Token, LexicalError>` values.
+/// After construction, call [`parse()`] to consume the entire token sequence and return a single [`Value`].
 ///
-/// The parser validates the JSON grammar incrementally and returns a [`ParseError`] when the token stream is structurally invalid.
+/// The parser validates the JSON grammar incrementally and returns a [`ParseError`] when the token sequence is structurally invalid.
 ///
 /// [`Lexer`]: crate::Lexer
 /// [`new`]: Parser::new
@@ -116,7 +116,7 @@ where
     /// Parses a single JSON value from the token stream.
     ///
     /// This method consumes the entire token stream and expects exactly one complete JSON value.
-    /// If the token stream is not a valid JSON text, of if extra tokens remain after the value, a [`ParseError`] is returned.
+    /// If the token stream is not a valid JSON text, or if extra tokens remain after the value, a [`ParseError`] is returned.
     ///
     pub fn parse(&mut self) -> Result<Value, ParseError> {
         let (value, _) = self.parse_value(0)?;

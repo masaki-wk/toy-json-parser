@@ -6,7 +6,7 @@
 
 ## Rulesets
 
-- Brach ruleset `main`
+- Branch ruleset `main`
   - Target branches: Default (changed)
   - Bypass list: (empty)
   - Branch protections

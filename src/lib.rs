@@ -1,19 +1,21 @@
-//! A toy JSON lexer and parser implementation as a study exercise on how to build
-//! a lexer and parser.
+//! A toy JSON lexer and parser developed as a learning project on how to build
+//! lexers and parsers.
 //!
-//! - `Lexer` tokenizes JSON source text into `Token` values.
-//! - `Parser` consumes those tokens and builds a tree of `Value` objects.
-//! - Both tokens and parsed values carry source position information.
+//! - [`Lexer`] tokenizes JSON source text into [`Token`]s.
+//! - [`Parser`] consumes those tokens and builds a tree of [`Value`]s.
 //!
-//! Both tokens and parsed values track their source location as `CodeSpan`, which contains:
+//! Both [`Token`]s and [`Value`]s track their spans in the source text. Each span
+//! contains a start location and an end location, and each location includes line
+//! and column numbers.
 //!
-//! - Line and column numbers (1-indexed)
-//! - Start and end positions in the source text
+//! [`Lexer`] reports lexical errors, and [`Parser`] reports lexical or syntactic
+//! errors. Errors include the location where lexing or parsing failed, making
+//! problems easier to diagnose.
 //!
-//! The `Parser` returns `ParseError` if the JSON is invalid.
-//! Errors include the location where parsing failed, making debugging easier.
+//! # Examples
 //!
-//! # Example of `Lexer`
+//! The following example code of [`Lexer`] tokenizes a JSON string into tokens and
+//! prints their kinds and spans.
 //!
 //! ```rust
 //! use toy_json_parser::Lexer;
@@ -29,7 +31,7 @@
 //! }
 //! ```
 //!
-//! Outputs the following:
+//! This outputs the following:
 //!
 //! ```text
 //! Delimiter(LeftBrace): [Ln 1, Col 1]..[Ln 1, Col 2]
@@ -47,7 +49,8 @@
 //! Delimiter(RightBrace): [Ln 4, Col 1]..[Ln 4, Col 2]
 //! ```
 //!
-//! # Example of `Parser`
+//! The following example code of [`Lexer`] and [`Parser`] parses a JSON string into
+//! a value and prints it.
 //!
 //! ```rust
 //! use toy_json_parser::{Lexer, Parser};
@@ -66,7 +69,7 @@
 //! # }
 //! ```
 //!
-//! Outputs the following:
+//! This outputs the following:
 //!
 //! ```text
 //! {

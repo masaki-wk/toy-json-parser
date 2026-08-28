@@ -8,7 +8,7 @@ use std::path::Path;
 use toy_json_parser::{BufReadCharsExt as _, Lexer, Parser};
 
 // The test function for `Lexer` and `Parser`.
-fn do_parser_test(filename: &str, expected_pasing_result: bool, contains_invalid_token: bool) -> Result<()> {
+fn do_parser_test(filename: &str, expected_parsing_result: bool, contains_invalid_token: bool) -> Result<()> {
     let file = File::open(Path::new(filename))?;
     let reader = BufReader::new(file);
     let lexer = Lexer::new(reader.chars());
@@ -16,7 +16,7 @@ fn do_parser_test(filename: &str, expected_pasing_result: bool, contains_invalid
     ensure!(lexer_results.iter().any(Result::is_err) == contains_invalid_token);
     let mut parser = Parser::new(lexer_results.into_iter());
     let result = parser.parse();
-    ensure!(result.is_ok() == expected_pasing_result);
+    ensure!(result.is_ok() == expected_parsing_result);
     Ok(())
 }
 

@@ -16,7 +16,7 @@ mod app {
         #[arg(default_value = "-")]
         file: String,
 
-        /// Verbosely output
+        /// Enable Verbose output
         #[arg(short, long)]
         verbose: bool,
     }

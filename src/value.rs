@@ -4,15 +4,27 @@ use crate::{CodeSpan, Literal};
 
 /// Represents a kind of JSON value.
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub enum ValueKind {
+    /// A JSON array value containing zero or more JSON values.
     Array(Vec<Box<Value>>),
+
+    /// A JSON object value containing zero or more name-value pairs.
+    ///
+    /// Each name is stored together with its source span.
+    ///
+    /// [`Parser`] stores pairs in the order in which they appear in the input.
+    /// It does not check for duplicate names or change their order.
+    ///
+    /// [`Parser`]: crate::Parser
+    ///
     Object(Vec<((String, CodeSpan), Box<Value>)>),
+
+    /// A JSON value represented by a literal, such as a number, string, boolean, or `null`.
     Literal(Literal),
 }
 
 impl ValueKind {
-    /// Displays [`ValueKind`] via returning the helper struct `ValueDisplay`.
+    /// Displays [`ValueKind`] via returning the helper struct [`ValueDisplay`].
     pub const fn display(&self, indent_width: usize) -> ValueDisplay<'_> {
         ValueDisplay::new(ValueDisplayMode::PrettyPrint(indent_width), self)
     }
@@ -27,9 +39,11 @@ impl fmt::Display for ValueKind {
 
 /// Represents a JSON value.
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub struct Value {
+    /// The kind of the value.
     pub kind: ValueKind,
+
+    /// The span of the value in the JSON source text.
     pub span: CodeSpan,
 }
 

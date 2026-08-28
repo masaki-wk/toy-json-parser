@@ -41,16 +41,23 @@ impl fmt::Display for Delimiter {
 /// Represents a JSON literal.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
-    /// A number, e.g. `0`, `123`
+    /// A JSON number literal, e.g. `0`, `123`, or `-1.2`.
+    ///
+    /// [`Lexer`] stores the source text of the number without converting it to a numeric type.
+    ///
+    /// [`Lexer`]: crate::Lexer
+    ///
     Number(std::string::String),
 
-    /// A string, e.g. `"foo"`, `"bar"`
+    /// A JSON string literal, e.g. `foo` or `bar`.
+    ///
+    /// The surrounding quotes are removed, but escape sequences are preserved.
     String(std::string::String),
 
-    /// `true` or `false`
+    /// A JSON boolean literal: `true` or `false`.
     Boolean(bool),
 
-    /// `null`
+    /// The JSON `null` literal.
     Null,
 }
 
@@ -86,9 +93,11 @@ impl fmt::Display for TokenKind {
 
 /// Represents a JSON token.
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub struct Token {
+    /// The kind of the token.
     pub kind: TokenKind,
+
+    /// The span of the token in the JSON source text.
     pub span: CodeSpan,
 }
 

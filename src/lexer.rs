@@ -3,7 +3,7 @@ use std::iter::Peekable;
 
 use crate::{CodeLocation, CodeSpan, Delimiter, IteratorLocationExt as _, Literal, LocatedIterator, Token, TokenKind};
 
-/// Represents a lexical error by [`Lexer`].
+/// Represents a kind of lexical error by [`Lexer`].
 #[derive(Debug, PartialEq, Clone)]
 pub enum LexicalErrorKind {
     /// Unexpected character was found.
@@ -39,10 +39,14 @@ pub enum LexicalErrorKind {
 
 /// Represents a lexical error by [`Lexer`].
 #[derive(Debug, PartialEq, Clone)]
-#[allow(missing_docs)]
 pub struct LexicalError {
+    /// The kind of the error.
     pub kind: LexicalErrorKind,
+
+    /// The substring of the JSON source text related to the error, stored as-is.
     pub string: String,
+
+    /// The starting location of the error.
     pub location: CodeLocation,
 }
 
@@ -63,9 +67,16 @@ impl std::error::Error for LexicalError {}
 
 /// Represents a JSON lexer.
 ///
-/// [`Lexer`] is instantiated using the [`new`] method, which takes an iterator of characters (e.g. `string.chars()`).
-/// [`Lexer`] implements the [`Iterator`] trait for [`Result`] of [`Token`] or [`LexicalError`],
+/// [`Lexer`] is instantiated using the [`new`] method, which takes an iterator over [`char`]s (e.g. `string.chars()`).
+/// [`Lexer`] implements the [`Iterator`] trait with `Item = Result<Token, LexicalError>`,
 /// so you can call [`next()`] to retrieve tokens sequentially.
+///
+/// [`next()`] returns one of the following:
+///
+/// - `Some(Ok(Token))`: A [`Token`] was successfully produced.
+/// - `Some(Err(LexicalError))`: A [`LexicalError`] occurred.
+///   Iteration may continue, and subsequent calls may return more tokens or errors.
+/// - `None`: Neither a token nor an error was produced because the underlying character iterator is exhausted.
 ///
 /// [`new`]: Lexer::new
 /// [`next()`]: Iterator::next
@@ -111,7 +122,7 @@ where
         }
     }
 
-    // Advances the iterator and returns the next token, like `iter.next()`.
+    // Advances the iterator and returns the next result, like `iter.next()`.
     fn take_token(&mut self) -> Option<Result<Token, LexicalError>> {
         enum TokenCategory {
             Delimiter(Delimiter),
