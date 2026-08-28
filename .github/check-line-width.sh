@@ -18,4 +18,4 @@ width="$1"
 shift
 
 # Check the input
-awk -e "length(\$0) >= $width { print \"Error: Line \" NR \" contains \" length(\$0) \" chars\"; exit 1 }" $*
+awk -e "length(\$0) >= $width { print \"Error: Line \" NR \" contains \" length(\$0) \" chars\"; found=1 } END { exit found }" $*
