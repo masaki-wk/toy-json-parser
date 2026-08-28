@@ -60,8 +60,8 @@ jobs:
         run: cargo doc --no-deps --all-features
       - name: Verify README.md
         run: |
-          cargo readme | ./.github/fix-readme.sh | cmp ./README.md -
-          ./.github/check-line-width.sh 80 ./README.md
+          cargo readme | ./.github/tools/fix-readme.sh | cmp ./README.md -
+          ./.github/tools/check-line-width.sh 80 ./README.md
 
   test:
     name: Test with Rust-${{ matrix.toolchain }}
