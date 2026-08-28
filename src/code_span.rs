@@ -21,9 +21,15 @@ impl CodeSpan {
 
 impl fmt::Display for CodeSpan {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let start = self.start;
-        let end = self.end;
-        write!(f, "{start}..{end}")
+        let start_line = self.start.line;
+        let end_line = self.end.line;
+        let start_column = self.start.column;
+        let end_column = self.end.column;
+        if start_line == end_line {
+            write!(f, "[Ln {start_line}, Col {start_column}-{end_column}]")
+        } else {
+            write!(f, "[Ln {start_line}, Col {start_column} - Ln {end_line}, Col {end_column}]")
+        }
     }
 }
 
@@ -38,7 +44,7 @@ mod tests {
     }
 
     #[test]
-    fn display() {
+    fn display_same_line() {
         let start_line = 1;
         let start_column = 2;
         let end_line = 1;
@@ -46,7 +52,20 @@ mod tests {
         let start = CodeLocation::new(start_line, start_column);
         let end = CodeLocation::new(end_line, end_column);
         let span = CodeSpan::new(start, end);
-        let expected = format!("[Ln {start_line}, Col {start_column}]..[Ln {end_line}, Col {end_column}]");
+        let expected = format!("[Ln {start_line}, Col {start_column}-{end_column}]");
+        assert_eq!(span.to_string(), expected);
+    }
+
+    #[test]
+    fn display_lines() {
+        let start_line = 1;
+        let start_column = 2;
+        let end_line = 2;
+        let end_column = 1;
+        let start = CodeLocation::new(start_line, start_column);
+        let end = CodeLocation::new(end_line, end_column);
+        let span = CodeSpan::new(start, end);
+        let expected = format!("[Ln {start_line}, Col {start_column} - Ln {end_line}, Col {end_column}]");
         assert_eq!(span.to_string(), expected);
     }
 }
