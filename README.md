@@ -1,13 +1,14 @@
 # toy-json-parser
 
-A toy JSON lexer and parser developed as a learning project.
+A toy JSON lexer and parser developed as a learning project on how to build
+lexers and parsers.
 
 - `Lexer` tokenizes JSON source text into `Token`s.
 - `Parser` consumes those tokens and builds a tree of `Value`s.
 
 Both `Token`s and `Value`s track their spans in the source text. Each span
-contains start and end positions, and each position includes 1-indexed line and
-column numbers.
+contains a start location and an end location, and each location includes line
+and column numbers.
 
 `Lexer` reports lexical errors, and `Parser` reports lexical or syntactic
 errors. Errors include the location where lexing or parsing failed, making
@@ -15,7 +16,8 @@ problems easier to diagnose.
 
 ## Examples
 
-The example code of `Lexer` shown below:
+The following example code of `Lexer` tokenizes a JSON string into tokens and
+prints their kinds and spans.
 
 ```rust
 use toy_json_parser::Lexer;
@@ -31,7 +33,7 @@ for result in lexer {
 }
 ```
 
-Outputs the following:
+This outputs the following:
 
 ```text
 Delimiter(LeftBrace): [Ln 1, Col 1]..[Ln 1, Col 2]
@@ -49,7 +51,8 @@ Delimiter(RightBracket): [Ln 3, Col 17]..[Ln 3, Col 18]
 Delimiter(RightBrace): [Ln 4, Col 1]..[Ln 4, Col 2]
 ```
 
-The example code of `Lexer` and `Parser` shown below:
+The following example code of `Lexer` and `Parser` parses a JSON string into
+a value and prints it.
 
 ```rust
 use toy_json_parser::{Lexer, Parser};
@@ -64,7 +67,7 @@ let value = parser.parse()?;
 println!("{}", value.display(4));
 ```
 
-Outputs the following:
+This outputs the following:
 
 ```text
 {
