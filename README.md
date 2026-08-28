@@ -29,26 +29,26 @@ let input = r#"{
 let mut lexer = Lexer::new(input.chars());
 for result in lexer {
     let token = result.unwrap();
-    println!("{:?}: {}", token.kind, token.span);
+    println!("{:?}: {}", token.kind, token.span.start);
 }
 ```
 
 This outputs the following:
 
 ```text
-Delimiter(LeftBrace): [Ln 1, Col 1]..[Ln 1, Col 2]
-Literal(String("foo")): [Ln 2, Col 5]..[Ln 2, Col 10]
-Delimiter(Colon): [Ln 2, Col 10]..[Ln 2, Col 11]
-Literal(Null): [Ln 2, Col 12]..[Ln 2, Col 16]
-Delimiter(Comma): [Ln 2, Col 16]..[Ln 2, Col 17]
-Literal(String("bar")): [Ln 3, Col 5]..[Ln 3, Col 10]
-Delimiter(Colon): [Ln 3, Col 10]..[Ln 3, Col 11]
-Delimiter(LeftBracket): [Ln 3, Col 12]..[Ln 3, Col 13]
-Literal(Number("0")): [Ln 3, Col 13]..[Ln 3, Col 14]
-Delimiter(Comma): [Ln 3, Col 14]..[Ln 3, Col 15]
-Literal(Number("1")): [Ln 3, Col 16]..[Ln 3, Col 17]
-Delimiter(RightBracket): [Ln 3, Col 17]..[Ln 3, Col 18]
-Delimiter(RightBrace): [Ln 4, Col 1]..[Ln 4, Col 2]
+Delimiter(LeftBrace): [Ln 1, Col 1]
+Literal(String("foo")): [Ln 2, Col 5]
+Delimiter(Colon): [Ln 2, Col 10]
+Literal(Null): [Ln 2, Col 12]
+Delimiter(Comma): [Ln 2, Col 16]
+Literal(String("bar")): [Ln 3, Col 5]
+Delimiter(Colon): [Ln 3, Col 10]
+Delimiter(LeftBracket): [Ln 3, Col 12]
+Literal(Number("0")): [Ln 3, Col 13]
+Delimiter(Comma): [Ln 3, Col 14]
+Literal(Number("1")): [Ln 3, Col 16]
+Delimiter(RightBracket): [Ln 3, Col 17]
+Delimiter(RightBrace): [Ln 4, Col 1]
 ```
 
 The following example code of `Lexer` and `Parser` parses a JSON string into
