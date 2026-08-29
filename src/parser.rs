@@ -105,11 +105,14 @@ impl<T> Parser<T>
 where
     T: Iterator<Item = Result<Token, LexicalError>>,
 {
+    // The default value of maximum nesting depth.
+    const MAX_DEPTH_DEFAULT: usize = 32;
+
     /// Creates a new [`Parser`].
     pub fn new(lexer: T) -> Self {
         Self {
             lexer: lexer.peekable(),
-            max_depth: 32,
+            max_depth: Self::MAX_DEPTH_DEFAULT,
         }
     }
 
