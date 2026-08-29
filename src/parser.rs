@@ -48,14 +48,14 @@ pub enum ParseError {
 
     /// Maximum nesting depth exceeded at [`CodeLocation`].
     ///
-    /// The maximum nesting depth of the [`Parser`] instance is set by [`new()`] or [`new_with_max_depth()`].
+    /// The maximum nesting depth of the [`Parser`] instance is set by [`new()`] or [`with_max_depth()`].
     /// The definition of nesting depth in [`Parser`] is:
     ///
     /// - The root value is depth 0.
     /// - Each nested array/object increments the depth.
     ///
     /// [`new()`]: Parser::new
-    /// [`new_with_max_depth()`]: Parser::new_with_max_depth
+    /// [`with_max_depth()`]: Parser::with_max_depth
     ///
     NestingDepthExceeded(CodeLocation),
 }
@@ -130,7 +130,7 @@ where
         }
     }
 
-    /// Creates a new [`Parser`] with the specified maximum nesting depth.
+    /// Returns a new [`Parser`] with the specified maximum nesting depth.
     ///
     /// If an input JSON text requires a depth greater than or equal to `max_depth`,
     /// parsing fails with [`ParseError::NestingDepthExceeded`].
@@ -142,15 +142,12 @@ where
     ///
     /// let input = "[[[0]]]";  // The depth of this input is 3
     /// let lexer = Lexer::new(input.chars());
-    /// let mut parser = Parser::new_with_max_depth(lexer, 4);
+    /// let mut parser = Parser::new(lexer).with_max_depth(4);
     /// assert!(parser.parse().is_ok());
     /// ```
     ///
-    pub fn new_with_max_depth(lexer: T, max_depth: usize) -> Self {
-        Self {
-            lexer: lexer.peekable(),
-            max_depth,
-        }
+    pub fn with_max_depth(self, max_depth: usize) -> Self {
+        Self { lexer: self.lexer, max_depth }
     }
 
     /// Parses a single JSON value from the token stream.
@@ -673,7 +670,7 @@ mod tests {
         let nesting_depth = 4;
         let input = &format!("{}{}", "[".repeat(nesting_depth), "]".repeat(nesting_depth));
         let lexer = Lexer::new(input.chars());
-        let mut parser = Parser::new_with_max_depth(lexer, nesting_depth - 1);
+        let mut parser = Parser::new(lexer).with_max_depth(nesting_depth - 1);
         let error = parser.parse().unwrap_err();
         assert!(matches!(error, ParseError::NestingDepthExceeded(_)));
     }
