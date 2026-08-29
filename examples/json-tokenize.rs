@@ -10,6 +10,7 @@ mod app {
     use anyhow::Result;
     use clap::Parser;
 
+    /// JSON tokenizer.
     #[derive(Parser, Debug)]
     pub struct Args {
         /// JSON file
