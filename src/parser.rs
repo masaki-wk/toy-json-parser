@@ -47,6 +47,16 @@ pub enum ParseError {
     ObjectMemberMissingValue { member_start: CodeLocation, error_at: CodeLocation },
 
     /// Maximum nesting depth exceeded at [`CodeLocation`].
+    ///
+    /// The maximum nesting depth of the [`Parser`] instance is set by [`new()`] or [`new_with_max_depth()`].
+    /// The definition of nesting depth in [`Parser`] is:
+    ///
+    /// - The root value is depth 0.
+    /// - Each nested array/object increments the depth.
+    ///
+    /// [`new()`]: Parser::new
+    /// [`new_with_max_depth()`]: Parser::new_with_max_depth
+    ///
     NestingDepthExceeded(CodeLocation),
 }
 
@@ -105,12 +115,13 @@ impl<T> Parser<T>
 where
     T: Iterator<Item = Result<Token, LexicalError>>,
 {
-    // The default value of maximum nesting depth.
+    // Default maximum nesting depth.
     const MAX_DEPTH_DEFAULT: usize = 32;
 
     /// Creates a new [`Parser`].
     ///
     /// The maximum nesting depth is set to the default value of 32.
+    /// For more details, see [`ParseError::NestingDepthExceeded`].
     ///
     pub fn new(lexer: T) -> Self {
         Self {
@@ -119,7 +130,11 @@ where
         }
     }
 
-    /// Creates a new [`Parser`] with the specific maximum nesting depth.
+    /// Creates a new [`Parser`] with the specified maximum nesting depth.
+    ///
+    /// If an input JSON text requires a depth greater than or equal to `max_depth`,
+    /// parsing fails with [`ParseError::NestingDepthExceeded`].
+    ///
     pub fn new_with_max_depth(lexer: T, max_depth: usize) -> Self {
         Self {
             lexer: lexer.peekable(),
