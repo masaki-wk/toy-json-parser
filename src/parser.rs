@@ -317,17 +317,8 @@ mod tests {
     fn do_parse_illegal_code(input: &str, expected: ParseError) {
         let lexer = Lexer::new(input.chars());
         let mut parser = Parser::new(lexer);
-        match parser.parse() {
-            Ok(_) => {
-                panic!();
-            }
-            Err(e) => match e {
-                ParseError::NestingDepthExceeded(_) => {}
-                _ => {
-                    assert_eq!(e, expected);
-                }
-            },
-        }
+        let error = parser.parse().unwrap_err();
+        assert_eq!(error, expected);
     }
 
     #[test]
@@ -626,7 +617,9 @@ mod tests {
     fn parse_illegal_nesting_depth_exceeded() {
         let nesting_depth = 1024;
         let input = &format!("{}{}", "[".repeat(nesting_depth), "]".repeat(nesting_depth));
-        let dummy = CodeLocation::new(1, 1);
-        do_parse_illegal_code(input, ParseError::NestingDepthExceeded(dummy))
+        let lexer = Lexer::new(input.chars());
+        let mut parser = Parser::new(lexer);
+        let error = parser.parse().unwrap_err();
+        assert!(matches!(error, ParseError::NestingDepthExceeded(_)));
     }
 }
