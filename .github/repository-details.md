@@ -19,4 +19,4 @@ A toy JSON lexer and parser
 
 - [x] Releases
 - [ ] Deployments
-- [x] Packages
+- [ ] Packages (changed)
