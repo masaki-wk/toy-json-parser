@@ -152,7 +152,7 @@ where
         } else {
             Err(ParseError::EmptyInput)
         }?;
-        if current_depth > self.max_depth {
+        if current_depth >= self.max_depth {
             return Err(ParseError::NestingDepthExceeded(token_span.start));
         }
         match token_category {
