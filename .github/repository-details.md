@@ -2,7 +2,7 @@
 
 ## Description
 
-A toy JSON lexer and parser as a study exercise
+A toy JSON lexer and parser
 
 ## Website
 
@@ -19,4 +19,4 @@ A toy JSON lexer and parser as a study exercise
 
 - [x] Releases
 - [ ] Deployments
-- [x] Packages
+- [ ] Packages (changed)
