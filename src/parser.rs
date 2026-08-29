@@ -163,7 +163,7 @@ where
         } else {
             Err(ParseError::EmptyInput)
         }?;
-        if current_depth >= self.max_depth {
+        if self.exceeds_max_depth(current_depth) {
             return Err(ParseError::NestingDepthExceeded(token_span.start));
         }
         match token_category {
@@ -313,6 +313,11 @@ where
             _ => e,
         })?;
         Ok(((name, token_for_name.span), value, last_token_span))
+    }
+
+    // Helper function to check exceeding maximum depth.
+    fn exceeds_max_depth(&self, current_depth: usize) -> bool {
+        current_depth >= self.max_depth
     }
 }
 
