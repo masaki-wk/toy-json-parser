@@ -109,10 +109,21 @@ where
     const MAX_DEPTH_DEFAULT: usize = 32;
 
     /// Creates a new [`Parser`].
+    ///
+    /// The maximum nesting depth is set to the default value of 32.
+    ///
     pub fn new(lexer: T) -> Self {
         Self {
             lexer: lexer.peekable(),
             max_depth: Self::MAX_DEPTH_DEFAULT,
+        }
+    }
+
+    /// Creates a new [`Parser`] with the specific maximum nesting depth.
+    pub fn new_with_max_depth(lexer: T, max_depth: usize) -> Self {
+        Self {
+            lexer: lexer.peekable(),
+            max_depth,
         }
     }
 
@@ -617,11 +628,21 @@ mod tests {
     }
 
     #[test]
-    fn parse_illegal_nesting_depth_exceeded() {
+    fn parse_illegal_nesting_depth_exceeded_default() {
         let nesting_depth = 1024;
         let input = &format!("{}{}", "[".repeat(nesting_depth), "]".repeat(nesting_depth));
         let lexer = Lexer::new(input.chars());
         let mut parser = Parser::new(lexer);
+        let error = parser.parse().unwrap_err();
+        assert!(matches!(error, ParseError::NestingDepthExceeded(_)));
+    }
+
+    #[test]
+    fn parse_illegal_nesting_depth_exceeded_specific() {
+        let nesting_depth = 4;
+        let input = &format!("{}{}", "[".repeat(nesting_depth), "]".repeat(nesting_depth));
+        let lexer = Lexer::new(input.chars());
+        let mut parser = Parser::new_with_max_depth(lexer, nesting_depth - 1);
         let error = parser.parse().unwrap_err();
         assert!(matches!(error, ParseError::NestingDepthExceeded(_)));
     }
