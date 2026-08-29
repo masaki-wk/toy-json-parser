@@ -310,7 +310,7 @@ where
             object_start: begin_object_token_span.start,
             error_at: last_token_span.end,
         })?;
-        let token_for_name = result_for_name.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+        let token_for_name = result_for_name.map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
         let name = match token_for_name.kind {
             TokenKind::Literal(Literal::String(s)) => Ok(s),
             TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameNotString(lit, token_for_name.span.start)),
@@ -320,7 +320,7 @@ where
             member_start: token_for_name.span.start,
             error_at: token_for_name.span.end,
         })?;
-        let token_for_colon = result_for_colon.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+        let token_for_colon = result_for_colon.map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
         match token_for_colon.kind {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             _ => Err(ParseError::ObjectMemberMissingSeparator {
