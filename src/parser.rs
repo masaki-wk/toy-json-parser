@@ -135,6 +135,17 @@ where
     /// If an input JSON text requires a depth greater than or equal to `max_depth`,
     /// parsing fails with [`ParseError::NestingDepthExceeded`].
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toy_json_parser::{Lexer, Parser};
+    ///
+    /// let input = "[[[0]]]";  // The depth of this input is 3
+    /// let lexer = Lexer::new(input.chars());
+    /// let mut parser = Parser::new_with_max_depth(lexer, 4);
+    /// assert!(parser.parse().is_ok());
+    /// ```
+    ///
     pub fn new_with_max_depth(lexer: T, max_depth: usize) -> Self {
         Self {
             lexer: lexer.peekable(),
