@@ -4,6 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/toy-json-parser?logo=rust)](https://crates.io/crates/toy-json-parser)
 [![Docs.rs](https://img.shields.io/badge/Docs.rs-toy--json--parser-informational?logo=docsdotrs)](https://docs.rs/toy-json-parser/)
 [![CI Status](https://github.com/masaki-wk/toy-json-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/masaki-wk/toy-json-parser/actions/workflows/ci.yml)
+[![Docs Status](https://img.shields.io/docsrs/toy-json-parser?logo=docsdotrs)](https://docs.rs/crate/toy-json-parser/latest/builds)
 
 {{readme}}
 
