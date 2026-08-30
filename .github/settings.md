@@ -50,7 +50,10 @@
       - [ ] Require approval of the most recent reviewable push
       - [ ] Require conversation resolution before merging
       - [x] Require an additional approval for unattributed Copilot pull requests
-      - Allowed merge methods: Merge, Squash, Rebase
+      - Allowed merge methods
+        - [x] Merge
+        - [ ] Squash
+        - [ ] Rebase
     - [x] Require status checks to pass (changed)
       - [x] Require branches to be up to date before merging (changed)
       - [ ] Do not require status checks on creation
