@@ -3,6 +3,32 @@
 ## General
 
 - Default branch: `main`
+- Releases
+  - [ ] Enable release immutability
+- Features
+  - [ ] Wikis
+  - [x] Issues
+  - [ ] Sponsorships
+  - [x] Preserve this repository
+  - [ ] Discussions
+  - [x] Projects
+  - [x] Pull requests
+- Pull Requests
+  - [x] Allow merge commits
+  - [x] Allow squash merging
+  - [x] Allow rebase merging
+  - [ ] Always suggest updating pull request branches
+  - [ ] Allow auto-merge
+  - [ ] Automatically delete head branches
+- Commits
+  - [ ] Require contributors to sign off on web-based commits
+  - [x] Allow comments on individual commits
+- Archives
+  - [ ] Include Git LFS objects in archives
+- Pushes
+  - [ ] Limit how many branches and tags can be updated in a single push
+- Issues
+  - [x] Auto-close issues with merged linked pull requests
 
 ## Rulesets
 
