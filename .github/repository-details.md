@@ -6,7 +6,7 @@ A toy JSON lexer and parser
 
 ## Website
 
-(not set)
+<https://crates.io/crates/toy-json-parser>
 
 ## Topics
 
