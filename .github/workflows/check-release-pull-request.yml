@@ -1,0 +1,48 @@
+name: Check Release Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  PULL_REQUEST_TITLE_PREFIX: "Release "
+  TAG_PREFIX: "v"
+  PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
+
+jobs:
+  detect:
+    name: Detect release pull request
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check.outputs.is_release }}
+    steps:
+      - id: check
+        run: |
+          if [[ "$PULL_REQUEST_TITLE" =~ "^${PULL_REQUEST_TITLE_PREFIX}" ]]; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify-title:
+    name: Verify release pull request title
+    needs: detect
+    if: needs.detect.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Check the pull request title
+        run: ./.github/tools/check-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
+
+  verify-publish:
+    name: Verify publishing the crate
+    needs: detect
+    if: needs.detect.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Verify publishing via cargo command
+        run: cargo publish --dry-run
