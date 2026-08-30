@@ -1,6 +1,7 @@
 # {{crate}}
 
 [![GitHub](https://img.shields.io/badge/GitHub-masaki--wk/toy--json--parser-informational?logo=github)](https://github.com/masaki-wk/toy-json-parser)
+[![crates.io](https://img.shields.io/crates/v/toy-json-parser?logo=rust)](https://crates.io/crates/toy-json-parser)
 [![CI Status](https://github.com/masaki-wk/toy-json-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/masaki-wk/toy-json-parser/actions/workflows/ci.yml)
 
 {{readme}}
