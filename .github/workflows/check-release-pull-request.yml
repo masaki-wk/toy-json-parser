@@ -26,7 +26,7 @@ jobs:
           fi
 
   verify-title:
-    name: Verify release pull request title
+    name: Verify pull request title (release pull request)
     needs: detect
     if: needs.detect.outputs.is_release == 'true'
     runs-on: ubuntu-latest
@@ -37,7 +37,7 @@ jobs:
         run: ./.github/tools/check-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
 
   verify-publish:
-    name: Verify publishing the crate
+    name: Verify crate can be published (release pull request)
     needs: detect
     if: needs.detect.outputs.is_release == 'true'
     runs-on: ubuntu-latest
