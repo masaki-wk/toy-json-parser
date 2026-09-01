@@ -34,7 +34,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Check the pull request title
-        run: ./.github/tools/check-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
+        run: ./.github/tools/check-release-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
 
   verify-publish:
     name: Verify crate can be published (release pull request)
