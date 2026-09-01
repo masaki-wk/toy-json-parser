@@ -1,0 +1,36 @@
+name: Create Release Branch and Release Pull Request
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version"
+        required: true
+
+env:
+  RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
+  TARGET_BRANCH_NAME: main
+
+jobs:
+  create-release-branch:
+    name: Create release branch
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET_BRANCH_NAME }}
+          fetch-depth: 0  # fetch all history for all tags and branches
+      - name: Update package version in Cargo.toml
+        run: ./.github/tools/update-cargo-toml-version.sh < Cargo.toml > Cargo.toml
+      - name: Create a release pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Release ${{ github.event.inputs.version }}
+          title: Release ${{ github.event.inputs.version }}
+          body: This is a release pull request created by the workflow job `Create release branch`
+          branch:  ${{ env.RELEASE_BRANCH_NAME }}
