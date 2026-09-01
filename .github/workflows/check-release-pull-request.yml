@@ -8,7 +8,6 @@ on:
 env:
   PULL_REQUEST_TITLE_PREFIX: "Release "
   TAG_PREFIX: "v"
-  PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
   detect:
@@ -34,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Check the pull request title
-        run: ./.github/tools/check-release-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
+        run: ./.github/tools/check-release-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "${{ github.event.pull_request.title }}"
 
   verify-publish:
     name: Verify crate can be published (release pull request)
