@@ -10,24 +10,9 @@ env:
   TAG_PREFIX: "v"
 
 jobs:
-  detect:
-    name: Detect release pull request
-    runs-on: ubuntu-latest
-    outputs:
-      is_release: ${{ steps.check.outputs.is_release }}
-    steps:
-      - id: check
-        run: |
-          if [[ "$PULL_REQUEST_TITLE" =~ "^${PULL_REQUEST_TITLE_PREFIX}" ]]; then
-            echo "is_release=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_release=false" >> "$GITHUB_OUTPUT"
-          fi
-
   verify-title:
     name: Verify pull request title (release pull request)
-    needs: detect
-    if: needs.detect.outputs.is_release == 'true'
+    if: startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,8 +24,8 @@ jobs:
 
   verify-publish:
     name: Verify crate can be published (release pull request)
-    needs: detect
-    if: needs.detect.outputs.is_release == 'true'
+    needs: verify-title
+    if: startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
