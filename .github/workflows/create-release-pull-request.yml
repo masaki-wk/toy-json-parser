@@ -32,6 +32,13 @@ jobs:
         with:
           ref: ${{ env.TARGET_BRANCH_NAME }}
           fetch-depth: 0  # fetch all history for all tags and branches
+      - name: Check whether the version is differ from the one in Cargo.toml
+        run: |
+          current_version="$(./.github/tools/print-package-version.sh Cargo.toml)"
+          test "${{ github.event.inputs.version }}" != "$current_version" || {
+            echo "Error: version string \`${{ github.event.inputs.version }}\` already used in Cargo.toml"
+            exit 1
+          }
       - name: Check whether the release branch already exists
         run: |
           ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${{ env.RELEASE_BRANCH_NAME }}" >/dev/null || {
