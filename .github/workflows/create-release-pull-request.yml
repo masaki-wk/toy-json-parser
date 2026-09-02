@@ -61,7 +61,7 @@ jobs:
       - name: Update package version in Cargo.toml
         run: |
           tmpfile=$(mktemp)
-          ./.github/tools/update-cargo-toml-version.sh "${{ github.event.inputs.version }}" Cargo.toml > "$tmpfile"
+          ./.github/tools/replace-package-version.sh "${{ github.event.inputs.version }}" Cargo.toml > "$tmpfile"
           mv -f "$tmpfile" Cargo.toml
       - name: Create a release pull request
         uses: peter-evans/create-pull-request@v8
