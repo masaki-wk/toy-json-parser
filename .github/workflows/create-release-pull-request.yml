@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Verify version string
-        run: ./.github/tools/verify-semver.sh ${{ github.event.inputs.version }}
+        run: ./.github/tools/verify-semver.sh "${{ github.event.inputs.version }}"
 
   create-release-branch:
     name: Create release branch
@@ -43,7 +43,7 @@ jobs:
       - name: Update package version in Cargo.toml
         run: |
           tmpfile=$(mktemp)
-          ./.github/tools/update-cargo-toml-version.sh ${{ github.event.inputs.version }} Cargo.toml > "$tmpfile"
+          ./.github/tools/update-cargo-toml-version.sh "${{ github.event.inputs.version }}" Cargo.toml > "$tmpfile"
           mv -f "$tmpfile" Cargo.toml
       - name: Create a release pull request
         uses: peter-evans/create-pull-request@v8
