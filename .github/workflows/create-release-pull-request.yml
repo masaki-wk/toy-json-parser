@@ -43,4 +43,4 @@ jobs:
           commit-message: Release ${{ github.event.inputs.version }}
           title: Release ${{ github.event.inputs.version }}
           body: This is a release pull request created by the workflow job `Create release branch`
-          branch:  ${{ env.RELEASE_BRANCH_NAME }}
+          branch: ${{ env.RELEASE_BRANCH_NAME }}
