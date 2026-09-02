@@ -10,6 +10,7 @@ on:
 env:
   RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
   TARGET_BRANCH_NAME: main
+  RELEASE_TAG_NAME: "v${{ github.event.inputs.version }}"
 
 jobs:
   verify-version:
@@ -35,6 +36,12 @@ jobs:
         run: |
           ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${{ env.RELEASE_BRANCH_NAME }}" >/dev/null || {
             echo "Error: branch \`${{ env.RELEASE_BRANCH_NAME }}\` already exists"
+            exit 1
+          }
+      - name: Check whether the release tag already exists
+        run: |
+          ! git tag --list | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
+            echo "Error: tag \`${{ env.RELEASE_TAG_NAME }}\` already exists"
             exit 1
           }
 
