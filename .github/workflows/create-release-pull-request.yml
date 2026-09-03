@@ -89,3 +89,4 @@ jobs:
           title: Release ${{ github.event.inputs.version }}
           body: This is a release pull request created by the workflow job `Create release branch`
           branch: ${{ env.RELEASE_BRANCH_NAME }}
+          base: ${{ env.TARGET_BRANCH_NAME }}
