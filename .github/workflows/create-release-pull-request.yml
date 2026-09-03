@@ -55,8 +55,8 @@ jobs:
             exit 1
           }
 
-  create-release-branch:
-    name: Create release branch
+  create-release-pull-request:
+    name: Create release pull request
     needs: check-condition
     permissions:
       contents: write
