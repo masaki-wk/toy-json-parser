@@ -58,7 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ! gh release list --json name --jq '.[].name' | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
+          ! gh release list --json tagName --jq '.[].tagName' | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
             echo "Error: release \`${{ env.RELEASE_TAG_NAME }}\` already exists"
             exit 1
           }
