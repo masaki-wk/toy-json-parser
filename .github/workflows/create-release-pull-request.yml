@@ -1,4 +1,4 @@
-name: Create Release Branch and Release Pull Request
+name: Create Release Pull Request
 
 on:
   workflow_dispatch:
@@ -8,8 +8,13 @@ on:
         required: true
 
 env:
-  RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
+  VERSION: ${{ github.event.inputs.version }}
   TARGET_BRANCH_NAME: main
+  RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
+  RELEASE_TAG_NAME: "v${{ github.event.inputs.version }}"
+
+concurrency:
+  create-release-pull-request
 
 jobs:
   verify-version:
@@ -19,11 +24,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Verify version string
-        run: ./.github/tools/verify-semver.sh ${{ github.event.inputs.version }}
+        run: ./.github/tools/verify-semver.sh "$VERSION"
 
-  create-release-branch:
-    name: Create release branch
+  check-condition:
+    name: Check condition before creating release branch
     needs: verify-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET_BRANCH_NAME }}
+          fetch-depth: 0  # fetch all history for all tags and branches
+      - name: Check whether the version is differ from the one in Cargo.toml
+        run: |
+          current_version="$(./.github/tools/print-package-version.sh Cargo.toml)"
+          test "$VERSION" != "$current_version" || {
+            echo "Error: version string \`${VERSION}\` already used in Cargo.toml"
+            exit 1
+          }
+      - name: Check whether the release branch already exists
+        run: |
+          ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${RELEASE_BRANCH_NAME}" >/dev/null || {
+            echo "Error: branch \`${RELEASE_BRANCH_NAME}\` already exists"
+            exit 1
+          }
+      - name: Check whether the release tag already exists
+        run: |
+          ! git tag --list | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
+            echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists"
+            exit 1
+          }
+      - name: Check whether the release already exists
+        run: |
+          ! gh release list --json tagName --jq '.[].tagName' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
+            echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
+            exit 1
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-release-pull-request:
+    name: Create release pull request
+    needs: check-condition
     permissions:
       contents: write
       pull-requests: write
@@ -35,7 +78,10 @@ jobs:
           ref: ${{ env.TARGET_BRANCH_NAME }}
           fetch-depth: 0  # fetch all history for all tags and branches
       - name: Update package version in Cargo.toml
-        run: ./.github/tools/update-cargo-toml-version.sh ${{ github.event.inputs.version }} < Cargo.toml > Cargo.toml
+        run: |
+          tmpfile=$(mktemp)
+          ./.github/tools/replace-package-version.sh "$VERSION" Cargo.toml > "$tmpfile"
+          mv -f "$tmpfile" Cargo.toml
       - name: Create a release pull request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -43,4 +89,5 @@ jobs:
           commit-message: Release ${{ github.event.inputs.version }}
           title: Release ${{ github.event.inputs.version }}
           body: This is a release pull request created by the workflow job `Create release branch`
-          branch:  ${{ env.RELEASE_BRANCH_NAME }}
+          branch: ${{ env.RELEASE_BRANCH_NAME }}
+          base: ${{ env.TARGET_BRANCH_NAME }}

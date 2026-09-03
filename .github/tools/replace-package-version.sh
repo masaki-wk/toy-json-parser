@@ -1,17 +1,18 @@
 #! /bin/sh
 #
-# Usage: $0 VERSION < Cargo.toml > Cargo.toml.new
+# Usage: $0 VERSION [FILE...]
 #
-# Update package version in Cargo.toml.
+# Update package version in Cargo.toml, which given from stdin or FILE.
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -lt 1 ]; then
   echo "Usage: $0 VERSION" >&2
   exit 1
 fi
 version="$1"
+shift
 
-sed '
+sed -e '
   /^\[package\]/,/^\[/ {
     s/^\([[:space:]]*version[[:space:]]*=[[:space:]]*"\)[^"]*\(".*\)$/\1'"$version"'\2/
   }
-'
+' $*
