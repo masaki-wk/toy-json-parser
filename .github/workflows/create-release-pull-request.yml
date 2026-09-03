@@ -8,6 +8,7 @@ on:
         required: true
 
 env:
+  VERSION: ${{ github.event.inputs.version }}
   TARGET_BRANCH_NAME: main
   RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
   RELEASE_TAG_NAME: "v${{ github.event.inputs.version }}"
@@ -23,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Verify version string
-        run: ./.github/tools/verify-semver.sh "${{ github.event.inputs.version }}"
+        run: ./.github/tools/verify-semver.sh "$VERSION"
 
   check-condition:
     name: Check condition before creating release branch
@@ -38,28 +39,28 @@ jobs:
       - name: Check whether the version is differ from the one in Cargo.toml
         run: |
           current_version="$(./.github/tools/print-package-version.sh Cargo.toml)"
-          test "${{ github.event.inputs.version }}" != "$current_version" || {
-            echo "Error: version string \`${{ github.event.inputs.version }}\` already used in Cargo.toml"
+          test "$VERSION" != "$current_version" || {
+            echo "Error: version string \`${VERSION}\` already used in Cargo.toml"
             exit 1
           }
       - name: Check whether the release branch already exists
         run: |
-          ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${{ env.RELEASE_BRANCH_NAME }}" >/dev/null || {
-            echo "Error: branch \`${{ env.RELEASE_BRANCH_NAME }}\` already exists"
+          ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${RELEASE_BRANCH_NAME}" >/dev/null || {
+            echo "Error: branch \`${RELEASE_BRANCH_NAME}\` already exists"
             exit 1
           }
       - name: Check whether the release tag already exists
         run: |
-          ! git tag --list | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
-            echo "Error: tag \`${{ env.RELEASE_TAG_NAME }}\` already exists"
+          ! git tag --list | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
+            echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists"
             exit 1
           }
       - name: Check whether the release already exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ! gh release list --json tagName --jq '.[].tagName' | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
-            echo "Error: release \`${{ env.RELEASE_TAG_NAME }}\` already exists"
+          ! gh release list --json tagName --jq '.[].tagName' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
+            echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
             exit 1
           }
 
@@ -79,7 +80,7 @@ jobs:
       - name: Update package version in Cargo.toml
         run: |
           tmpfile=$(mktemp)
-          ./.github/tools/replace-package-version.sh "${{ github.event.inputs.version }}" Cargo.toml > "$tmpfile"
+          ./.github/tools/replace-package-version.sh "$VERSION" Cargo.toml > "$tmpfile"
           mv -f "$tmpfile" Cargo.toml
       - name: Create a release pull request
         uses: peter-evans/create-pull-request@v8
