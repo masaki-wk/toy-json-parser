@@ -56,13 +56,13 @@ jobs:
             exit 1
           }
       - name: Check whether the release already exists
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ! gh release list --json tagName --jq '.[].tagName' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
             echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
             exit 1
           }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   create-release-pull-request:
     name: Create release pull request
