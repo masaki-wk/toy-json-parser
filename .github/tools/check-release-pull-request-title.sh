@@ -29,9 +29,9 @@ else
 fi
 
 check_target='The version string in the pull request title matches the one in Cargo.toml'
-version_from_cargo_toml=$(
+version_from_cargo_toml="$(
   sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' Cargo.toml
-)
+)"
 if [ "$version" = "$version_from_cargo_toml" ]; then
   echo "${check_target}: PASS"
 else
