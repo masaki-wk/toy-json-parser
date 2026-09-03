@@ -45,10 +45,10 @@ jobs:
             echo "Error: branch \`${{ env.RELEASE_BRANCH_NAME }}\` already exists"
             exit 1
           }
-      - name: Check whether the release tag already exists
+      - name: Check whether the release already exists
         run: |
-          ! git tag --list | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
-            echo "Error: tag \`${{ env.RELEASE_TAG_NAME }}\` already exists"
+          ! gh release list --json name --jq '.[].name' | grep -x "${{ env.RELEASE_TAG_NAME }}" >/dev/null || {
+            echo "Error: release \`${{ env.RELEASE_TAG_NAME }}\` already exists"
             exit 1
           }
 
