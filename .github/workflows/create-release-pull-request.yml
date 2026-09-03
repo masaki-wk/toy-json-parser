@@ -12,6 +12,9 @@ env:
   RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
   RELEASE_TAG_NAME: "v${{ github.event.inputs.version }}"
 
+concurrency:
+  create-release-pull-request
+
 jobs:
   verify-version:
     name: Verify version string
