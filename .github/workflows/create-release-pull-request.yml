@@ -8,8 +8,8 @@ on:
         required: true
 
 env:
-  RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
   TARGET_BRANCH_NAME: main
+  RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
   RELEASE_TAG_NAME: "v${{ github.event.inputs.version }}"
 
 jobs:
