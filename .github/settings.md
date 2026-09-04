@@ -58,7 +58,8 @@
       - [x] Require branches to be up to date before merging (changed)
       - [ ] Do not require status checks on creation
       - Status checks that are required (added)
-        - (All CI jobs)
+        - (All jobs in ci.yml)
+        - (All jobs in check-release-pull-request.yml)
     - [x] Block force pushes
     - [ ] Require code scanning results
     - [ ] Require code quality results
