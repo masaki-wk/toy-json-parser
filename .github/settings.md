@@ -76,4 +76,4 @@
   - Selected: Require approval for first-time contributors
 - Workflow permissions
   - Selected: Read repository contents and packages permissions
-  - [x] Allow GitHub Actions to create and approve pull requests
+  - [x] Allow GitHub Actions to create and approve pull requests (changed)
