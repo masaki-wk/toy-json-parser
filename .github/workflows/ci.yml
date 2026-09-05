@@ -75,11 +75,10 @@ jobs:
         uses: actions/checkout@v7
       - name: Resolve toolchain version
         id: resolve-toolchain-version
-        shell: bash
         run: |
           case "${{ matrix.toolchain }}" in
             msrv)
-              value=$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+              value=$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].rust_version')
               echo "value=${value}" >> "$GITHUB_OUTPUT"
               ;;
             *)
