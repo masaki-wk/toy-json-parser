@@ -78,7 +78,7 @@ jobs:
         run: |
           case "${{ matrix.toolchain }}" in
             msrv)
-              value=$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.package[0].rust_version')
+              value=$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].rust_version')
               echo "value=${value}" >> "$GITHUB_OUTPUT"
               ;;
             *)
