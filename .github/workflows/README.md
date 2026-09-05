@@ -31,17 +31,22 @@ The workflow:
   - Creates a release branch `release/<version>` and commits the updated `Cargo.toml` to it
   - Creates a release pull request with the title `Release <version>`
 
-### Check Release Pull Request
+### Check Pull Request
 
-[Check Release Pull Request](./check-release-pull-request.yml) runs for pull requests targeting the `main` branch.
+[Check Pull Request](./check-pull-request.yml) runs for pull requests targeting the `main` branch.
 Release-specific checks are performed when the source branch starts with `release/`.
 
-The workflow verifies that:
+The workflow checks that:
 
-- The pull request title is `Release <version>`
-- The version in the pull request title matches the package version
-- The corresponding release tag does not already exist
-- The package passes `cargo publish --dry-run`
+- For release pull requests (`release/`)
+  - The pull request title is `Release <version>`
+  - The version in the pull request title matches the package version
+  - The release branch name is `release/<version>`
+  - The corresponding release tag does not already exist
+  - The corresponding GitHub Release does not already exist
+  - The package passes `cargo publish --dry-run`
+- For normal pull requests (not `release/`)
+  - The pull request title does not start with "Release "
 
 ### Release
 
