@@ -23,4 +23,4 @@ The release flow consists of the following steps:
       - Release notes: automatically generated
       - Status: draft
 4. Review the draft GitHub Release, modify it, and convert it from a draft to a published release
-5. Manually publish the crate with `cargo publish` on the local environment
+5. Manually publish the package with `cargo publish` on the local environment

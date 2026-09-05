@@ -41,7 +41,7 @@ The workflow verifies that:
 - The pull request title is `Release <version>`
 - The version in the pull request title matches the version in `Cargo.toml`
 - The corresponding release tag does not already exist
-- The crate passes `cargo publish --dry-run`
+- The package passes `cargo publish --dry-run`
 
 ### Release
 
