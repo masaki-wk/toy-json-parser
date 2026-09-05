@@ -6,6 +6,7 @@ on:
       - main
 
 env:
+  PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
   PULL_REQUEST_TITLE_PREFIX: "Release "
   TAG_PREFIX: "v"
 
@@ -20,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0  # fetch all history for all tags and branches
       - name: Check the pull request title
-        run: ./.github/tools/check-release-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "${{ github.event.pull_request.title }}"
+        run: ./.github/tools/check-release-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
 
   verify-publish:
     name: Verify crate can be published (release pull request)
