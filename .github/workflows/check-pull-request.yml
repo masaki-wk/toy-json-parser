@@ -1,4 +1,4 @@
-name: Check Release Pull Request
+name: Check Pull Request
 
 on:
   pull_request:
