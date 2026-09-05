@@ -39,7 +39,7 @@ Release-specific checks are performed when the source branch starts with `releas
 The workflow verifies that:
 
 - The pull request title is `Release <version>`
-- The version in the pull request title matches the version in `Cargo.toml`
+- The version in the pull request title matches the package version
 - The corresponding release tag does not already exist
 - The package passes `cargo publish --dry-run`
 

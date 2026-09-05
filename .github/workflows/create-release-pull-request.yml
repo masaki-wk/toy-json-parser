@@ -36,11 +36,11 @@ jobs:
         with:
           ref: ${{ env.TARGET_BRANCH_NAME }}
           fetch-depth: 0  # fetch the complete history, including all tags and branches
-      - name: Check whether the version is differ from the one in Cargo.toml
+      - name: Check whether the version is differ from the package version
         run: |
           current_version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
           test "$VERSION" != "$current_version" || {
-            echo "Error: version string \`${VERSION}\` already used in Cargo.toml"
+            echo "Error: version string \`${VERSION}\` is the same as the package version"
             exit 1
           }
       - name: Check whether the release branch already exists
