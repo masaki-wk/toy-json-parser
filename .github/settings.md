@@ -19,7 +19,7 @@
   - [x] Allow rebase merging
   - [ ] Always suggest updating pull request branches
   - [ ] Allow auto-merge
-  - [ ] Automatically delete head branches
+  - [x] Automatically delete head branches (changed)
 - Commits
   - [ ] Require contributors to sign off on web-based commits
   - [x] Allow comments on individual commits
