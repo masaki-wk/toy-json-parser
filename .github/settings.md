@@ -59,7 +59,7 @@
       - [ ] Do not require status checks on creation
       - Status checks that are required (added)
         - (All jobs in ci.yml)
-        - (All jobs in check-release-pull-request.yml)
+        - (All jobs in check-pull-request.yml)
     - [x] Block force pushes
     - [ ] Require code scanning results
     - [ ] Require code quality results
