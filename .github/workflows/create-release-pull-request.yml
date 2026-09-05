@@ -9,8 +9,8 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  TARGET_BRANCH_NAME: main
-  RELEASE_BRANCH_NAME: release/${{ github.event.inputs.version }}
+  TARGET_BRANCH_NAME: "main"
+  RELEASE_BRANCH_NAME: "release/${{ github.event.inputs.version }}"
   RELEASE_TAG_NAME: "v${{ github.event.inputs.version }}"
 
 concurrency:
@@ -55,7 +55,7 @@ jobs:
             echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists"
             exit 1
           }
-      - name: Check whether the release already exists
+      - name: Check whether the GitHub Release already exists
         run: |
           ! gh release list --json tagName --jq '.[].tagName' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
             echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
