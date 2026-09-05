@@ -9,8 +9,8 @@ The release flow is described in [release-flow.md](./release-flow.md).
 
 [CI](ci.yml) verifies the following:
 
-- Rust formatting with Rustfmt
-- Linting with Clippy
+- Rust formatting
+- Linting
 - Rust documentation and the generated `README.md`
 - Builds and tests using the stable, nightly, and minimum supported Rust versions
 
@@ -24,9 +24,9 @@ The workflow:
 
 - Checks the following conditions
   - Verifies that the version follows Semantic Versioning
-  - Checks that the version has not already been used
-  - Checks that the release branch, tag, and GitHub Release do not already exist
-- Creates a release branch and a pull release request
+  - Checks that the version is differ from the current package version
+  - Checks that the corresponding release branch, tag, and GitHub Release do not already exist
+- Creates a release branch and a release pull request
   - Updates the package version in `Cargo.toml`
   - Creates a release branch `release/<version>` and commits the updated `Cargo.toml` to it
   - Creates a release pull request with the title `Release <version>`
@@ -40,11 +40,9 @@ The workflow checks that:
 
 - For release pull requests (`release/`)
   - The pull request title is `Release <version>`
-  - The version in the pull request title matches the package version
   - The release branch name is `release/<version>`
-  - The corresponding release tag does not already exist
-  - The corresponding GitHub Release does not already exist
-  - The package passes `cargo publish --dry-run`
+  - The corresponding release tag and GitHub Release do not already exist
+  - The package can be published
 - For normal pull requests (not `release/`)
   - The pull request title does not start with "Release "
 
