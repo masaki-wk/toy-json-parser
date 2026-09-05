@@ -53,6 +53,6 @@ jobs:
           }}
         run: |
           git push origin --delete "$TAG_NAME"
-          git push tag --delete "$TAG_NAME"
+          git tag --delete "$TAG_NAME"
         env:
           TAG_NAME: ${{ steps.get_tag_name.outputs.value }}
