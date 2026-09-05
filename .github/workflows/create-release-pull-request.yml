@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0  # fetch all history for all tags and branches
       - name: Check whether the version is differ from the one in Cargo.toml
         run: |
-          current_version="$(./.github/tools/print-package-version.sh Cargo.toml)"
+          current_version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
           test "$VERSION" != "$current_version" || {
             echo "Error: version string \`${VERSION}\` already used in Cargo.toml"
             exit 1
