@@ -10,11 +10,10 @@ if [ "$#" -ne 1 ]; then
 fi
 version="$1"
 
-numeric_id='\(0\|[1-9][0-9]*\)'
-prerelease='-[-.0-9A-Za-z][-.0-9A-Za-z]*'
-buildmetadata='+[-.0-9A-Za-z][-.0-9A-Za-z]*'
+# The official SemVer RegEx copied from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+semver_regex='^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
 
-echo "$version" | grep -x "${numeric_id}\.${numeric_id}\.${numeric_id}\(\|${prerelease}\)\(\|${buildmetadata}\)" >/dev/null || {
+echo "$version" | grep -P "$semver_regex" >/dev/null || {
   echo "Error: version string \`$version\` is invalid" >&2
   exit 1
 }

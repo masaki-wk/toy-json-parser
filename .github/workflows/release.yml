@@ -27,7 +27,7 @@ jobs:
       - name: Get tag name
         id: get_tag_name
         run: |
-          version="$(./.github/tools/print-package-version.sh Cargo.toml)"
+          version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
           echo "value=${TAG_PREFIX}${version}" >> "$GITHUB_OUTPUT"
       - name: Create release tag
         id: create_tag

@@ -19,7 +19,7 @@
   - [x] Allow rebase merging
   - [ ] Always suggest updating pull request branches
   - [ ] Allow auto-merge
-  - [ ] Automatically delete head branches
+  - [x] Automatically delete head branches (changed)
 - Commits
   - [ ] Require contributors to sign off on web-based commits
   - [x] Allow comments on individual commits
@@ -59,7 +59,7 @@
       - [ ] Do not require status checks on creation
       - Status checks that are required (added)
         - (All jobs in ci.yml)
-        - (All jobs in check-release-pull-request.yml)
+        - (All jobs in check-pull-request.yml)
     - [x] Block force pushes
     - [ ] Require code scanning results
     - [ ] Require code quality results
