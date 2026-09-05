@@ -11,6 +11,7 @@ The release flow consists of the following steps:
       - Target branch: `main`
       - Title: `Release <version>`
 2. Review the generated release pull request and then merge it.
+   - The release branch is deleted if `Settings` > `General` > `Pull Requests` > `Automatically delete head branches` was set
 3. The workflow automatically executes the following:
    1. Creates a release tag
       - Target commit: the merge commit
