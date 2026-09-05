@@ -72,16 +72,15 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      - name: Install required tools
+        run: cargo install cargo-set-version
       - name: Checkout
         uses: actions/checkout@v7
         with:
           ref: ${{ env.TARGET_BRANCH_NAME }}
           fetch-depth: 0  # fetch the complete history, including all tags and branches
-      - name: Update package version in Cargo.toml
-        run: |
-          tmpfile=$(mktemp)
-          ./.github/tools/replace-package-version.sh "$VERSION" Cargo.toml > "$tmpfile"
-          mv -f "$tmpfile" Cargo.toml
+      - name: Update the package version
+        run: cargo set-version "$VERSION"
       - name: Create a release pull request
         uses: peter-evans/create-pull-request@v8
         with:
