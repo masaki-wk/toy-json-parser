@@ -57,7 +57,7 @@ jobs:
           }
       - name: Check whether the GitHub Release already exists
         run: |
-          ! gh release list --json tagName --jq '.[].tagName' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
+          ! gh release view "$RELEASE_TAG_NAME" >/dev/null || {
             echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
             exit 1
           }
