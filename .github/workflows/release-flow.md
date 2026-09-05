@@ -14,7 +14,7 @@ The release flow consists of the following steps:
    - The release branch is deleted if `Settings` > `General` > `Pull Requests` > `Automatically delete head branches` was set
 3. The workflow automatically executes the following:
    1. Creates a release tag
-      - Target commit: the merge commit
+      - Target commit: the merged commit
       - Tag name: `v<version>`
       - Tag type: lightweight
    2. Creates a draft GitHub Release
