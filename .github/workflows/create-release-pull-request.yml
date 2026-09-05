@@ -27,7 +27,7 @@ jobs:
         run: ./.github/tools/verify-semver.sh "$VERSION"
 
   check-condition:
-    name: Check condition before creating release branch
+    name: Check condition before creating release pull request
     needs: verify-version
     runs-on: ubuntu-latest
     steps:
