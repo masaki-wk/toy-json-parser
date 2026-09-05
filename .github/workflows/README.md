@@ -1,6 +1,7 @@
 # Workflows
 
 This directory contains GitHub Actions workflows for continuous integration and releasing the package.
+The release flow is described in [release-flow.md](./release-flow.md).
 
 ## Workflows for continuous integration
 
