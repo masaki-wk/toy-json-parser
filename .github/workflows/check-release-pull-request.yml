@@ -6,30 +6,67 @@ on:
       - main
 
 env:
+  RELEASE_PULL_REQUEST_TITLE_PREFIX: "Release "
+  RELEASE_BRANCH_PREFIX: "release/"
+  RELEASE_TAG_PREFIX: "v"
   PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
-  PULL_REQUEST_TITLE_PREFIX: "Release "
-  TAG_PREFIX: "v"
+  PULL_REQUEST_SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
 
 jobs:
-  verify-title:
-    name: Verify pull request title (release pull request)
+  check-pull-request-for-release:
+    name: Check the release pull request
     if: startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # fetch all history for all tags and branches
-      - name: Check the pull request title
-        run: ./.github/tools/check-release-pull-request-title.sh "$PULL_REQUEST_TITLE_PREFIX" "$TAG_PREFIX" "$PULL_REQUEST_TITLE"
+          fetch-depth: 0  # fetch the complete history, including all tags and branches
+      - name: Get version of the package
+        id: get_version
+        run: |
+          version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+      - name: Check the release pull request title
+        run: |
+          test "$PULL_REQUEST_TITLE" = "${RELEASE_PULL_REQUEST_TITLE_PREFIX}${{ steps.get_version.outputs.value }}" || {
+            echo "Error: unexpected release pull request title \`${PULL_REQUEST_TITLE}\`"
+            exit 1
+          }
+      - name: Check the release branch name
+        run: |
+          test "$PULL_REQUEST_SOURCE_BRANCH" = "${RELEASE_BRANCH_PREFIX}${{ steps.get_version.outputs.value }}" || {
+            echo "Error: unexpected release branch name \`${PULL_REQUEST_SOURCE_BRANCH}\`"
+            exit 1
+          }
+      - name: Check whether the release tag already exists
+        run: |
+          ! git tag --list | grep -x "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
+            echo "Error: the release tag \`${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}\` already exists"
+            exit 1
+          }
+      - name: Check whether the GitHub Release already exists
+        run: |
+          ! gh release list --json tagName --jq '.[].tagName' | grep -x "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
+            echo "Error: the GitHub Release \`${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}\` already exists"
+            exit 1
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify that the package can be published
+        run: cargo publish --dry-run
 
-  verify-publish:
-    name: Verify crate can be published (release pull request)
-    needs: verify-title
-    if: startsWith(github.head_ref, 'release/')
+  check-pull-request-for-normal:
+    name: Check the normal pull request
+    if: ${{ !startsWith(github.head_ref, 'release/') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Verify publishing via cargo command
-        run: cargo publish --dry-run
+      - name: Check the pull request title
+        run: |
+          case "$PULL_REQUEST_TITLE" in
+            "$RELEASE_PULL_REQUEST_TITLE_PREFIX"*)
+              echo "Error: the pull request title \`${PULL_REQUEST_TITLE}\` is reserved for release pull requests" >&2
+              exit 1
+              ;;
+          esac
+          true
