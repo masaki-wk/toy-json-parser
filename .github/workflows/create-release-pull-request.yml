@@ -88,6 +88,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Release ${{ github.event.inputs.version }}
           title: Release ${{ github.event.inputs.version }}
-          body: This is a release pull request created by the workflow job `Create release branch`
+          body: This is a release pull request created by the workflow job `Create release pull request`
           branch: ${{ env.RELEASE_BRANCH_NAME }}
           base: ${{ env.TARGET_BRANCH_NAME }}
