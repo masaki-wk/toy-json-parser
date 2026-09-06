@@ -27,7 +27,7 @@ The workflow:
 
 - Checks the following conditions
   - Verifies that the version follows Semantic Versioning
-  - Checks that the version is differ from the current package version
+  - Checks that the version differs from the current package version
   - Checks that the corresponding release branch, tag, and GitHub Release do not already exist
 - Creates a release branch and a release pull request
   - Updates the package version in `Cargo.toml`
