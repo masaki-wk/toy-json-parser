@@ -66,7 +66,7 @@ jobs:
 
   create-release-pull-request:
     name: Create release pull request
-    needs: check-condition
+    needs: check-prerequisites
     permissions:
       contents: write
       pull-requests: write
