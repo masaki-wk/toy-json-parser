@@ -23,7 +23,7 @@ jobs:
           cargo fmt --version
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Verify the format via Rustfmt
+      - name: Verify formatting via Rustfmt
         run: cargo fmt --all --check --verbose
 
   lint:
