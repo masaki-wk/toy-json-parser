@@ -7,12 +7,15 @@ The release flow is described in [release-flow.md](./release-flow.md).
 
 ### CI
 
-[CI](ci.yml) verifies the following:
+[CI](./ci.yml) verifies the following:
 
-- Rust formatting
-- Linting
-- Rust documentation and the generated `README.md`
-- Builds and tests using the stable, nightly, and minimum supported Rust versions
+- Verify formatting
+- Lint
+- Verify documentation (all doc comments and the generated `README.md`)
+- Tests using:
+  - Stable toolchain
+  - Nightly toolchain
+  - The minimum supported Rust version
 
 ## Workflows for release
 
