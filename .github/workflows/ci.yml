@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Install required tools
         run: rustup component add rustfmt
-      - name: Show version information of tools
+      - name: Show tool version information
         run: |
           cargo --version
           cargo fmt --version
@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Install required tools
         run: rustup component add clippy
-      - name: Show version information of tools
+      - name: Show tool version information
         run: |
           cargo --version
           cargo clippy --version
@@ -49,14 +49,14 @@ jobs:
         run: |
           rustup component add rust-docs
           cargo install cargo-readme
-      - name: Show version information of tools
+      - name: Show tool version information
         run: |
           cargo --version
           rustdoc --version
           cargo readme --version
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Build the document
+      - name: Build the documentation
         run: cargo doc --no-deps --all-features
       - name: Verify README.md
         run: |
@@ -89,7 +89,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "${{ steps.resolve-toolchain-version.outputs.value }}"
-      - name: Show version information of tools
+      - name: Show tool version information
         run: |
           cargo --version
           rustc --version
