@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   verify-version:
-    name: Verify version string
+    name: Verify the version string
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,8 +26,8 @@ jobs:
       - name: Verify version string
         run: ./.github/tools/verify-semver.sh "$VERSION"
 
-  check-condition:
-    name: Check condition before creating release pull request
+  check-prerequisites:
+    name: Check prerequisites for creating the release pull request
     needs: verify-version
     runs-on: ubuntu-latest
     steps:
@@ -88,6 +88,6 @@ jobs:
           commit-message: Release ${{ github.event.inputs.version }}
           title: Release ${{ github.event.inputs.version }}
           body: |
-            This is a release pull request created by the workflow `Create Release Pull Request`.
+            This release pull request was created by the workflow `Create Release Pull Request`.
           branch: ${{ env.RELEASE_BRANCH_NAME }}
           base: ${{ env.TARGET_BRANCH_NAME }}
