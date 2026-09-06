@@ -12,7 +12,7 @@ env:
 
 jobs:
   verify-format:
-    name: Verify format
+    name: Verify formatting
     runs-on: ubuntu-latest
     steps:
       - name: Install required tools
@@ -42,7 +42,7 @@ jobs:
         run: cargo clippy --no-deps --all-targets --all-features -- --deny warnings
 
   verify-doc:
-    name: Verify document
+    name: Verify documentation
     runs-on: ubuntu-latest
     steps:
       - name: Install required tools

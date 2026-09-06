@@ -36,7 +36,7 @@ jobs:
         with:
           ref: ${{ env.TARGET_BRANCH_NAME }}
           fetch-depth: 0  # fetch the complete history, including all tags and branches
-      - name: Check whether the version is differ from the package version
+      - name: Check whether the version differs from the package version
         run: |
           current_version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
           test "$VERSION" != "$current_version" || {
@@ -87,6 +87,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Release ${{ github.event.inputs.version }}
           title: Release ${{ github.event.inputs.version }}
-          body: This is a release pull request created by the workflow job `Create release pull request`
+          body: |
+            This is a release pull request created by the workflow `Create Release Pull Request`.
           branch: ${{ env.RELEASE_BRANCH_NAME }}
           base: ${{ env.TARGET_BRANCH_NAME }}

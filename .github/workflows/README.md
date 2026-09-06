@@ -7,24 +7,27 @@ The release flow is described in [release-flow.md](./release-flow.md).
 
 ### CI
 
-[CI](ci.yml) verifies the following:
+[CI](./ci.yml) verifies the following:
 
-- Rust formatting
-- Linting
-- Rust documentation and the generated `README.md`
-- Builds and tests using the stable, nightly, and minimum supported Rust versions
+- Verify formatting
+- Lint
+- Verify documentation (all doc comments and the generated `README.md`)
+- Tests using:
+  - Stable toolchain
+  - Nightly toolchain
+  - The minimum supported Rust version
 
 ## Workflows for release
 
 ### Create Release Pull Request
 
-[Create Release Pull Request](./create-release-pull-request.yml) is run manually with the package version as an input.
+[Create Release Pull Request](./create-release-pull-request.yml) is run manually with the package version as input.
 
 The workflow:
 
-- Checks the following conditions
+- Checks the following:
   - Verifies that the version follows Semantic Versioning
-  - Checks that the version is differ from the current package version
+  - Checks that the version differs from the current package version
   - Checks that the corresponding release branch, tag, and GitHub Release do not already exist
 - Creates a release branch and a release pull request
   - Updates the package version in `Cargo.toml`
@@ -34,9 +37,9 @@ The workflow:
 ### Check Pull Request
 
 [Check Pull Request](./check-pull-request.yml) runs for pull requests targeting the `main` branch.
-Release-specific checks are performed when the source branch starts with `release/`.
+Release-specific checks are performed when the source branch name starts with `release/`.
 
-The workflow checks that:
+The workflow checks the following:
 
 - For release pull requests (`release/`)
   - The pull request title is `Release <version>`
