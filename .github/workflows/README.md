@@ -21,11 +21,11 @@ The release flow is described in [release-flow.md](./release-flow.md).
 
 ### Create Release Pull Request
 
-[Create Release Pull Request](./create-release-pull-request.yml) is run manually with the package version as an input.
+[Create Release Pull Request](./create-release-pull-request.yml) is run manually with the package version as input.
 
 The workflow:
 
-- Checks the following conditions
+- Checks the following:
   - Verifies that the version follows Semantic Versioning
   - Checks that the version differs from the current package version
   - Checks that the corresponding release branch, tag, and GitHub Release do not already exist
@@ -37,9 +37,9 @@ The workflow:
 ### Check Pull Request
 
 [Check Pull Request](./check-pull-request.yml) runs for pull requests targeting the `main` branch.
-Release-specific checks are performed when the source branch starts with `release/`.
+Release-specific checks are performed when the source branch name starts with `release/`.
 
-The workflow checks that:
+The workflow checks the following:
 
 - For release pull requests (`release/`)
   - The pull request title is `Release <version>`
