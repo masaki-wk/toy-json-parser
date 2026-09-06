@@ -88,6 +88,6 @@ jobs:
           commit-message: Release ${{ github.event.inputs.version }}
           title: Release ${{ github.event.inputs.version }}
           body: |
-            This is a release pull request created by the workflow `Create Release Pull Request`.
+            This release pull request was created by the workflow `Create Release Pull Request`.
           branch: ${{ env.RELEASE_BRANCH_NAME }}
           base: ${{ env.TARGET_BRANCH_NAME }}
