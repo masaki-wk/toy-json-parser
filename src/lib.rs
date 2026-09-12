@@ -27,7 +27,7 @@
 //! let mut lexer = Lexer::new(input.chars());
 //! for result in lexer {
 //!     let token = result.unwrap();
-//!     println!("{:?}: {}", token.kind, token.span.start());
+//!     println!("{:?}: {}", token.kind(), token.span().start());
 //! }
 //! ```
 //!
