@@ -259,12 +259,11 @@ where
                 error_at: *prev_token_span.end(),
             })?;
             let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-            let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
-                    let end = *token_span.end();
+                    let end = *token.span.end();
                     self.lexer.next();
-                    break (end, token_span);
+                    break (end, token.span);
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
@@ -285,7 +284,7 @@ where
                     }
                 }
             }?;
-            let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token_span)?;
+            let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token.span)?;
             buf.push((name_pair, Box::new(value)));
             prev_token_span = last_token_span_of_item;
         };
