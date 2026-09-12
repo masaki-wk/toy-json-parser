@@ -634,6 +634,26 @@ mod tests {
     }
 
     #[test]
+    fn parse_illegal_unclosed_object_missing_next_name() {
+        let pre = r#"{"foo": 0,"#;
+        let post = " ";
+        let input = &format!("{pre}{post}");
+        let object_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_at })
+    }
+
+    #[test]
+    fn parse_illegal_unclosed_object_invalid_next_name() {
+        let pre = r#"{"foo": 0, "#;
+        let post = r#"null: 1}"#;
+        let input = &format!("{pre}{post}");
+        let object_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberNameNotString(Literal::Null, error_at))
+    }
+
+    #[test]
     fn parse_illegal_object_missing_separator() {
         let pre = r#"{"foo": 0"#;
         let post = r#" "bar": 1}"#;
