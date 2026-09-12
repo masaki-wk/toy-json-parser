@@ -41,16 +41,26 @@ impl fmt::Display for ValueKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Value {
     /// The kind of the value.
-    pub kind: ValueKind,
+    kind: ValueKind,
 
     /// The span of the value in the JSON source text.
-    pub span: CodeSpan,
+    span: CodeSpan,
 }
 
 impl Value {
     /// Creates a new [`Value`].
     pub const fn new(kind: ValueKind, span: CodeSpan) -> Self {
         Self { kind, span }
+    }
+
+    /// Returns the kind of the value.
+    pub const fn kind(&self) -> &ValueKind {
+        &self.kind
+    }
+
+    /// Returns the span of the value.
+    pub const fn span(&self) -> &CodeSpan {
+        &self.span
     }
 
     /// Displays [`Value`] via returning the helper struct `ValueDisplay`.
@@ -196,6 +206,16 @@ mod tests {
         let target = Value::new(kind, span);
         assert_eq!(&target.to_string(), expected_tostring);
         assert_eq!(&format!("{}", target.display(1)), expected_prettyprint);
+    }
+
+    #[test]
+    fn new() {
+        let loc = CodeLocation::new(1, 1);
+        let span = CodeSpan::new(loc, loc);
+        let kind = ValueKind::Literal(Literal::Null);
+        let value = Value::new(kind.clone(), span);
+        assert_eq!(*value.kind(), kind);
+        assert_eq!(*value.span(), span);
     }
 
     #[test]
