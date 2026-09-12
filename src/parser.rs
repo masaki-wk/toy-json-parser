@@ -271,6 +271,7 @@ where
                         if buf.is_empty() {
                             Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
                         } else {
+                            prev_token_span = token.span;
                             self.lexer.next();
                             Ok(())
                         }
@@ -286,7 +287,7 @@ where
                         }
                     }
                 }?;
-                let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token.span)?;
+                let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, prev_token_span)?;
                 buf.push((name_pair, Box::new(value)));
                 prev_token_span = last_token_span_of_item;
             }
