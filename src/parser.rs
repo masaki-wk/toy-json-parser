@@ -259,21 +259,23 @@ where
         let last_token_span = {
             let mut prev_token_span = begin_object_token_span;
             loop {
-                let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
+                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                     object_start: *begin_object_token_span.start(),
                     error_at: *prev_token_span.end(),
                 })?;
-                let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-                match token.kind {
+                let peeked_token = peeked_result_for_token
+                    .clone()
+                    .map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+                match peeked_token.kind {
                     TokenKind::Delimiter(Delimiter::RightBrace) => {
                         self.lexer.next();
-                        break token.span;
+                        break peeked_token.span;
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span.start()))
                         } else {
-                            prev_token_span = token.span;
+                            prev_token_span = peeked_token.span;
                             self.lexer.next();
                             Ok(())
                         }
