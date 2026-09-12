@@ -6,16 +6,26 @@ use crate::CodeLocation;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct CodeSpan {
     /// The start location of the span (inclusive).
-    pub start: CodeLocation,
+    start: CodeLocation,
 
     /// The end location of the span (exclusive).
-    pub end: CodeLocation,
+    end: CodeLocation,
 }
 
 impl CodeSpan {
     /// Creates a new [`CodeSpan`].
     pub const fn new(start: CodeLocation, end: CodeLocation) -> Self {
         Self { start, end }
+    }
+
+    /// Returns the start of the span.
+    pub const fn start(&self) -> &CodeLocation {
+        &self.start
+    }
+
+    /// Returns the end of the span.
+    pub const fn end(&self) -> &CodeLocation {
+        &self.end
     }
 }
 
