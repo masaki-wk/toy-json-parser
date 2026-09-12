@@ -286,9 +286,9 @@ where
                     }
                 }
             }?;
-            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(current_depth, begin_object_token_span, token_span)?;
+            let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token_span)?;
             buf.push((name_pair, Box::new(value)));
-            last_token_span = last_token_span_new;
+            last_token_span = last_token_span_of_item;
         };
         Ok((
             Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), end)),
