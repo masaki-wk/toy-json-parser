@@ -202,52 +202,57 @@ where
     // Parses a rest of the array.
     fn parse_rest_of_array(&mut self, current_depth: usize, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
-        let mut last_token_span = begin_array_token_span;
-        let (end, last_token_span) = loop {
-            let token_loc = last_token_span.end();
-            let result = self.lexer.peek().ok_or(ParseError::UnclosedArray {
-                array_start: *begin_array_token_span.start(),
-                error_at: *token_loc,
-            })?;
-            let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-            let token_span = token.span;
-            match token.kind {
-                TokenKind::Delimiter(Delimiter::RightBracket) => {
-                    let end = *token_span.end();
-                    self.lexer.next();
-                    break (end, token_span);
-                }
-                TokenKind::Delimiter(Delimiter::Comma) => {
-                    if buf.is_empty() {
-                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
-                    } else {
-                        self.lexer.next();
-                        Ok(())
-                    }
-                }
-                _ => {
-                    if buf.is_empty() {
-                        Ok(())
-                    } else {
-                        Err(ParseError::ArrayMissingSeparator {
-                            array_start: *begin_array_token_span.start(),
-                            error_at: *token_loc,
-                        })
-                    }
-                }
-            }?;
-            let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
-                ParseError::EmptyInput => ParseError::UnclosedArray {
+        let last_token_span = {
+            let mut prev_token_span = begin_array_token_span;
+            loop {
+                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                     array_start: *begin_array_token_span.start(),
-                    error_at: *token_span.end(),
-                },
-                _ => e,
-            })?;
-            buf.push(Box::new(item));
-            last_token_span = last_token_span_new;
+                    error_at: *prev_token_span.end(),
+                })?;
+                let peeked_token = match peeked_result_for_token {
+                    Ok(token) => token,
+                    Err(e) => {
+                        return Err(ParseError::LexicalError(e.kind.clone(), e.string.clone(), e.location));
+                    }
+                };
+                let peeked_token_span = peeked_token.span;
+                match peeked_token.kind {
+                    TokenKind::Delimiter(Delimiter::RightBracket) => {
+                        self.lexer.next();
+                        break peeked_token_span;
+                    }
+                    TokenKind::Delimiter(Delimiter::Comma) => {
+                        if buf.is_empty() {
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span.start()))
+                        } else {
+                            self.lexer.next();
+                            Ok(())
+                        }
+                    }
+                    _ => {
+                        if buf.is_empty() {
+                            Ok(())
+                        } else {
+                            Err(ParseError::ArrayMissingSeparator {
+                                array_start: *begin_array_token_span.start(),
+                                error_at: *prev_token_span.end(),
+                            })
+                        }
+                    }
+                }?;
+                let (item, last_token_span_of_item) = self.parse_value(current_depth + 1).map_err(|e| match e {
+                    ParseError::EmptyInput => ParseError::UnclosedArray {
+                        array_start: *begin_array_token_span.start(),
+                        error_at: *peeked_token_span.end(),
+                    },
+                    _ => e,
+                })?;
+                buf.push(Box::new(item));
+                prev_token_span = last_token_span_of_item;
+            }
         };
         Ok((
-            Value::new(ValueKind::Array(buf), CodeSpan::new(*begin_array_token_span.start(), end)),
+            Value::new(ValueKind::Array(buf), CodeSpan::new(*begin_array_token_span.start(), *last_token_span.end())),
             last_token_span,
         ))
     }
@@ -255,46 +260,52 @@ where
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, current_depth: usize, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
-        let mut last_token_span = begin_object_token_span;
-        let (end, last_token_span) = loop {
-            let token_loc = last_token_span.end();
-            let result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
-                object_start: *begin_object_token_span.start(),
-                error_at: *token_loc,
-            })?;
-            let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-            let token_span = token.span;
-            match token.kind {
-                TokenKind::Delimiter(Delimiter::RightBrace) => {
-                    let end = *token_span.end();
-                    self.lexer.next();
-                    break (end, token_span);
-                }
-                TokenKind::Delimiter(Delimiter::Comma) => {
-                    if buf.is_empty() {
-                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
-                    } else {
+        let last_token_span = {
+            let mut prev_token_span = begin_object_token_span;
+            loop {
+                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
+                    object_start: *begin_object_token_span.start(),
+                    error_at: *prev_token_span.end(),
+                })?;
+                let peeked_token = match peeked_result_for_token {
+                    Ok(token) => token,
+                    Err(e) => {
+                        return Err(ParseError::LexicalError(e.kind.clone(), e.string.clone(), e.location));
+                    }
+                };
+                let peeked_token_span = peeked_token.span;
+                match peeked_token.kind {
+                    TokenKind::Delimiter(Delimiter::RightBrace) => {
                         self.lexer.next();
-                        Ok(())
+                        break peeked_token_span;
                     }
-                }
-                _ => {
-                    if buf.is_empty() {
-                        Ok(())
-                    } else {
-                        Err(ParseError::ObjectMissingSeparator {
-                            object_start: *begin_object_token_span.start(),
-                            error_at: *token_loc,
-                        })
+                    TokenKind::Delimiter(Delimiter::Comma) => {
+                        if buf.is_empty() {
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span.start()))
+                        } else {
+                            prev_token_span = peeked_token.span;
+                            self.lexer.next();
+                            Ok(())
+                        }
                     }
-                }
-            }?;
-            let (name_pair, value, last_token_span_new) = self.parse_pair_for_object(current_depth, begin_object_token_span, token_span)?;
-            buf.push((name_pair, Box::new(value)));
-            last_token_span = last_token_span_new;
+                    _ => {
+                        if buf.is_empty() {
+                            Ok(())
+                        } else {
+                            Err(ParseError::ObjectMissingSeparator {
+                                object_start: *begin_object_token_span.start(),
+                                error_at: *prev_token_span.end(),
+                            })
+                        }
+                    }
+                }?;
+                let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, prev_token_span)?;
+                buf.push((name_pair, Box::new(value)));
+                prev_token_span = last_token_span_of_item;
+            }
         };
         Ok((
-            Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), end)),
+            Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), *last_token_span.end())),
             last_token_span,
         ))
     }
@@ -632,6 +643,26 @@ mod tests {
         let object_start = CodeLocation::new(1, 1);
         let error_at = CodeLocation::new(object_start.line, object_start.column + input.chars().count());
         do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_at })
+    }
+
+    #[test]
+    fn parse_illegal_unclosed_object_missing_next_name() {
+        let pre = r#"{"foo": 0,"#;
+        let post = " ";
+        let input = &format!("{pre}{post}");
+        let object_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::UnclosedObject { object_start, error_at })
+    }
+
+    #[test]
+    fn parse_illegal_unclosed_object_invalid_next_name() {
+        let pre = r#"{"foo": 0, "#;
+        let post = r#"null: 1}"#;
+        let input = &format!("{pre}{post}");
+        let object_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectMemberNameNotString(Literal::Null, error_at))
     }
 
     #[test]
