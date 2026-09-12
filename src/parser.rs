@@ -254,10 +254,9 @@ where
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
         let mut prev_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
-            let token_loc = prev_token_span.end();
             let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: *begin_object_token_span.start(),
-                error_at: *token_loc,
+                error_at: *prev_token_span.end(),
             })?;
             let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
             let token_span = token.span;
@@ -281,7 +280,7 @@ where
                     } else {
                         Err(ParseError::ObjectMissingSeparator {
                             object_start: *begin_object_token_span.start(),
-                            error_at: *token_loc,
+                            error_at: *prev_token_span.end(),
                         })
                     }
                 }
