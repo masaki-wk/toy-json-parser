@@ -95,16 +95,26 @@ impl fmt::Display for TokenKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     /// The kind of the token.
-    pub kind: TokenKind,
+    kind: TokenKind,
 
     /// The span of the token in the JSON source text.
-    pub span: CodeSpan,
+    span: CodeSpan,
 }
 
 impl Token {
     /// Creates a new [`Token`].
     pub const fn new(kind: TokenKind, span: CodeSpan) -> Self {
         Self { kind, span }
+    }
+
+    /// Returns the kind of the token.
+    pub const fn kind(&self) -> &TokenKind {
+        &self.kind
+    }
+
+    /// Returns the span of the token.
+    pub const fn span(&self) -> &CodeSpan {
+        &self.span
     }
 }
 

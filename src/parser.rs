@@ -159,7 +159,7 @@ where
         let (value, _) = self.parse_value(0)?;
         match self.lexer.next() {
             Some(result) => Err(match result {
-                Ok(token) => ParseError::TrailingToken(*token.span.start()),
+                Ok(token) => ParseError::TrailingToken(*token.span().start()),
                 Err(error) => ParseError::LexicalError(error.kind, error.string, error.location),
             }),
             None => Ok(value),
@@ -175,11 +175,11 @@ where
         }
         let (token_category, token_span) = if let Some(result) = self.lexer.next() {
             match result {
-                Ok(token) => match token.kind {
-                    TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, token.span)),
-                    TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, token.span)),
-                    TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, *token.span.start())),
-                    TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit), token.span)),
+                Ok(token) => match token.kind() {
+                    TokenKind::Delimiter(Delimiter::LeftBracket) => Ok((TokenCategory::BeginArray, *token.span())),
+                    TokenKind::Delimiter(Delimiter::LeftBrace) => Ok((TokenCategory::BeginObject, *token.span())),
+                    TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim.clone(), *token.span().start())),
+                    TokenKind::Literal(lit) => Ok((TokenCategory::Literal(lit.clone()), *token.span())),
                 },
                 Err(error) => Err(ParseError::LexicalError(error.kind, error.string, error.location)),
             }
@@ -215,15 +215,15 @@ where
                         return Err(ParseError::LexicalError(e.kind.clone(), e.string.clone(), e.location));
                     }
                 };
-                let peeked_token_span = peeked_token.span;
-                match peeked_token.kind {
+                let peeked_token_span = *peeked_token.span();
+                match peeked_token.kind() {
                     TokenKind::Delimiter(Delimiter::RightBracket) => {
                         self.lexer.next();
                         break peeked_token_span;
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span.start()))
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span().start()))
                         } else {
                             self.lexer.next();
                             Ok(())
@@ -273,17 +273,17 @@ where
                         return Err(ParseError::LexicalError(e.kind.clone(), e.string.clone(), e.location));
                     }
                 };
-                let peeked_token_span = peeked_token.span;
-                match peeked_token.kind {
+                let peeked_token_span = *peeked_token.span();
+                match peeked_token.kind() {
                     TokenKind::Delimiter(Delimiter::RightBrace) => {
                         self.lexer.next();
                         break peeked_token_span;
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span.start()))
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token_span.start()))
                         } else {
-                            prev_token_span = peeked_token.span;
+                            prev_token_span = peeked_token_span;
                             self.lexer.next();
                             Ok(())
                         }
@@ -322,31 +322,31 @@ where
             error_at: *last_token_span.end(),
         })?;
         let token_for_name = result_for_name.map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-        let name = match token_for_name.kind {
-            TokenKind::Literal(Literal::String(s)) => Ok(s),
-            TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameNotString(lit, *token_for_name.span.start())),
-            TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim, *token_for_name.span.start())),
+        let name = match token_for_name.kind() {
+            TokenKind::Literal(Literal::String(s)) => Ok(s.clone()),
+            TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameNotString(lit.clone(), *token_for_name.span().start())),
+            TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim.clone(), *token_for_name.span().start())),
         }?;
         let result_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
-            member_start: *token_for_name.span.start(),
-            error_at: *token_for_name.span.end(),
+            member_start: *token_for_name.span().start(),
+            error_at: *token_for_name.span().end(),
         })?;
         let token_for_colon = result_for_colon.map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-        match token_for_colon.kind {
+        match token_for_colon.kind() {
             TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
             _ => Err(ParseError::ObjectMemberMissingSeparator {
-                member_start: *token_for_name.span.start(),
-                error_at: *token_for_colon.span.start(),
+                member_start: *token_for_name.span().start(),
+                error_at: *token_for_colon.span().start(),
             }),
         }?;
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
             ParseError::EmptyInput => ParseError::ObjectMemberMissingValue {
-                member_start: *token_for_name.span.start(),
-                error_at: *token_for_colon.span.end(),
+                member_start: *token_for_name.span().start(),
+                error_at: *token_for_colon.span().end(),
             },
             _ => e,
         })?;
-        Ok(((name, token_for_name.span), value, last_token_span))
+        Ok(((name, *token_for_name.span()), value, last_token_span))
     }
 
     // Helper function to check exceeding maximum depth.

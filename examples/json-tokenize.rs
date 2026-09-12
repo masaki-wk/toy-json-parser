@@ -38,8 +38,8 @@ mod app {
             for result in lexer {
                 match result {
                     Ok(token) => {
-                        let kind = &token.kind;
-                        let span = &token.span;
+                        let kind = token.kind();
+                        let span = token.span();
                         println!("{token}: {kind:?}, {span}")
                     }
                     Err(error) => {

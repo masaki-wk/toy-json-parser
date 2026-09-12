@@ -90,11 +90,11 @@ impl std::error::Error for LexicalError {}
 ///
 /// // Get the first token `[`
 /// let token1 = lexer.next()?.ok()?;
-/// assert_eq!(token1.kind, TokenKind::Delimiter(Delimiter::LeftBracket));
+/// assert_eq!(*token1.kind(), TokenKind::Delimiter(Delimiter::LeftBracket));
 ///
 /// // Get the second token `]`
 /// let token2 = lexer.next()?.ok()?;
-/// assert_eq!(token2.kind, TokenKind::Delimiter(Delimiter::RightBracket));
+/// assert_eq!(*token2.kind(), TokenKind::Delimiter(Delimiter::RightBracket));
 ///
 /// // No more tokens
 /// assert_eq!(lexer.next(), None);
@@ -384,8 +384,8 @@ mod tests {
     fn do_take_single_valid_token(input: &str, expected_kind: TokenKind, expected_span: CodeSpan) {
         let mut lexer = Lexer::new(input.chars());
         let token = lexer.next().unwrap().unwrap();
-        assert_eq!(token.kind, expected_kind);
-        assert_eq!(token.span, expected_span);
+        assert_eq!(*token.kind(), expected_kind);
+        assert_eq!(*token.span(), expected_span);
         assert_eq!(lexer.next(), None);
     }
 
