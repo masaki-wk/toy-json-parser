@@ -253,7 +253,7 @@ where
     fn parse_rest_of_object(&mut self, current_depth: usize, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
         let mut prev_token_span = begin_object_token_span;
-        let (end, last_token_span) = loop {
+        let last_token_span = loop {
             let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: *begin_object_token_span.start(),
                 error_at: *prev_token_span.end(),
@@ -262,7 +262,7 @@ where
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
                     self.lexer.next();
-                    break (*token.span.end(), token.span);
+                    break token.span;
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
@@ -288,7 +288,7 @@ where
             prev_token_span = last_token_span_of_item;
         };
         Ok((
-            Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), end)),
+            Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), *last_token_span.end())),
             last_token_span,
         ))
     }
