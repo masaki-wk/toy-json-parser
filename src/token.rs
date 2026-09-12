@@ -52,6 +52,12 @@ pub enum Literal {
     /// A JSON string literal, e.g. `foo` or `bar`.
     ///
     /// The surrounding quotes are removed, but escape sequences are preserved.
+    ///
+    /// This variant is intended to contain values produced by [`Lexer`].
+    /// Manually constructed values are not guaranteed to be valid JSON strings.
+    ///
+    /// [`Lexer`]: crate::Lexer
+    ///
     String(std::string::String),
 
     /// A JSON boolean literal: `true` or `false`.
