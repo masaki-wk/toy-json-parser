@@ -233,7 +233,7 @@ where
                     }
                 }
             }?;
-            let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
+            let (item, last_token_span_of_item) = self.parse_value(current_depth + 1).map_err(|e| match e {
                 ParseError::EmptyInput => ParseError::UnclosedArray {
                     array_start: *begin_array_token_span.start(),
                     error_at: *token.span.end(),
@@ -241,7 +241,7 @@ where
                 _ => e,
             })?;
             buf.push(Box::new(item));
-            prev_token_span = last_token_span_new;
+            prev_token_span = last_token_span_of_item;
         };
         Ok((
             Value::new(ValueKind::Array(buf), CodeSpan::new(*begin_array_token_span.start(), end)),
