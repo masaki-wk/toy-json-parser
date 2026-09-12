@@ -204,10 +204,9 @@ where
         let mut buf: Vec<Box<Value>> = Vec::new();
         let mut prev_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
-            let token_loc = prev_token_span.end();
             let result = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                 array_start: *begin_array_token_span.start(),
-                error_at: *token_loc,
+                error_at: *prev_token_span.end(),
             })?;
             let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
             match token.kind {
@@ -229,7 +228,7 @@ where
                     } else {
                         Err(ParseError::ArrayMissingSeparator {
                             array_start: *begin_array_token_span.start(),
-                            error_at: *token_loc,
+                            error_at: *prev_token_span.end(),
                         })
                     }
                 }
