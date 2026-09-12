@@ -209,6 +209,16 @@ mod tests {
     }
 
     #[test]
+    fn new() {
+        let loc = CodeLocation::new(1, 1);
+        let span = CodeSpan::new(loc, loc);
+        let kind = ValueKind::Literal(Literal::Null);
+        let value = Value::new(kind.clone(), span);
+        assert_eq!(*value.kind(), kind);
+        assert_eq!(*value.span(), span);
+    }
+
+    #[test]
     fn display_value_literal_null() {
         let expected = "null";
         let kind = ValueKind::Literal(Literal::Null);
