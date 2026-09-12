@@ -261,9 +261,8 @@ where
             let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
-                    let end = *token.span.end();
                     self.lexer.next();
-                    break (end, token.span);
+                    break (*token.span.end(), token.span);
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
