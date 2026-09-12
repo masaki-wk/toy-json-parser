@@ -41,16 +41,26 @@ impl fmt::Display for ValueKind {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Value {
     /// The kind of the value.
-    pub kind: ValueKind,
+    kind: ValueKind,
 
     /// The span of the value in the JSON source text.
-    pub span: CodeSpan,
+    span: CodeSpan,
 }
 
 impl Value {
     /// Creates a new [`Value`].
     pub const fn new(kind: ValueKind, span: CodeSpan) -> Self {
         Self { kind, span }
+    }
+
+    /// Returns the kind of the value.
+    pub const fn kind(&self) -> &ValueKind {
+        &self.kind
+    }
+
+    /// Returns the span of the value.
+    pub const fn span(&self) -> &CodeSpan {
+        &self.span
     }
 
     /// Displays [`Value`] via returning the helper struct `ValueDisplay`.
