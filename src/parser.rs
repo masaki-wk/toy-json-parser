@@ -210,12 +210,10 @@ where
                 error_at: *token_loc,
             })?;
             let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-            let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBracket) => {
-                    let end = *token_span.end();
                     self.lexer.next();
-                    break (end, token_span);
+                    break (*token.span.end(), token.span);
                 }
                 TokenKind::Delimiter(Delimiter::Comma) => {
                     if buf.is_empty() {
@@ -239,7 +237,7 @@ where
             let (item, last_token_span_new) = self.parse_value(current_depth + 1).map_err(|e| match e {
                 ParseError::EmptyInput => ParseError::UnclosedArray {
                     array_start: *begin_array_token_span.start(),
-                    error_at: *token_span.end(),
+                    error_at: *token.span.end(),
                 },
                 _ => e,
             })?;
