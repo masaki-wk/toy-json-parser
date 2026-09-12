@@ -100,10 +100,12 @@ pub use token::Literal;
 pub use token::Token;
 pub use token::TokenKind;
 
+mod lexical_error;
+pub use lexical_error::LexicalError;
+pub use lexical_error::LexicalErrorKind;
+
 mod lexer;
 pub use lexer::Lexer;
-pub use lexer::LexicalError;
-pub use lexer::LexicalErrorKind;
 
 mod value;
 pub use value::Value;
