@@ -202,46 +202,48 @@ where
     // Parses a rest of the array.
     fn parse_rest_of_array(&mut self, current_depth: usize, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
-        let mut prev_token_span = begin_array_token_span;
-        let last_token_span = loop {
-            let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedArray {
-                array_start: *begin_array_token_span.start(),
-                error_at: *prev_token_span.end(),
-            })?;
-            let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-            match token.kind {
-                TokenKind::Delimiter(Delimiter::RightBracket) => {
-                    self.lexer.next();
-                    break token.span;
-                }
-                TokenKind::Delimiter(Delimiter::Comma) => {
-                    if buf.is_empty() {
-                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
-                    } else {
-                        self.lexer.next();
-                        Ok(())
-                    }
-                }
-                _ => {
-                    if buf.is_empty() {
-                        Ok(())
-                    } else {
-                        Err(ParseError::ArrayMissingSeparator {
-                            array_start: *begin_array_token_span.start(),
-                            error_at: *prev_token_span.end(),
-                        })
-                    }
-                }
-            }?;
-            let (item, last_token_span_of_item) = self.parse_value(current_depth + 1).map_err(|e| match e {
-                ParseError::EmptyInput => ParseError::UnclosedArray {
+        let last_token_span = {
+            let mut prev_token_span = begin_array_token_span;
+            loop {
+                let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                     array_start: *begin_array_token_span.start(),
-                    error_at: *token.span.end(),
-                },
-                _ => e,
-            })?;
-            buf.push(Box::new(item));
-            prev_token_span = last_token_span_of_item;
+                    error_at: *prev_token_span.end(),
+                })?;
+                let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+                match token.kind {
+                    TokenKind::Delimiter(Delimiter::RightBracket) => {
+                        self.lexer.next();
+                        break token.span;
+                    }
+                    TokenKind::Delimiter(Delimiter::Comma) => {
+                        if buf.is_empty() {
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
+                        } else {
+                            self.lexer.next();
+                            Ok(())
+                        }
+                    }
+                    _ => {
+                        if buf.is_empty() {
+                            Ok(())
+                        } else {
+                            Err(ParseError::ArrayMissingSeparator {
+                                array_start: *begin_array_token_span.start(),
+                                error_at: *prev_token_span.end(),
+                            })
+                        }
+                    }
+                }?;
+                let (item, last_token_span_of_item) = self.parse_value(current_depth + 1).map_err(|e| match e {
+                    ParseError::EmptyInput => ParseError::UnclosedArray {
+                        array_start: *begin_array_token_span.start(),
+                        error_at: *token.span.end(),
+                    },
+                    _ => e,
+                })?;
+                buf.push(Box::new(item));
+                prev_token_span = last_token_span_of_item;
+            }
         };
         Ok((
             Value::new(ValueKind::Array(buf), CodeSpan::new(*begin_array_token_span.start(), *last_token_span.end())),
