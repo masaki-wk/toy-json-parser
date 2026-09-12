@@ -267,13 +267,17 @@ where
                     object_start: *begin_object_token_span.start(),
                     error_at: *prev_token_span.end(),
                 })?;
-                let peeked_token = peeked_result_for_token
-                    .clone()
-                    .map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+                let peeked_token = match peeked_result_for_token {
+                    Ok(token) => token,
+                    Err(e) => {
+                        return Err(ParseError::LexicalError(e.kind.clone(), e.string.clone(), e.location));
+                    }
+                };
+                let peeked_token_span = peeked_token.span;
                 match peeked_token.kind {
                     TokenKind::Delimiter(Delimiter::RightBrace) => {
                         self.lexer.next();
-                        break peeked_token.span;
+                        break peeked_token_span;
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
