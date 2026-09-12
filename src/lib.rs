@@ -112,8 +112,10 @@ pub use value::Value;
 pub use value::ValueDisplay;
 pub use value::ValueKind;
 
+mod parse_error;
+pub use parse_error::ParseError;
+
 mod parser;
-pub use parser::ParseError;
 pub use parser::Parser;
 
 mod bufread_chars_ext;
