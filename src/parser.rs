@@ -252,9 +252,9 @@ where
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, current_depth: usize, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
-        let mut last_token_span = begin_object_token_span;
+        let mut prev_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
-            let token_loc = last_token_span.end();
+            let token_loc = prev_token_span.end();
             let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: *begin_object_token_span.start(),
                 error_at: *token_loc,
@@ -288,7 +288,7 @@ where
             }?;
             let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token_span)?;
             buf.push((name_pair, Box::new(value)));
-            last_token_span = last_token_span_of_item;
+            prev_token_span = last_token_span_of_item;
         };
         Ok((
             Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), end)),
