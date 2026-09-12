@@ -255,11 +255,11 @@ where
         let mut last_token_span = begin_object_token_span;
         let (end, last_token_span) = loop {
             let token_loc = last_token_span.end();
-            let result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
+            let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
                 object_start: *begin_object_token_span.start(),
                 error_at: *token_loc,
             })?;
-            let token = result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+            let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
             let token_span = token.span;
             match token.kind {
                 TokenKind::Delimiter(Delimiter::RightBrace) => {
