@@ -100,18 +100,22 @@ pub use token::Literal;
 pub use token::Token;
 pub use token::TokenKind;
 
+mod lexical_error;
+pub use lexical_error::LexicalError;
+pub use lexical_error::LexicalErrorKind;
+
 mod lexer;
 pub use lexer::Lexer;
-pub use lexer::LexicalError;
-pub use lexer::LexicalErrorKind;
 
 mod value;
 pub use value::Value;
 pub use value::ValueDisplay;
 pub use value::ValueKind;
 
+mod parse_error;
+pub use parse_error::ParseError;
+
 mod parser;
-pub use parser::ParseError;
 pub use parser::Parser;
 
 mod bufread_chars_ext;
