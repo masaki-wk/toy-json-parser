@@ -254,40 +254,42 @@ where
     // Parses a rest of the object.
     fn parse_rest_of_object(&mut self, current_depth: usize, begin_object_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<((String, CodeSpan), Box<Value>)> = Vec::new();
-        let mut prev_token_span = begin_object_token_span;
-        let last_token_span = loop {
-            let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
-                object_start: *begin_object_token_span.start(),
-                error_at: *prev_token_span.end(),
-            })?;
-            let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-            match token.kind {
-                TokenKind::Delimiter(Delimiter::RightBrace) => {
-                    self.lexer.next();
-                    break token.span;
-                }
-                TokenKind::Delimiter(Delimiter::Comma) => {
-                    if buf.is_empty() {
-                        Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
-                    } else {
+        let last_token_span = {
+            let mut prev_token_span = begin_object_token_span;
+            loop {
+                let peek_result = self.lexer.peek().ok_or(ParseError::UnclosedObject {
+                    object_start: *begin_object_token_span.start(),
+                    error_at: *prev_token_span.end(),
+                })?;
+                let token = peek_result.clone().map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
+                match token.kind {
+                    TokenKind::Delimiter(Delimiter::RightBrace) => {
                         self.lexer.next();
-                        Ok(())
+                        break token.span;
                     }
-                }
-                _ => {
-                    if buf.is_empty() {
-                        Ok(())
-                    } else {
-                        Err(ParseError::ObjectMissingSeparator {
-                            object_start: *begin_object_token_span.start(),
-                            error_at: *prev_token_span.end(),
-                        })
+                    TokenKind::Delimiter(Delimiter::Comma) => {
+                        if buf.is_empty() {
+                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *token.span.start()))
+                        } else {
+                            self.lexer.next();
+                            Ok(())
+                        }
                     }
-                }
-            }?;
-            let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token.span)?;
-            buf.push((name_pair, Box::new(value)));
-            prev_token_span = last_token_span_of_item;
+                    _ => {
+                        if buf.is_empty() {
+                            Ok(())
+                        } else {
+                            Err(ParseError::ObjectMissingSeparator {
+                                object_start: *begin_object_token_span.start(),
+                                error_at: *prev_token_span.end(),
+                            })
+                        }
+                    }
+                }?;
+                let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, token.span)?;
+                buf.push((name_pair, Box::new(value)));
+                prev_token_span = last_token_span_of_item;
+            }
         };
         Ok((
             Value::new(ValueKind::Object(buf), CodeSpan::new(*begin_object_token_span.start(), *last_token_span.end())),
