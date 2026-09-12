@@ -202,9 +202,9 @@ where
     // Parses a rest of the array.
     fn parse_rest_of_array(&mut self, current_depth: usize, begin_array_token_span: CodeSpan) -> Result<(Value, CodeSpan), ParseError> {
         let mut buf: Vec<Box<Value>> = Vec::new();
-        let mut last_token_span = begin_array_token_span;
+        let mut prev_token_span = begin_array_token_span;
         let (end, last_token_span) = loop {
-            let token_loc = last_token_span.end();
+            let token_loc = prev_token_span.end();
             let result = self.lexer.peek().ok_or(ParseError::UnclosedArray {
                 array_start: *begin_array_token_span.start(),
                 error_at: *token_loc,
@@ -244,7 +244,7 @@ where
                 _ => e,
             })?;
             buf.push(Box::new(item));
-            last_token_span = last_token_span_new;
+            prev_token_span = last_token_span_new;
         };
         Ok((
             Value::new(ValueKind::Array(buf), CodeSpan::new(*begin_array_token_span.start(), end)),
