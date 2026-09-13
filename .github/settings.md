@@ -37,7 +37,7 @@
     - Default
   - Bypass list: (empty)
   - Branch protections
-    - [ ] Restrict creations
+    - [x] Restrict creations (changed)
     - [ ] Restrict updates
     - [x] Restrict deletions
     - [ ] Require linear history
