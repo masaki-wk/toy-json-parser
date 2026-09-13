@@ -8,7 +8,7 @@ on:
 env:
   RELEASE_PULL_REQUEST_TITLE_PREFIX: "Release "
   RELEASE_BRANCH_PREFIX: "release/"
-  RELEASE_TAG_PREFIX: "v"
+  RELEASE_TAG_PREFIX: ""
   PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
   PULL_REQUEST_SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
 

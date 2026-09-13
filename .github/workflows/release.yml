@@ -8,7 +8,7 @@ on:
       - closed
 
 env:
-  TAG_PREFIX: "v"
+  TAG_PREFIX: ""
 
 jobs:
   create-release-tag:
