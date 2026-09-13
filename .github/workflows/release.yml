@@ -22,7 +22,8 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
@@ -46,7 +47,8 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
@@ -74,7 +76,8 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
