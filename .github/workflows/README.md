@@ -59,7 +59,7 @@ The workflow checks the following:
 
 [Release (release.yml)](./release.yml) runs automatically when a release pull request is merged into the `main` branch.
 
-The workflow performs the following actions:
+The workflow performs the following actions in the `production` environment:
 
 - Creates a release tag `<version>`
 - Creates a draft GitHub Release `<version>`
