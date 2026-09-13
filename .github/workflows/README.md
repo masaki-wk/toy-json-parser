@@ -1,29 +1,29 @@
 # Workflows
 
-This directory contains GitHub Actions workflows for continuous integration and releasing the package.
+This directory contains GitHub Actions workflows for continuous integration and package release management.
 The release flow is described in [release-flow.md](./release-flow.md).
 
 ## Workflows for continuous integration
 
 ### CI
 
-[CI](./ci.yml) verifies the following:
+[CI (ci.yml)](./ci.yml) verifies the following:
 
 - Verify formatting
 - Lint
 - Verify documentation (all doc comments and the generated `README.md`)
-- Tests using:
-  - Stable toolchain
-  - Nightly toolchain
-  - The minimum supported Rust version
+- Tests on the following Rust toolchains:
+  - Stable
+  - Nightly
+  - MSRV: The minimum supported Rust version
 
 ## Workflows for release
 
 ### Create Release Pull Request
 
-[Create Release Pull Request](./create-release-pull-request.yml) is run manually with the package version as input.
+[Create Release Pull Request (create-release-pull-request.yml)](./create-release-pull-request.yml) is run manually with the package version as input.
 
-The workflow:
+The workflow performs the following actions:
 
 - Checks the following:
   - Verifies that the version follows Semantic Versioning
@@ -36,7 +36,7 @@ The workflow:
 
 ### Check Pull Request
 
-[Check Pull Request](./check-pull-request.yml) runs for pull requests targeting the `main` branch.
+[Check Pull Request (check-pull-request.yml)](./check-pull-request.yml) runs for pull requests targeting the `main` branch.
 Release-specific checks are performed when the source branch name starts with `release/`.
 
 The workflow checks the following:
@@ -51,9 +51,9 @@ The workflow checks the following:
 
 ### Release
 
-[Release](./release.yml) runs when a release pull request is merged into `main`.
+[Release (release.yml)](./release.yml) runs when a release pull request is merged into `main`.
 
-The workflow:
+The workflow performs the following actions:
 
 - Creates a release tag `v<version>`
 - Creates a draft GitHub Release `v<version>`
