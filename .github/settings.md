@@ -33,7 +33,8 @@
 ## Rulesets
 
 - Branch ruleset `main`
-  - Target branches: Default (changed)
+  - Target branches (added)
+    - Default
   - Bypass list: (empty)
   - Branch protections
     - [ ] Restrict creations
@@ -52,8 +53,8 @@
       - [x] Require an additional approval for unattributed Copilot pull requests
       - Allowed merge methods
         - [x] Merge
-        - [ ] Squash
-        - [ ] Rebase
+        - [ ] Squash (changed)
+        - [ ] Rebase (changed)
     - [x] Require status checks to pass (changed)
       - [x] Require branches to be up to date before merging (changed)
       - [ ] Do not require status checks on creation
