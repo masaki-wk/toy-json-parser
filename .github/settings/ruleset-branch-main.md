@@ -1,0 +1,35 @@
+# Settings on GitHub - Branch ruleset `main`
+
+- Target branches (added)
+  - Default
+- Bypass list: (empty)
+- Branch protections
+  - [x] Restrict creations (changed)
+  - [ ] Restrict updates
+  - [x] Restrict deletions
+  - [ ] Require linear history
+  - [ ] Require deployments to succeed
+  - [ ] Require signed commits
+  - [x] Require a pull request before merging (changed)
+    - Required approvals: 0
+    - [ ] Dismiss stale pull request approvals when new commits are pushed
+    - [ ] Require review from specific teams
+    - [ ] Require review from Code Owners
+    - [ ] Require approval of the most recent reviewable push
+    - [ ] Require conversation resolution before merging
+    - [x] Require an additional approval for unattributed Copilot pull requests
+    - Allowed merge methods
+      - [x] Merge
+      - [ ] Squash (changed)
+      - [ ] Rebase (changed)
+  - [x] Require status checks to pass (changed)
+    - [x] Require branches to be up to date before merging (changed)
+    - [ ] Do not require status checks on creation
+    - Status checks that are required (added)
+      - (All jobs in ci.yml)
+      - (All jobs in check-pull-request.yml)
+  - [x] Block force pushes
+  - [ ] Require code scanning results
+  - [ ] Require code quality results
+  - [ ] Restrict code coverage
+  - [ ] Automatically request Copilot code review
