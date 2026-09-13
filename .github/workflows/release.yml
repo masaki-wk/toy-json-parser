@@ -10,6 +10,9 @@ on:
 env:
   TAG_PREFIX: ""
 
+concurrency:
+  release
+
 jobs:
   create-release-tag:
     name: Create release tag
@@ -19,6 +22,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
@@ -46,6 +50,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
