@@ -16,7 +16,7 @@ The release flow consists of the following steps:
 4. The workflow triggered by the merge automatically executes the following:
    1. Creates a release tag.
       - Target commit: the merged commit
-      - Tag name: `v<version>`
+      - Tag name: `<version>`
       - Tag type: lightweight
    2. Creates a draft GitHub Release.
       - Title: `<version>`
