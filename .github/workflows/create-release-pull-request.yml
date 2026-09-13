@@ -35,7 +35,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ env.TARGET_BRANCH_NAME }}
-          fetch-depth: 0  # fetch the complete history, including all tags and branches
       - name: Check whether the version differs from the package version
         run: |
           current_version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
@@ -51,7 +50,7 @@ jobs:
           }
       - name: Check whether the release tag already exists
         run: |
-          ! git tag --list | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
+          ! git ls-remote --tags --refs origin | sed -e 's,.*refs/tags/,,' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
             echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists"
             exit 1
           }
