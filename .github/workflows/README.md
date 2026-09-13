@@ -7,12 +7,18 @@ The release flow is described in [release-flow.md](./release-flow.md).
 
 ### CI
 
-[CI (ci.yml)](./ci.yml) verifies the following:
+[CI (ci.yml)](./ci.yml) is triggered by the following conditions:
 
-- Verify formatting
-- Lint
-- Verify documentation (all doc comments and the generated `README.md`)
-- Tests on the following Rust toolchains:
+- Push to `main`
+- Pull request
+- Manual workflow dispatch
+
+The workflow performs the following:
+
+- Verifies formatting
+- Runs lint checks
+- Verifies documentation (all doc comments and the generated `README.md`)
+- Runs tests on the following Rust toolchains:
   - Stable
   - Nightly
   - MSRV: The minimum supported Rust version
@@ -27,16 +33,16 @@ The workflow performs the following actions:
 
 - Checks the following:
   - Verifies that the version follows Semantic Versioning
-  - Checks that the version differs from the current package version
-  - Checks that the corresponding release branch, tag, and GitHub Release do not already exist
-- Creates a release branch and a release pull request
+  - Confirms that the version differs from the current package version
+  - Confirms that the corresponding release branch, tag, and GitHub Release do not already exist
+- Creates a release branch and a release pull request:
   - Updates the package version in `Cargo.toml`
   - Creates a release branch `release/<version>` and commits the updated `Cargo.toml` to it
   - Creates a release pull request with the title `Release <version>`
 
 ### Check Pull Request
 
-[Check Pull Request (check-pull-request.yml)](./check-pull-request.yml) runs for pull requests targeting the `main` branch.
+[Check Pull Request (check-pull-request.yml)](./check-pull-request.yml) runs automatically for pull requests targeting the `main` branch.
 Release-specific checks are performed when the source branch name starts with `release/`.
 
 The workflow checks the following:
@@ -51,7 +57,7 @@ The workflow checks the following:
 
 ### Release
 
-[Release (release.yml)](./release.yml) runs when a release pull request is merged into `main`.
+[Release (release.yml)](./release.yml) runs automatically when a release pull request is merged into the `main` branch.
 
 The workflow performs the following actions:
 
