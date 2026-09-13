@@ -14,15 +14,41 @@ concurrency:
   release
 
 jobs:
+  publish-package:
+    name: Publish the package to crates.io
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.head_ref, 'release/')
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Checkout merged commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - name: Get a temporary access token to interact with crates.io using trusted publishing
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+      - name: Publish the package
+        run: |
+          cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
   create-release-tag:
     name: Create release tag
     if: >-
       github.event.pull_request.merged == true &&
       startsWith(github.head_ref, 'release/')
+    needs: publish-package
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
@@ -50,7 +76,8 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    environment: production
+    environment:
+      name: production
     steps:
       - name: Checkout merged commit
         uses: actions/checkout@v7
