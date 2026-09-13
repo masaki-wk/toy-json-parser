@@ -77,7 +77,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ env.TARGET_BRANCH_NAME }}
-          fetch-depth: 0  # fetch the complete history, including all tags and branches
       - name: Update the package version
         run: cargo set-version "$VERSION"
       - name: Create a release pull request
