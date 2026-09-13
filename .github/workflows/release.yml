@@ -11,8 +11,8 @@ env:
   TAG_PREFIX: "v"
 
 jobs:
-  release:
-    name: Release
+  create-release-tag:
+    name: Create release tag
     if: >-
       github.event.pull_request.merged == true &&
       startsWith(github.head_ref, 'release/')
@@ -36,23 +36,30 @@ jobs:
           git push origin "$TAG_NAME"
         env:
           TAG_NAME: ${{ steps.get_tag_name.outputs.value }}
+
+  create-github-release:
+    name: Create GitHub Release
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.head_ref, 'release/')
+    needs: create-release-tag
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout merged commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - name: Get the release tag name
+        id: get_tag_name
+        run: |
+          version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
+          echo "value=${TAG_PREFIX}${version}" >> "$GITHUB_OUTPUT"
       - name: Create the GitHub Release
-        id: create_release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get_tag_name.outputs.value }}
           name: ${{ steps.get_tag_name.outputs.value }}
           generate_release_notes: true
           draft: true
-      - name: Delete the release tag if the GitHub Release creation failed
-        if: >-
-          ${{
-            failure() &&
-            steps.create_tag.outcome == 'success' &&
-            steps.create_release.outcome == 'failure'
-          }}
-        run: |
-          git push origin --delete "$TAG_NAME"
-          git tag --delete "$TAG_NAME"
-        env:
-          TAG_NAME: ${{ steps.get_tag_name.outputs.value }}
