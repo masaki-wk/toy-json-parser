@@ -55,5 +55,5 @@ The workflow checks the following:
 
 The workflow performs the following actions:
 
-- Creates a release tag `v<version>`
-- Creates a draft GitHub Release `v<version>`
+- Creates a release tag `<version>`
+- Creates a draft GitHub Release `<version>`
