@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0  # fetch the complete history, including all tags and branches
       - name: Get the package version
         id: get_version
         run: |
@@ -41,7 +39,7 @@ jobs:
           }
       - name: Check whether the release tag already exists
         run: |
-          ! git tag --list | grep -x "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
+          ! git ls-remote --tags --refs origin | sed -e 's,.*refs/tags/,,' | grep -x "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
             echo "Error: the release tag \`${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}\` already exists"
             exit 1
           }
