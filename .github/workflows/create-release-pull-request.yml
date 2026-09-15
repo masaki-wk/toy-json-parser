@@ -44,10 +44,11 @@ jobs:
           }
       - name: Check whether the release branch already exists
         run: |
-          ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${RELEASE_BRANCH_NAME}" >/dev/null || {
-            echo "Error: branch \`${RELEASE_BRANCH_NAME}\` already exists"
+          branches=$(git branch --list --remotes | sed -e 's,^[[:space:]]*origin/,,')
+          if printf '%s\n' "$branches" | grep -Fx "${RELEASE_BRANCH_NAME}" >/dev/null; then
+            echo "Error: branch \`${RELEASE_BRANCH_NAME}\` already exists" >&2
             exit 1
-          }
+          fi
       - name: Check whether the release tag already exists
         run: |
           tags=$(git ls-remote --tags --refs origin | sed -e 's,^.*refs/tags/,,')
