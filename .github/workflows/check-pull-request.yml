@@ -39,10 +39,12 @@ jobs:
           }
       - name: Check whether the release tag already exists
         run: |
-          ! git ls-remote --tags --refs origin | sed -e 's,.*refs/tags/,,' | grep -x "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
-            echo "Error: the release tag \`${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}\` already exists"
+          target_tag="${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}"
+          tags=$(git ls-remote --tags --refs origin | sed -e 's,^.*refs/tags/,,')
+          if printf '%s\n' "$tags" | grep -Fx "${target_tag}" >/dev/null; then
+            echo "Error: tag \`${target_tag}\` already exists" >&2
             exit 1
-          }
+          fi
       - name: Check whether the GitHub Release already exists
         run: |
           ! gh release view "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
