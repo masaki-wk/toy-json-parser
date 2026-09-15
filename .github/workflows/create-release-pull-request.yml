@@ -50,10 +50,11 @@ jobs:
           }
       - name: Check whether the release tag already exists
         run: |
-          ! git ls-remote --tags --refs origin | sed -e 's,.*refs/tags/,,' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
-            echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists"
+          tags=$(git ls-remote --tags --refs origin | sed -e 's,^.*refs/tags/,,')
+          if printf '%s\n' "$tags" | grep -Fx "${RELEASE_TAG_NAME}" >/dev/null; then
+            echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists" >&2
             exit 1
-          }
+          fi
       - name: Check whether the GitHub Release already exists
         run: |
           ! gh release view "$RELEASE_TAG_NAME" >/dev/null || {
