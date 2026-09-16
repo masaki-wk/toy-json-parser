@@ -28,13 +28,13 @@ jobs:
       - name: Check the release pull request title
         run: |
           test "$PULL_REQUEST_TITLE" = "${RELEASE_PULL_REQUEST_TITLE_PREFIX}${{ steps.get_version.outputs.value }}" || {
-            echo "Error: unexpected release pull request title \`${PULL_REQUEST_TITLE}\`"
+            echo "Error: unexpected release pull request title \`${PULL_REQUEST_TITLE}\`" >&2
             exit 1
           }
       - name: Check the release branch name
         run: |
           test "$PULL_REQUEST_SOURCE_BRANCH" = "${RELEASE_BRANCH_PREFIX}${{ steps.get_version.outputs.value }}" || {
-            echo "Error: unexpected release branch name \`${PULL_REQUEST_SOURCE_BRANCH}\`"
+            echo "Error: unexpected release branch name \`${PULL_REQUEST_SOURCE_BRANCH}\`" >&2
             exit 1
           }
       - name: Check whether the release tag already exists
