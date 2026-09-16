@@ -47,12 +47,12 @@ jobs:
           fi
       - name: Check whether the GitHub Release already exists
         run: |
+          owner="${GITHUB_REPOSITORY_OWNER}"
+          repo="${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}"
           tag="${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}"
-          ./.github/tools/assert-no-github-release.sh "$OWNER" "$REPO" "$tag"
+          ./.github/tools/assert-no-github-release.sh "$owner" "$repo" "$tag"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: ${{ github.event.repository.owner }}
-          REPO: ${{ github.event.repository.name }}
       - name: Verify that the package can be published
         run: cargo publish --dry-run
 

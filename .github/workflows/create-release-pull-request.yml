@@ -58,11 +58,11 @@ jobs:
           fi
       - name: Check whether the GitHub Release already exists
         run: |
-          ./.github/tools/assert-no-github-release.sh "$OWNER" "$REPO" "$RELEASE_TAG_NAME"
+          owner="${GITHUB_REPOSITORY_OWNER}"
+          repo="${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}"
+          ./.github/tools/assert-no-github-release.sh "$owner" "$repo" "$RELEASE_TAG_NAME"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: ${{ github.event.repository.owner }}
-          REPO: ${{ github.event.repository.name }}
 
   create-release-pull-request:
     name: Create release pull request
