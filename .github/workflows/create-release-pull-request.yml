@@ -58,12 +58,11 @@ jobs:
           fi
       - name: Check whether the GitHub Release already exists
         run: |
-          ! gh release view "$RELEASE_TAG_NAME" >/dev/null || {
-            echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
-            exit 1
-          }
+          ./.github/tools/assert-no-github-release.sh "$OWNER" "$REPO" "$RELEASE_TAG_NAME"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.event.repository.owner }}
+          REPO: ${{ github.event.repository.name }}
 
   create-release-pull-request:
     name: Create release pull request
