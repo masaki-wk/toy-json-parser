@@ -39,7 +39,7 @@ jobs:
         run: |
           current_version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
           test "$VERSION" != "$current_version" || {
-            echo "Error: version string \`${VERSION}\` is the same as the package version"
+            echo "Error: version string \`${VERSION}\` is the same as the package version" >&2
             exit 1
           }
       - name: Check whether the release branch already exists
