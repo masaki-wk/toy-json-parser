@@ -28,29 +28,31 @@ jobs:
       - name: Check the release pull request title
         run: |
           test "$PULL_REQUEST_TITLE" = "${RELEASE_PULL_REQUEST_TITLE_PREFIX}${{ steps.get_version.outputs.value }}" || {
-            echo "Error: unexpected release pull request title \`${PULL_REQUEST_TITLE}\`"
+            echo "Error: unexpected release pull request title \`${PULL_REQUEST_TITLE}\`" >&2
             exit 1
           }
       - name: Check the release branch name
         run: |
           test "$PULL_REQUEST_SOURCE_BRANCH" = "${RELEASE_BRANCH_PREFIX}${{ steps.get_version.outputs.value }}" || {
-            echo "Error: unexpected release branch name \`${PULL_REQUEST_SOURCE_BRANCH}\`"
+            echo "Error: unexpected release branch name \`${PULL_REQUEST_SOURCE_BRANCH}\`" >&2
             exit 1
           }
       - name: Check whether the release tag already exists
         run: |
-          ! git ls-remote --tags --refs origin | sed -e 's,.*refs/tags/,,' | grep -x "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
-            echo "Error: the release tag \`${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}\` already exists"
+          target_tag="${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}"
+          tags=$(git ls-remote --tags --refs origin | sed -e 's,^.*refs/tags/,,')
+          if printf '%s\n' "$tags" | grep -Fx "${target_tag}" >/dev/null; then
+            echo "Error: tag \`${target_tag}\` already exists" >&2
             exit 1
-          }
+          fi
       - name: Check whether the GitHub Release already exists
         run: |
-          ! gh release view "${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}" >/dev/null || {
-            echo "Error: the GitHub Release \`${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}\` already exists"
-            exit 1
-          }
+          tag="${RELEASE_TAG_PREFIX}${{ steps.get_version.outputs.value }}"
+          ./.github/tools/assert-no-github-release.sh "$OWNER" "$REPO" "$tag"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.event.repository.owner }}
+          REPO: ${{ github.event.repository.name }}
       - name: Verify that the package can be published
         run: cargo publish --dry-run
 

@@ -39,29 +39,30 @@ jobs:
         run: |
           current_version="$(cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[0].version')"
           test "$VERSION" != "$current_version" || {
-            echo "Error: version string \`${VERSION}\` is the same as the package version"
+            echo "Error: version string \`${VERSION}\` is the same as the package version" >&2
             exit 1
           }
       - name: Check whether the release branch already exists
         run: |
-          ! git branch --list --remotes | sed -e 's/^[[:space:]]*//' | grep -x origin/"${RELEASE_BRANCH_NAME}" >/dev/null || {
-            echo "Error: branch \`${RELEASE_BRANCH_NAME}\` already exists"
+          branches=$(git branch --list --remotes | sed -e 's,^[[:space:]]*origin/,,')
+          if printf '%s\n' "$branches" | grep -Fx "${RELEASE_BRANCH_NAME}" >/dev/null; then
+            echo "Error: branch \`${RELEASE_BRANCH_NAME}\` already exists" >&2
             exit 1
-          }
+          fi
       - name: Check whether the release tag already exists
         run: |
-          ! git ls-remote --tags --refs origin | sed -e 's,.*refs/tags/,,' | grep -x "${RELEASE_TAG_NAME}" >/dev/null || {
-            echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists"
+          tags=$(git ls-remote --tags --refs origin | sed -e 's,^.*refs/tags/,,')
+          if printf '%s\n' "$tags" | grep -Fx "${RELEASE_TAG_NAME}" >/dev/null; then
+            echo "Error: tag \`${RELEASE_TAG_NAME}\` already exists" >&2
             exit 1
-          }
+          fi
       - name: Check whether the GitHub Release already exists
         run: |
-          ! gh release view "$RELEASE_TAG_NAME" >/dev/null || {
-            echo "Error: release \`${RELEASE_TAG_NAME}\` already exists"
-            exit 1
-          }
+          ./.github/tools/assert-no-github-release.sh "$OWNER" "$REPO" "$RELEASE_TAG_NAME"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.event.repository.owner }}
+          REPO: ${{ github.event.repository.name }}
 
   create-release-pull-request:
     name: Create release pull request
