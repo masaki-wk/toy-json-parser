@@ -5,7 +5,6 @@
   - [ ] Wait timer
   - [ ] Enable custom rules with GitHub Apps
 - [x] Allow administrators to bypass configured protection rules
-- Deployment branches and tags: Selected branches and tags (changed)
-  - `main`
+- Deployment branches and tags: No restriction
 - Environment secrets: (empty)
 - Environment variables: (empty)
