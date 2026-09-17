@@ -32,6 +32,10 @@ pub enum ParseError {
     #[allow(missing_docs)]
     ArrayMissingSeparator { array_start: CodeLocation, error_at: CodeLocation },
 
+    /// Array contains a trailing comma after the last item.
+    #[allow(missing_docs)]
+    ArrayContainsTrailingComma { array_start: CodeLocation, error_at: CodeLocation },
+
     /// Object was missing `,` separator between object members.
     #[allow(missing_docs)]
     ObjectMissingSeparator { object_start: CodeLocation, error_at: CodeLocation },

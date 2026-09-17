@@ -179,6 +179,10 @@ where
                         array_start: *begin_array_token_span.start(),
                         error_at: *peeked_token_span.end(),
                     },
+                    ParseError::UnexpectedDelimiter(Delimiter::RightBracket, _) => ParseError::ArrayContainsTrailingComma {
+                        array_start: *begin_array_token_span.start(),
+                        error_at: *peeked_token_span.start(),
+                    },
                     _ => e,
                 })?;
                 buf.push(Box::new(item));
@@ -543,6 +547,16 @@ mod tests {
         let array_start = CodeLocation::new(1, 1);
         let error_at = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
         do_parse_illegal_code(input, ParseError::ArrayMissingSeparator { array_start, error_at })
+    }
+
+    #[test]
+    fn parse_illegal_array_contains_trailing_comma() {
+        let pre = "[0, 1";
+        let post = ", ]";
+        let input = &format!("{pre}{post}");
+        let array_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ArrayContainsTrailingComma { array_start, error_at })
     }
 
     #[test]
