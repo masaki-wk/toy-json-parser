@@ -27,7 +27,10 @@ The workflow performs the following:
 
 ### Create Release Pull Request
 
-[Create Release Pull Request (create-release-pull-request.yml)](./create-release-pull-request.yml) is run manually with the package version as input.
+[Create Release Pull Request (create-release-pull-request.yml)](./create-release-pull-request.yml) is run manually with the following input:
+
+- Branch; this workflow only allows `main`
+- Package version
 
 The workflow performs the following actions:
 
