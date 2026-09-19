@@ -17,8 +17,21 @@ concurrency:
   create-release-pull-request
 
 jobs:
+  check-branch:
+    name: Check the branch name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the branch name
+        run: |
+          branch_name="${{ github.ref }}"
+          test "$branch_name" = "$TARGET_BRANCH_NAME" || {
+            echo "Error: branch \`${branch_name}\` is not allowed; this workflow only runs on \`${TARGET_BRANCH_NAME}\`" >&2
+            exit 1
+          }
+
   verify-version:
     name: Verify the version string
+    needs: check-branch
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
