@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Check the branch name
         run: |
-          branch_name="${{ github.ref }}"
+          branch_name="${{ github.ref_name }}"
           test "$branch_name" = "$TARGET_BRANCH_NAME" || {
             echo "Error: branch \`${branch_name}\` is not allowed; this workflow only runs on \`${TARGET_BRANCH_NAME}\`" >&2
             exit 1
