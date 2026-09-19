@@ -17,11 +17,17 @@ concurrency:
   create-release-pull-request
 
 jobs:
-  check-branch:
-    name: Check the branch name
+  check-target:
+    name: Check the target
     runs-on: ubuntu-latest
     steps:
-      - name: Check the branch name
+      - name: Check the target type
+        run: |
+          if [ "${{ github.ref_type }}" = 'tag' ]; then
+            echo "Error: tag is not allowed; this workflow only runs on a branch" >&2
+            exit 1
+          fi
+      - name: Check the target branch name
         run: |
           branch_name="${{ github.ref_name }}"
           test "$branch_name" = "$TARGET_BRANCH_NAME" || {
@@ -31,7 +37,7 @@ jobs:
 
   verify-version:
     name: Verify the version string
-    needs: check-branch
+    needs: check-target
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
