@@ -61,5 +61,6 @@ The workflow checks the following:
 
 The workflow performs the following actions in the `production` environment:
 
+- Publish the package to crates.io
 - Creates a release tag `<version>`
 - Creates a draft GitHub Release `<version>`
