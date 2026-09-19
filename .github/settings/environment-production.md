@@ -7,8 +7,8 @@
 - [x] Allow administrators to bypass configured protection rules
 - Deployment branches and tags: Selected branches and tags
   - Branch: 'refs/pull/*/merge'
-- Environment secrets: (empty)
-- Environment variables: (empty)
+- Environment secrets: (none)
+- Environment variables: (none)
 
 ## Notes on the deployment branches rule
 
