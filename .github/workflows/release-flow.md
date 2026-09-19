@@ -2,7 +2,7 @@
 
 The release flow consists of the following steps:
 
-1. Manually run `Create Release Pull Request`. The workflow performs the following:
+1. Manually run `Create Release Pull Request`. The workflow performs the following actions:
    1. Creates a release branch and updates the package version in `Cargo.toml` on that branch.
       - Base branch: `main`
       - Release branch name: `release/<version>`
@@ -12,8 +12,8 @@ The release flow consists of the following steps:
       - Target branch: `main`
 2. Manually review the generated release pull request and then merge it.
    - The release branch is deleted if `Settings` > `General` > `Pull Requests` > `Automatically delete head branches` is enabled.
-3. The workflow `Release` triggered by the merge automatically executes the following:
-   1. Publish the package to crates.io.
+3. The `Release` workflow, triggered when the pull request is merged, automatically executes the following actions:
+   1. Publishes the package to crates.io.
    2. Creates a release tag.
       - Target commit: the merged commit
       - Tag name: `<version>`
@@ -25,5 +25,4 @@ The release flow consists of the following steps:
       - Status: draft
 4. Manually review and update the draft GitHub Release, then publish it.
 
-The package is published using [Trusted Publishing](https://crates.io/docs/trusted-publishing), a feature provided by crates.io.
-This step requires configuring Trusted Publishing on crates.io.
+The package is published using [Trusted Publishing](https://crates.io/docs/trusted-publishing) configured on crates.io.
