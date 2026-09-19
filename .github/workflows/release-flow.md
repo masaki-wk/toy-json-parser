@@ -2,8 +2,9 @@
 
 The release flow consists of the following steps:
 
-1. Manually run `Create Release Pull Request`. The workflow performs the following actions:
-   1. Creates a release branch and updates the package version in `Cargo.toml` on that branch.
+1. Manually run `Create Release Pull Request` with the package version to be released.
+   The workflow performs the following actions:
+   1. Creates a release branch and updates the package version in `Cargo.toml` on the release branch.
       - Base branch: `main`
       - Release branch name: `release/<version>`
    2. Creates a release pull request.
@@ -12,7 +13,7 @@ The release flow consists of the following steps:
       - Target branch: `main`
 2. Manually review the generated release pull request and then merge it.
    - The release branch is deleted if `Settings` > `General` > `Pull Requests` > `Automatically delete head branches` is enabled.
-3. The `Release` workflow, triggered when the pull request is merged, automatically executes the following actions:
+3. The `Release` workflow, triggered when the release pull request is merged, automatically executes the following actions:
    1. Publishes the package to crates.io.
    2. Creates a release tag.
       - Target commit: the merged commit
