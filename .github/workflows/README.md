@@ -1,6 +1,6 @@
 # Workflows
 
-This directory contains GitHub Actions workflows for continuous integration and package release management.
+This directory contains GitHub Actions workflows for continuous integration and release management.
 The release flow is described in [release-flow.md](./release-flow.md).
 
 ## Workflows for continuous integration
@@ -27,9 +27,9 @@ The workflow performs the following:
 
 ### Create Release Pull Request
 
-[Create Release Pull Request (create-release-pull-request.yml)](./create-release-pull-request.yml) is run manually with the following input:
+[Create Release Pull Request (create-release-pull-request.yml)](./create-release-pull-request.yml) is run manually with the following inputs:
 
-- Branch; this workflow only allows `main`
+- Target; this workflow only allows `main` branch
 - Package version
 
 The workflow performs the following actions:
