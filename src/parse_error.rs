@@ -40,6 +40,10 @@ pub enum ParseError {
     #[allow(missing_docs)]
     ObjectMissingSeparator { object_start: CodeLocation, error_at: CodeLocation },
 
+    /// Object contains a trailing comma after the last item.
+    #[allow(missing_docs)]
+    ObjectContainsTrailingComma { object_start: CodeLocation, error_at: CodeLocation },
+
     /// Object member name was not a string.
     /// The offending literal and its location are reported in the first and second fields.
     ObjectMemberNameNotString(Literal, CodeLocation),
