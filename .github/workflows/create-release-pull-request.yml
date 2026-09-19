@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Verify version string
+      - name: Verify the version string
         run: ./.github/tools/verify-semver.sh "$VERSION"
 
   check-prerequisites:
