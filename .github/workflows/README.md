@@ -34,7 +34,7 @@ The workflow performs the following actions:
 - Checks the following:
   - Verifies that the version follows Semantic Versioning
   - Confirms that the version differs from the current package version
-  - Confirms that the corresponding release branch, tag, and GitHub Release do not already exist
+  - Confirms that none of the corresponding release branch, tag, or GitHub Release already exists
 - Creates a release branch and a release pull request:
   - Updates the package version in `Cargo.toml`
   - Creates a release branch `release/<version>` and commits the updated `Cargo.toml` to it
@@ -61,6 +61,6 @@ The workflow checks the following:
 
 The workflow performs the following actions in the `production` environment:
 
-- Publish the package to crates.io
+- Publishes the package to crates.io
 - Creates a release tag `<version>`
 - Creates a draft GitHub Release `<version>`
