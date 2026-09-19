@@ -2,7 +2,7 @@
 
 - Target branches (added)
   - Default
-- Bypass list: (empty)
+- Bypass list: (none)
 - Branch protections
   - [x] Restrict creations (changed)
   - [ ] Restrict updates
