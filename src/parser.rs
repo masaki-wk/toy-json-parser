@@ -179,6 +179,10 @@ where
                         array_start: *begin_array_token_span.start(),
                         error_at: *peeked_token_span.end(),
                     },
+                    ParseError::UnexpectedDelimiter(Delimiter::RightBracket, _) => ParseError::ArrayContainsTrailingComma {
+                        array_start: *begin_array_token_span.start(),
+                        error_at: *peeked_token_span.start(),
+                    },
                     _ => e,
                 })?;
                 buf.push(Box::new(item));
@@ -259,6 +263,10 @@ where
         let name = match token_for_name.kind() {
             TokenKind::Literal(Literal::String(s)) => Ok(s.clone()),
             TokenKind::Literal(lit) => Err(ParseError::ObjectMemberNameNotString(lit.clone(), *token_for_name.span().start())),
+            TokenKind::Delimiter(Delimiter::RightBrace) => Err(ParseError::ObjectContainsTrailingComma {
+                object_start: *begin_object_token_span.start(),
+                error_at: *last_token_span.start(),
+            }),
             TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim.clone(), *token_for_name.span().start())),
         }?;
         let result_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
@@ -546,6 +554,16 @@ mod tests {
     }
 
     #[test]
+    fn parse_illegal_array_contains_trailing_comma() {
+        let pre = "[0, 1";
+        let post = ", ]";
+        let input = &format!("{pre}{post}");
+        let array_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(array_start.line, array_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ArrayContainsTrailingComma { array_start, error_at })
+    }
+
+    #[test]
     fn parse_illegal_unclosed_object_no_name() {
         let input = "{";
         let object_start = CodeLocation::new(1, 1);
@@ -618,6 +636,16 @@ mod tests {
         let start = CodeLocation::new(1, 1);
         let end = CodeLocation::new(start.line, start.column + pre.chars().count());
         do_parse_illegal_code(input, ParseError::ObjectMemberNameNotString(Literal::Number(name.to_string()), end))
+    }
+
+    #[test]
+    fn parse_illegal_object_trailing_comma() {
+        let pre = r#"{"foo": 0"#;
+        let post = ", }";
+        let input = &format!("{pre}{post}");
+        let object_start = CodeLocation::new(1, 1);
+        let error_at = CodeLocation::new(object_start.line, object_start.column + pre.chars().count());
+        do_parse_illegal_code(input, ParseError::ObjectContainsTrailingComma { object_start, error_at })
     }
 
     #[test]
