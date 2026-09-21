@@ -147,9 +147,37 @@ where
         (LexicalErrorKind::UnquotedString, s)
     }
 
+    // Reads digits.
+    fn read_digits(&mut self, buf: &mut String, loc_last: CodeLocation) -> (CodeLocation, bool) {
+        #[derive(PartialEq)]
+        enum State {
+            Initial,
+            FirstCharIsZero,
+            LeadingZeroDetected,
+            LeadingZeroNotDetected,
+        }
+        let mut loc_last = loc_last;
+        let mut state = State::Initial;
+        while let Some((loc, ch)) = self.chars.peek() {
+            if !ch.is_ascii_digit() {
+                break;
+            }
+            state = match state {
+                State::Initial if *ch == '0' => State::FirstCharIsZero,
+                State::Initial => State::LeadingZeroNotDetected,
+                State::FirstCharIsZero => State::LeadingZeroDetected,
+                _ => state,
+            };
+            buf.push(*ch);
+            loc_last = *loc;
+            self.chars.next();
+        }
+        (loc_last, state == State::LeadingZeroDetected)
+    }
+
     // Reads a number.
     fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
-        let (is_negative, mut firstchar_is_zero) = match firstchar {
+        let (is_negative, firstchar_is_zero) = match firstchar {
             '-' => (true, false),
             '0' => (false, true),
             _ => (false, false),
@@ -158,28 +186,15 @@ where
         let mut loc_last = loc_start;
         let mut error = None;
         let mut has_integer_digits = !is_negative;
-        let mut firstchar_already_read = !is_negative;
-        loop {
-            match self.chars.peek() {
-                Some((loc, ch)) if ch.is_ascii_digit() => {
-                    if !firstchar_already_read {
-                        if *ch == '0' {
-                            firstchar_is_zero = true;
-                        }
-                        firstchar_already_read = true;
-                    } else {
-                        if firstchar_is_zero {
-                            error = Some(LexicalErrorKind::NumberContainsLeadingZero);
-                        }
-                    }
-                    buf.push(*ch);
-                    loc_last = *loc;
-                    self.chars.next();
-                    has_integer_digits = true;
+        let firstchar_already_read = !is_negative;
+        {
+            let (loc_last_new, leading_zero_detected) = self.read_digits(&mut buf, loc_last);
+            if loc_last_new != loc_last {
+                if firstchar_is_zero || (!firstchar_already_read && leading_zero_detected) {
+                    error = Some(LexicalErrorKind::NumberContainsLeadingZero);
                 }
-                _ => {
-                    break;
-                }
+                has_integer_digits = true;
+                loc_last = loc_last_new;
             }
         }
         if !has_integer_digits {
@@ -195,21 +210,10 @@ where
             _ => false,
         };
         if has_decimal_point {
-            let mut has_fraction_digits = false;
-            loop {
-                match self.chars.peek() {
-                    Some((loc, ch)) if ch.is_ascii_digit() => {
-                        buf.push(*ch);
-                        loc_last = *loc;
-                        self.chars.next();
-                        has_fraction_digits = true;
-                    }
-                    _ => {
-                        break;
-                    }
-                }
-            }
-            if !has_fraction_digits {
+            let (loc_last_new, _) = self.read_digits(&mut buf, loc_last);
+            if loc_last_new != loc_last {
+                loc_last = loc_last_new;
+            } else {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
@@ -231,21 +235,10 @@ where
                 }
                 _ => {}
             }
-            let mut has_exponent_digits = false;
-            loop {
-                match self.chars.peek() {
-                    Some((loc, ch)) if ch.is_ascii_digit() => {
-                        buf.push(*ch);
-                        loc_last = *loc;
-                        self.chars.next();
-                        has_exponent_digits = true;
-                    }
-                    _ => {
-                        break;
-                    }
-                }
-            }
-            if !has_exponent_digits {
+            let (loc_last_new, _) = self.read_digits(&mut buf, loc_last);
+            if loc_last_new != loc_last {
+                loc_last = loc_last_new;
+            } else {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
         }
