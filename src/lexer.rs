@@ -155,7 +155,7 @@ where
             _ => (false, false),
         };
         let mut buf = firstchar.to_string();
-        let mut loc = loc_start;
+        let mut loc_last = loc_start;
         let mut error = None;
         let mut has_integer_digits = !is_negative;
         let mut firstchar_already_read = !is_negative;
@@ -173,7 +173,7 @@ where
                         }
                     }
                     buf.push(*ch);
-                    loc = self.chars.next().unwrap().0;
+                    loc_last = self.chars.next().unwrap().0;
                     has_integer_digits = true;
                 }
                 _ => {
@@ -187,7 +187,7 @@ where
         let has_decimal_point = match self.chars.peek() {
             Some((_, ch)) if *ch == '.' => {
                 buf.push(*ch);
-                loc = self.chars.next().unwrap().0;
+                loc_last = self.chars.next().unwrap().0;
                 true
             }
             _ => false,
@@ -198,7 +198,7 @@ where
                 match self.chars.peek() {
                     Some((_, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
-                        loc = self.chars.next().unwrap().0;
+                        loc_last = self.chars.next().unwrap().0;
                         has_fraction_digits = true;
                     }
                     _ => {
@@ -213,7 +213,7 @@ where
         let has_exponent_letter = match self.chars.peek() {
             Some((_, ch)) if *ch == 'e' || *ch == 'E' => {
                 buf.push(*ch);
-                loc = self.chars.next().unwrap().0;
+                loc_last = self.chars.next().unwrap().0;
                 true
             }
             _ => false,
@@ -222,7 +222,7 @@ where
             match self.chars.peek() {
                 Some((_, ch)) if *ch == '+' || *ch == '-' => {
                     buf.push(*ch);
-                    loc = self.chars.next().unwrap().0;
+                    loc_last = self.chars.next().unwrap().0;
                 }
                 _ => {}
             }
@@ -231,7 +231,7 @@ where
                 match self.chars.peek() {
                     Some((_, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
-                        loc = self.chars.next().unwrap().0;
+                        loc_last = self.chars.next().unwrap().0;
                         has_exponent_digits = true;
                     }
                     _ => {
@@ -245,7 +245,7 @@ where
         }
         match error {
             Some(kind) => Err((kind, buf)),
-            None => Ok((TokenKind::Literal(Literal::Number(buf)), loc)),
+            None => Ok((TokenKind::Literal(Literal::Number(buf)), loc_last)),
         }
     }
 
