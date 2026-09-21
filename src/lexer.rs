@@ -161,7 +161,7 @@ where
         let mut firstchar_already_read = !is_negative;
         loop {
             match self.chars.peek() {
-                Some((_, ch)) if ch.is_ascii_digit() => {
+                Some((loc, ch)) if ch.is_ascii_digit() => {
                     if !firstchar_already_read {
                         if *ch == '0' {
                             firstchar_is_zero = true;
@@ -173,7 +173,8 @@ where
                         }
                     }
                     buf.push(*ch);
-                    loc_last = self.chars.next().unwrap().0;
+                    loc_last = *loc;
+                    self.chars.next();
                     has_integer_digits = true;
                 }
                 _ => {
@@ -185,9 +186,10 @@ where
             error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
         let has_decimal_point = match self.chars.peek() {
-            Some((_, ch)) if *ch == '.' => {
+            Some((loc, ch)) if *ch == '.' => {
                 buf.push(*ch);
-                loc_last = self.chars.next().unwrap().0;
+                loc_last = *loc;
+                self.chars.next();
                 true
             }
             _ => false,
@@ -196,9 +198,10 @@ where
             let mut has_fraction_digits = false;
             loop {
                 match self.chars.peek() {
-                    Some((_, ch)) if ch.is_ascii_digit() => {
+                    Some((loc, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
-                        loc_last = self.chars.next().unwrap().0;
+                        loc_last = *loc;
+                        self.chars.next();
                         has_fraction_digits = true;
                     }
                     _ => {
@@ -211,27 +214,30 @@ where
             }
         }
         let has_exponent_letter = match self.chars.peek() {
-            Some((_, ch)) if *ch == 'e' || *ch == 'E' => {
+            Some((loc, ch)) if *ch == 'e' || *ch == 'E' => {
                 buf.push(*ch);
-                loc_last = self.chars.next().unwrap().0;
+                loc_last = *loc;
+                self.chars.next();
                 true
             }
             _ => false,
         };
         if has_exponent_letter {
             match self.chars.peek() {
-                Some((_, ch)) if *ch == '+' || *ch == '-' => {
+                Some((loc, ch)) if *ch == '+' || *ch == '-' => {
                     buf.push(*ch);
-                    loc_last = self.chars.next().unwrap().0;
+                    loc_last = *loc;
+                    self.chars.next();
                 }
                 _ => {}
             }
             let mut has_exponent_digits = false;
             loop {
                 match self.chars.peek() {
-                    Some((_, ch)) if ch.is_ascii_digit() => {
+                    Some((loc, ch)) if ch.is_ascii_digit() => {
                         buf.push(*ch);
-                        loc_last = self.chars.next().unwrap().0;
+                        loc_last = *loc;
+                        self.chars.next();
                         has_exponent_digits = true;
                     }
                     _ => {
