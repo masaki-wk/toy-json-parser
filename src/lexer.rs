@@ -431,8 +431,20 @@ mod tests {
     }
 
     #[test]
+    fn tokenize_number_positive_integer_contains_zero() {
+        let s = "103";
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+    }
+
+    #[test]
     fn tokenize_number_negative_integer() {
         let s = "-123";
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+    }
+
+    #[test]
+    fn tokenize_number_negative_integer_contains_zero() {
+        let s = "-103";
         take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
