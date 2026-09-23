@@ -208,14 +208,14 @@ where
         if !has_integer_digits {
             error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
-        let has_decimal_point = match self.chars.peek() {
-            Some((loc, ch)) if *ch == '.' => {
-                buf.push(*ch);
-                loc_last = *loc;
-                self.chars.next();
+        let has_decimal_point = {
+            let loc = self.read_char_if(|ch| ch == '.', &mut buf, loc_last);
+            if loc != loc_last {
+                loc_last = loc;
                 true
+            } else {
+                false
             }
-            _ => false,
         };
         if has_decimal_point {
             let (loc_last_new, _) = self.read_digits(&mut buf, loc_last);
@@ -225,24 +225,17 @@ where
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_letter = match self.chars.peek() {
-            Some((loc, ch)) if *ch == 'e' || *ch == 'E' => {
-                buf.push(*ch);
-                loc_last = *loc;
-                self.chars.next();
+        let has_exponent_letter = {
+            let loc = self.read_char_if(|ch| ch == 'e' || ch == 'E', &mut buf, loc_last);
+            if loc != loc_last {
+                loc_last = loc;
                 true
+            } else {
+                false
             }
-            _ => false,
         };
         if has_exponent_letter {
-            match self.chars.peek() {
-                Some((loc, ch)) if *ch == '+' || *ch == '-' => {
-                    buf.push(*ch);
-                    loc_last = *loc;
-                    self.chars.next();
-                }
-                _ => {}
-            }
+            loc_last = self.read_char_if(|ch| ch == '+' || ch == '-', &mut buf, loc_last);
             let (loc_last_new, _) = self.read_digits(&mut buf, loc_last);
             if loc_last_new != loc_last {
                 loc_last = loc_last_new;
