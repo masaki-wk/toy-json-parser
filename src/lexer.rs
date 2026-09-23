@@ -112,17 +112,17 @@ where
     // Reads an unquoted string.
     fn read_unquoted_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
         let mut buf = firstchar.to_string();
-        let mut loc = loc_start;
-        while let Some((ch_loc, ch)) = self.chars.peek().copied() {
+        let mut loc_last = loc_start;
+        while let Some((loc, ch)) = self.chars.peek().copied() {
             if ch.is_ascii_alphanumeric() || ch == '_' {
                 self.chars.next();
                 buf.push(ch);
-                loc = ch_loc;
+                loc_last = loc;
             } else {
                 break;
             }
         }
-        (buf, loc)
+        (buf, loc_last)
     }
 
     // Reads a known unquoted string.
