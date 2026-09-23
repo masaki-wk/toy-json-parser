@@ -271,11 +271,9 @@ where
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
-                                    let (loc, ch) = self.chars.peek()?;
-                                    if ch.is_ascii_hexdigit() {
-                                        loc_last = *loc;
-                                        buf.push(*ch);
-                                        self.chars.next();
+                                    let loc = self.read_char_if(|ch| ch.is_ascii_hexdigit(), &mut buf, loc_last);
+                                    if loc != loc_last {
+                                        loc_last = loc;
                                     } else {
                                         error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
                                         break;
