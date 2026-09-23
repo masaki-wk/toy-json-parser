@@ -176,26 +176,21 @@ where
 
     // Reads a number.
     fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
-        let (is_negative, firstchar_is_zero) = match firstchar {
-            '-' => (true, false),
-            '0' => (false, true),
-            _ => (false, false),
-        };
         let mut buf = firstchar.to_string();
         let mut loc_last = loc_start;
         let mut error = None;
-        let mut has_integer_digits = !is_negative;
-        let firstchar_already_read = !is_negative;
-        {
+        let has_integer_digits = {
             let (loc_last_new, leading_zero_detected) = self.read_digits(&mut buf, loc_last);
             if loc_last_new != loc_last {
-                if firstchar_is_zero || (!firstchar_already_read && leading_zero_detected) {
+                loc_last = loc_last_new;
+                if firstchar == '0' || (firstchar == '-' && leading_zero_detected) {
                     error = Some(LexicalErrorKind::NumberContainsLeadingZero);
                 }
-                has_integer_digits = true;
-                loc_last = loc_last_new;
+                true
+            } else {
+                firstchar != '-'
             }
-        }
+        };
         if !has_integer_digits {
             error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
