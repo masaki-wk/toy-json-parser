@@ -245,27 +245,27 @@ where
     // Reads a quoted string.
     fn read_quoted_string(&mut self, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
         let mut buf = String::new();
-        let mut loc = loc_start;
+        let mut loc_last = loc_start;
         let status = (|| {
             let mut error = None;
             loop {
-                let (ch_loc, ch) = self.chars.next()?;
-                loc = ch_loc;
+                let (loc, ch) = self.chars.next()?;
+                loc_last = loc;
                 match ch {
                     '"' => {
                         break;
                     }
                     '\\' => {
                         buf.push(ch);
-                        let (ch_loc, ch) = self.chars.next()?;
-                        loc = ch_loc;
+                        let (loc, ch) = self.chars.next()?;
+                        loc_last = loc;
                         buf.push(ch);
                         match ch {
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
-                                    let (ch_loc, ch) = self.chars.next()?;
-                                    loc = ch_loc;
+                                    let (loc, ch) = self.chars.next()?;
+                                    loc_last = loc;
                                     buf.push(ch);
                                     if !ch.is_ascii_hexdigit() {
                                         error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
@@ -289,7 +289,7 @@ where
             Some(error)
         })();
         match status {
-            Some(None) => Ok((TokenKind::Literal(Literal::String(buf)), loc)),
+            Some(None) => Ok((TokenKind::Literal(Literal::String(buf)), loc_last)),
             Some(Some(kind)) => Err((kind, format!(r#""{buf}""#))),
             None => Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf)),
         }
