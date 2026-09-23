@@ -109,20 +109,34 @@ where
         }
     }
 
+    // Reads a character if the character satisfies the predicate.
+    fn read_char_if<F>(&mut self, pred: F, buf: &mut String, loc_last: CodeLocation) -> CodeLocation
+    where
+        F: Fn(char) -> bool,
+    {
+        match self.chars.peek().copied() {
+            Some((loc, ch)) if pred(ch) => {
+                buf.push(ch);
+                self.chars.next();
+                loc
+            }
+            _ => loc_last,
+        }
+    }
+
     // Reads an unquoted string.
     fn read_unquoted_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
         let mut buf = firstchar.to_string();
-        let mut loc = loc_start;
-        while let Some((ch_loc, ch)) = self.chars.peek().copied() {
-            if ch.is_ascii_alphanumeric() || ch == '_' {
-                self.chars.next();
-                buf.push(ch);
-                loc = ch_loc;
+        let mut loc_last = loc_start;
+        loop {
+            let loc = self.read_char_if(|ch| ch.is_ascii_alphanumeric() || ch == '_', &mut buf, loc_last);
+            if loc != loc_last {
+                loc_last = loc;
             } else {
                 break;
             }
         }
-        (buf, loc)
+        (buf, loc_last)
     }
 
     // Reads a known unquoted string.
@@ -147,135 +161,122 @@ where
         (LexicalErrorKind::UnquotedString, s)
     }
 
+    // Reads digits.
+    fn read_digits(&mut self, buf: &mut String, mut loc_last: CodeLocation) -> (CodeLocation, bool) {
+        #[derive(PartialEq)]
+        enum State {
+            Initial,
+            FirstCharIsZero,
+            LeadingZeroDetected,
+            LeadingZeroNotDetected,
+        }
+        let mut state = State::Initial;
+        while let Some((loc, ch)) = self.chars.peek() {
+            if !ch.is_ascii_digit() {
+                break;
+            }
+            state = match state {
+                State::Initial if *ch == '0' => State::FirstCharIsZero,
+                State::Initial => State::LeadingZeroNotDetected,
+                State::FirstCharIsZero => State::LeadingZeroDetected,
+                _ => state,
+            };
+            buf.push(*ch);
+            loc_last = *loc;
+            self.chars.next();
+        }
+        (loc_last, state == State::LeadingZeroDetected)
+    }
+
     // Reads a number.
     fn read_number(&mut self, firstchar: char, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
-        let (is_negative, mut firstchar_is_zero) = match firstchar {
-            '-' => (true, false),
-            '0' => (false, true),
-            _ => (false, false),
-        };
         let mut buf = firstchar.to_string();
-        let mut loc = loc_start;
+        let mut loc_last = loc_start;
         let mut error = None;
-        let mut has_integer_digits = !is_negative;
-        let mut firstchar_already_read = !is_negative;
-        loop {
-            match self.chars.peek() {
-                Some((_, ch)) if ch.is_ascii_digit() => {
-                    if !firstchar_already_read {
-                        if *ch == '0' {
-                            firstchar_is_zero = true;
-                        }
-                        firstchar_already_read = true;
-                    } else {
-                        if firstchar_is_zero {
-                            error = Some(LexicalErrorKind::NumberContainsLeadingZero);
-                        }
-                    }
-                    buf.push(*ch);
-                    loc = self.chars.next().unwrap().0;
-                    has_integer_digits = true;
+        let has_integer_digits = {
+            let (loc_last_new, leading_zero_detected) = self.read_digits(&mut buf, loc_last);
+            if loc_last_new != loc_last {
+                loc_last = loc_last_new;
+                if firstchar == '0' || (firstchar == '-' && leading_zero_detected) {
+                    error = Some(LexicalErrorKind::NumberContainsLeadingZero);
                 }
-                _ => {
-                    break;
-                }
+                true
+            } else {
+                firstchar != '-'
             }
-        }
+        };
         if !has_integer_digits {
             error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
-        let has_decimal_point = match self.chars.peek() {
-            Some((_, ch)) if *ch == '.' => {
-                buf.push(*ch);
-                loc = self.chars.next().unwrap().0;
+        let has_decimal_point = {
+            let loc = self.read_char_if(|ch| ch == '.', &mut buf, loc_last);
+            if loc != loc_last {
+                loc_last = loc;
                 true
+            } else {
+                false
             }
-            _ => false,
         };
         if has_decimal_point {
-            let mut has_fraction_digits = false;
-            loop {
-                match self.chars.peek() {
-                    Some((_, ch)) if ch.is_ascii_digit() => {
-                        buf.push(*ch);
-                        loc = self.chars.next().unwrap().0;
-                        has_fraction_digits = true;
-                    }
-                    _ => {
-                        break;
-                    }
-                }
-            }
-            if !has_fraction_digits {
+            let (loc_last_new, _) = self.read_digits(&mut buf, loc_last);
+            if loc_last_new != loc_last {
+                loc_last = loc_last_new;
+            } else {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_letter = match self.chars.peek() {
-            Some((_, ch)) if *ch == 'e' || *ch == 'E' => {
-                buf.push(*ch);
-                loc = self.chars.next().unwrap().0;
+        let has_exponent_letter = {
+            let loc = self.read_char_if(|ch| ch == 'e' || ch == 'E', &mut buf, loc_last);
+            if loc != loc_last {
+                loc_last = loc;
                 true
+            } else {
+                false
             }
-            _ => false,
         };
         if has_exponent_letter {
-            match self.chars.peek() {
-                Some((_, ch)) if *ch == '+' || *ch == '-' => {
-                    buf.push(*ch);
-                    loc = self.chars.next().unwrap().0;
-                }
-                _ => {}
-            }
-            let mut has_exponent_digits = false;
-            loop {
-                match self.chars.peek() {
-                    Some((_, ch)) if ch.is_ascii_digit() => {
-                        buf.push(*ch);
-                        loc = self.chars.next().unwrap().0;
-                        has_exponent_digits = true;
-                    }
-                    _ => {
-                        break;
-                    }
-                }
-            }
-            if !has_exponent_digits {
+            loc_last = self.read_char_if(|ch| ch == '+' || ch == '-', &mut buf, loc_last);
+            let (loc_last_new, _) = self.read_digits(&mut buf, loc_last);
+            if loc_last_new != loc_last {
+                loc_last = loc_last_new;
+            } else {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
         }
         match error {
             Some(kind) => Err((kind, buf)),
-            None => Ok((TokenKind::Literal(Literal::Number(buf)), loc)),
+            None => Ok((TokenKind::Literal(Literal::Number(buf)), loc_last)),
         }
     }
 
     // Reads a quoted string.
     fn read_quoted_string(&mut self, loc_start: CodeLocation) -> Result<(TokenKind, CodeLocation), (LexicalErrorKind, String)> {
         let mut buf = String::new();
-        let mut loc = loc_start;
+        let mut loc_last = loc_start;
         let status = (|| {
             let mut error = None;
             loop {
-                let (ch_loc, ch) = self.chars.next()?;
-                loc = ch_loc;
+                let (loc, ch) = self.chars.next()?;
+                loc_last = loc;
                 match ch {
                     '"' => {
                         break;
                     }
                     '\\' => {
                         buf.push(ch);
-                        let (ch_loc, ch) = self.chars.next()?;
-                        loc = ch_loc;
+                        let (loc, ch) = self.chars.next()?;
+                        loc_last = loc;
                         buf.push(ch);
                         match ch {
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
-                                    let (ch_loc, ch) = self.chars.next()?;
-                                    loc = ch_loc;
-                                    buf.push(ch);
-                                    if !ch.is_ascii_hexdigit() {
+                                    let loc = self.read_char_if(|ch| ch.is_ascii_hexdigit(), &mut buf, loc_last);
+                                    if loc != loc_last {
+                                        loc_last = loc;
+                                    } else {
                                         error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
+                                        break;
                                     }
                                 }
                             }
@@ -296,7 +297,7 @@ where
             Some(error)
         })();
         match status {
-            Some(None) => Ok((TokenKind::Literal(Literal::String(buf)), loc)),
+            Some(None) => Ok((TokenKind::Literal(Literal::String(buf)), loc_last)),
             Some(Some(kind)) => Err((kind, format!(r#""{buf}""#))),
             None => Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf)),
         }
@@ -432,8 +433,20 @@ mod tests {
     }
 
     #[test]
+    fn tokenize_number_positive_integer_contains_zero() {
+        let s = "103";
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+    }
+
+    #[test]
     fn tokenize_number_negative_integer() {
         let s = "-123";
+        take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
+    }
+
+    #[test]
+    fn tokenize_number_negative_integer_contains_zero() {
+        let s = "-103";
         take_single_valid_token(s, TokenKind::Literal(Literal::Number(s.to_string())))
     }
 
