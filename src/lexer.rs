@@ -113,11 +113,11 @@ where
     fn read_unquoted_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
         let mut buf = firstchar.to_string();
         let mut loc_last = loc_start;
-        while let Some((loc, ch)) = self.chars.peek().copied() {
-            if ch.is_ascii_alphanumeric() || ch == '_' {
+        while let Some((loc, ch)) = self.chars.peek() {
+            if ch.is_ascii_alphanumeric() || *ch == '_' {
+                buf.push(*ch);
+                loc_last = *loc;
                 self.chars.next();
-                buf.push(ch);
-                loc_last = loc;
             } else {
                 break;
             }
