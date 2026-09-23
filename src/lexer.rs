@@ -109,15 +109,29 @@ where
         }
     }
 
+    // Reads a character if the character satisfies the predicate.
+    fn read_char_if<F>(&mut self, pred: F, buf: &mut String, loc_last: CodeLocation) -> CodeLocation
+    where
+        F: Fn(char) -> bool,
+    {
+        match self.chars.peek().copied() {
+            Some((loc, ch)) if pred(ch) => {
+                buf.push(ch);
+                self.chars.next();
+                loc
+            }
+            _ => loc_last,
+        }
+    }
+
     // Reads an unquoted string.
     fn read_unquoted_string(&mut self, firstchar: char, loc_start: CodeLocation) -> (String, CodeLocation) {
         let mut buf = firstchar.to_string();
         let mut loc_last = loc_start;
-        while let Some((loc, ch)) = self.chars.peek() {
-            if ch.is_ascii_alphanumeric() || *ch == '_' {
-                buf.push(*ch);
-                loc_last = *loc;
-                self.chars.next();
+        loop {
+            let loc = self.read_char_if(|ch| ch.is_ascii_alphanumeric() || ch == '_', &mut buf, loc_last);
+            if loc != loc_last {
+                loc_last = loc;
             } else {
                 break;
             }
