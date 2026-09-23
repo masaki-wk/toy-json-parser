@@ -148,7 +148,7 @@ where
     }
 
     // Reads digits.
-    fn read_digits(&mut self, buf: &mut String, loc_last: CodeLocation) -> (CodeLocation, bool) {
+    fn read_digits(&mut self, buf: &mut String, mut loc_last: CodeLocation) -> (CodeLocation, bool) {
         #[derive(PartialEq)]
         enum State {
             Initial,
@@ -156,7 +156,6 @@ where
             LeadingZeroDetected,
             LeadingZeroNotDetected,
         }
-        let mut loc_last = loc_last;
         let mut state = State::Initial;
         while let Some((loc, ch)) = self.chars.peek() {
             if !ch.is_ascii_digit() {
