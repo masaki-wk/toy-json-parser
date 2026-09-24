@@ -93,7 +93,7 @@ where
             }
         };
         let result = match category {
-            TokenCategory::Delimiter(delim) => Ok(TokenKind::Delimiter(delim)),
+            TokenCategory::Delimiter(delim) => Ok((TokenKind::Delimiter(delim), 1)),
             TokenCategory::UnquotedStringKnown(lit, s) => self.read_unquoted_string_known(lit, s, firstchar),
             TokenCategory::UnquotedStringUnknown => Err(self.read_unquoted_string_unknown(firstchar)),
             TokenCategory::Number => self.read_number(firstchar),
@@ -101,15 +101,7 @@ where
             TokenCategory::Invalid => Err((LexicalErrorKind::UnexpectedChar, firstchar.to_string())),
         };
         match result {
-            Ok(kind) => {
-                let len = match &kind {
-                    TokenKind::Delimiter(_) => 1,
-                    TokenKind::Literal(Literal::Number(s)) => s.len(),
-                    TokenKind::Literal(Literal::String(s)) => s.len() + 2,
-                    TokenKind::Literal(Literal::Boolean(false)) => 5,
-                    TokenKind::Literal(Literal::Boolean(true)) => 4,
-                    TokenKind::Literal(Literal::Null) => 4,
-                };
+            Ok((kind, len)) => {
                 let loc_end = CodeLocation::new(loc_start.line, loc_start.column + len);
                 Some(Ok(Token::new(kind, CodeSpan::new(loc_start, loc_end))))
             }
@@ -140,10 +132,15 @@ where
     }
 
     // Reads a known unquoted string.
-    fn read_unquoted_string_known(&mut self, expected_literal: Literal, expected_str: &str, firstchar: char) -> Result<TokenKind, (LexicalErrorKind, String)> {
+    fn read_unquoted_string_known(
+        &mut self,
+        expected_literal: Literal,
+        expected_str: &str,
+        firstchar: char,
+    ) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let s = self.read_unquoted_string(firstchar);
         if s == expected_str {
-            Ok(TokenKind::Literal(expected_literal))
+            Ok((TokenKind::Literal(expected_literal), s.len()))
         } else {
             Err((LexicalErrorKind::UnquotedString, s))
         }
@@ -179,7 +176,7 @@ where
     }
 
     // Reads a number.
-    fn read_number(&mut self, firstchar: char) -> Result<TokenKind, (LexicalErrorKind, String)> {
+    fn read_number(&mut self, firstchar: char) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = firstchar.to_string();
         let mut error = None;
         let has_integer_digits = {
@@ -213,12 +210,15 @@ where
         }
         match error {
             Some(kind) => Err((kind, buf)),
-            None => Ok(TokenKind::Literal(Literal::Number(buf))),
+            None => {
+                let len = buf.len();
+                Ok((TokenKind::Literal(Literal::Number(buf)), len))
+            }
         }
     }
 
     // Reads a quoted string.
-    fn read_quoted_string(&mut self) -> Result<TokenKind, (LexicalErrorKind, String)> {
+    fn read_quoted_string(&mut self) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = String::new();
         let status = (|| {
             let mut error = None;
@@ -259,7 +259,10 @@ where
             Some(error)
         })();
         match status {
-            Some(None) => Ok(TokenKind::Literal(Literal::String(buf))),
+            Some(None) => {
+                let len = buf.len();
+                Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
+            }
             Some(Some(kind)) => Err((kind, format!(r#""{buf}""#))),
             None => Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf)),
         }
