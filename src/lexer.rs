@@ -166,18 +166,13 @@ where
         }
         let mut len: usize = 0;
         let mut state = State::Initial;
-        while let Some((_, ch)) = self.chars.peek() {
-            if !ch.is_ascii_digit() {
-                break;
-            }
+        while let Some(ch) = self.read_char_if(|ch| ch.is_ascii_digit(), buf) {
             state = match state {
-                State::Initial if *ch == '0' => State::FirstCharIsZero,
+                State::Initial if ch == '0' => State::FirstCharIsZero,
                 State::Initial => State::LeadingZeroNotDetected,
                 State::FirstCharIsZero => State::LeadingZeroDetected,
                 _ => state,
             };
-            buf.push(*ch);
-            self.chars.next();
             len += 1;
         }
         (len, state == State::LeadingZeroDetected)
