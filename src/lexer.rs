@@ -110,7 +110,7 @@ where
     }
 
     // Reads a character if the character satisfies the predicate.
-    fn read_char_if<F>(&mut self, pred: F, buf: &mut String) -> Option<char>
+    fn read_char_if<F>(&mut self, buf: &mut String, pred: F) -> Option<char>
     where
         F: Fn(char) -> bool,
     {
@@ -127,7 +127,7 @@ where
     // Reads an unquoted string.
     fn read_unquoted_string(&mut self, firstchar: char) -> String {
         let mut buf = firstchar.to_string();
-        while self.read_char_if(|ch| ch.is_ascii_alphanumeric() || ch == '_', &mut buf).is_some() {}
+        while self.read_char_if(&mut buf, |ch| ch.is_ascii_alphanumeric() || ch == '_').is_some() {}
         buf
     }
 
@@ -163,7 +163,7 @@ where
         }
         let mut len: usize = 0;
         let mut state = State::Initial;
-        while let Some(ch) = self.read_char_if(|ch| ch.is_ascii_digit(), buf) {
+        while let Some(ch) = self.read_char_if(buf, |ch| ch.is_ascii_digit()) {
             state = match state {
                 State::Initial if ch == '0' => State::FirstCharIsZero,
                 State::Initial => State::LeadingZeroNotDetected,
@@ -193,16 +193,16 @@ where
         if !has_integer_digits {
             error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
-        let has_decimal_point = self.read_char_if(|ch| ch == '.', &mut buf).is_some();
+        let has_decimal_point = self.read_char_if(&mut buf, |ch| ch == '.').is_some();
         if has_decimal_point {
             let (len, _) = self.read_digits(&mut buf);
             if len == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_letter = self.read_char_if(|ch| ch == 'e' || ch == 'E', &mut buf).is_some();
+        let has_exponent_letter = self.read_char_if(&mut buf, |ch| ch == 'e' || ch == 'E').is_some();
         if has_exponent_letter {
-            self.read_char_if(|ch| ch == '+' || ch == '-', &mut buf);
+            self.read_char_if(&mut buf, |ch| ch == '+' || ch == '-');
             let (len, _) = self.read_digits(&mut buf);
             if len == 0 {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
@@ -236,7 +236,7 @@ where
                             '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                             'u' => {
                                 for _ in 0..4 {
-                                    if self.read_char_if(|ch| ch.is_ascii_hexdigit(), &mut buf).is_none() {
+                                    if self.read_char_if(&mut buf, |ch| ch.is_ascii_hexdigit()).is_none() {
                                         error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
                                         break;
                                     }
