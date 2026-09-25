@@ -179,19 +179,13 @@ where
     fn read_number(&mut self, firstchar: char) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = firstchar.to_string();
         let mut error = None;
-        let has_integer_digits = {
-            let (len, leading_zero_detected) = self.read_digits(&mut buf);
-            if len > 0 {
-                if firstchar == '0' || (firstchar == '-' && leading_zero_detected) {
-                    error = Some(LexicalErrorKind::NumberContainsLeadingZero);
-                }
-                true
-            } else {
-                firstchar != '-'
+        {
+            let (integer_digits_len_rest, leading_zero_detected_rest) = self.read_digits(&mut buf);
+            if firstchar == '-' && integer_digits_len_rest == 0 {
+                error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
+            } else if (firstchar == '0' && integer_digits_len_rest > 0) || (firstchar == '-' && leading_zero_detected_rest) {
+                error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
-        };
-        if !has_integer_digits {
-            error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
         }
         let has_decimal_point = self.read_char_if(&mut buf, |ch| ch == '.').is_some();
         if has_decimal_point {
