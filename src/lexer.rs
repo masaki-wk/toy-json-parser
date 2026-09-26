@@ -213,53 +213,56 @@ where
     // Reads a quoted string.
     fn read_quoted_string(&mut self) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = String::new();
-        let status = (|| {
-            let mut error = None;
-            loop {
-                let (_, ch) = self.chars.next()?;
-                match ch {
-                    '"' => {
+        let mut error = None;
+        let mut terminated = false;
+        while let Some((_, ch)) = self.chars.next() {
+            match ch {
+                '"' => {
+                    terminated = true;
+                    break;
+                }
+                '\\' => {
+                    buf.push(ch);
+                    let Some((_, ch)) = self.chars.next() else {
                         break;
-                    }
-                    '\\' => {
-                        buf.push(ch);
-                        let (_, ch) = self.chars.next()?;
-                        buf.push(ch);
-                        match ch {
-                            '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
-                            'u' => {
-                                for _ in 0..4 {
-                                    if let Some(ch) = self.read_char_if(|ch| ch.is_ascii_hexdigit()) {
-                                        buf.push(ch);
-                                    } else {
-                                        error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
-                                        break;
-                                    }
+                    };
+                    buf.push(ch);
+                    match ch {
+                        '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
+                        'u' => {
+                            for _ in 0..4 {
+                                if let Some(ch) = self.read_char_if(|ch| ch.is_ascii_hexdigit()) {
+                                    buf.push(ch);
+                                } else {
+                                    error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
+                                    break;
                                 }
                             }
-                            _ => {
-                                error = Some(LexicalErrorKind::StringContainsInvalidEscapeSequence);
-                            }
+                        }
+                        _ => {
+                            error = Some(LexicalErrorKind::StringContainsInvalidEscapeSequence);
                         }
                     }
-                    '\0'..'\x1f' => {
-                        buf.push(ch);
-                        error = Some(LexicalErrorKind::StringContainsUnescapedControlChar);
-                    }
-                    _ => {
-                        buf.push(ch);
-                    }
+                }
+                '\0'..'\x1f' => {
+                    buf.push(ch);
+                    error = Some(LexicalErrorKind::StringContainsUnescapedControlChar);
+                }
+                _ => {
+                    buf.push(ch);
                 }
             }
-            Some(error)
-        })();
-        match status {
-            Some(None) => {
-                let len = buf.len();
-                Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
+        }
+        if !terminated {
+            Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf))
+        } else {
+            match error {
+                Some(kind) => Err((kind, format!(r#""{buf}""#))),
+                None => {
+                    let len = buf.len();
+                    Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
+                }
             }
-            Some(Some(kind)) => Err((kind, format!(r#""{buf}""#))),
-            None => Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf)),
         }
     }
 }
