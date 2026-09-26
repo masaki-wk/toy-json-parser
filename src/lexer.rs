@@ -112,21 +112,15 @@ where
     // Reads a character if the character satisfies the predicate.
     fn read_char_if<F>(&mut self, pred: F) -> Option<char>
     where
-        F: Fn(char) -> bool,
+        F: FnOnce(&char) -> bool,
     {
-        match self.chars.peek().copied() {
-            Some((_, ch)) if pred(ch) => {
-                self.chars.next();
-                Some(ch)
-            }
-            _ => None,
-        }
+        self.chars.next_if(|(_, ch)| pred(ch)).map(|(_, ch)| ch)
     }
 
     // Reads an unquoted string.
     fn read_unquoted_string(&mut self, firstchar: char) -> String {
         let mut buf = firstchar.to_string();
-        while let Some(ch) = self.read_char_if(|ch| ch.is_ascii_alphanumeric() || ch == '_') {
+        while let Some(ch) = self.read_char_if(|ch| ch.is_ascii_alphanumeric() || *ch == '_') {
             buf.push(ch);
         }
         buf
@@ -189,7 +183,7 @@ where
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
         }
-        let has_decimal_point = if let Some(ch) = self.read_char_if(|ch| ch == '.') {
+        let has_decimal_point = if let Some(ch) = self.read_char_if(|ch| *ch == '.') {
             buf.push(ch);
             true
         } else {
@@ -201,14 +195,14 @@ where
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_letter = if let Some(ch) = self.read_char_if(|ch| ch == 'e' || ch == 'E') {
+        let has_exponent_letter = if let Some(ch) = self.read_char_if(|ch| *ch == 'e' || *ch == 'E') {
             buf.push(ch);
             true
         } else {
             false
         };
         if has_exponent_letter {
-            if let Some(ch) = self.read_char_if(|ch| ch == '+' || ch == '-') {
+            if let Some(ch) = self.read_char_if(|ch| *ch == '+' || *ch == '-') {
                 buf.push(ch);
             }
             let (len, _) = self.read_digits(&mut buf);
