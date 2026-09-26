@@ -214,12 +214,16 @@ where
     fn read_quoted_string(&mut self) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = String::new();
         let mut error = None;
-        let mut terminated = false;
         while let Some((_, ch)) = self.chars.next() {
             match ch {
                 '"' => {
-                    terminated = true;
-                    break;
+                    return match error {
+                        Some(kind) => Err((kind, format!(r#""{buf}""#))),
+                        None => {
+                            let len = buf.len();
+                            Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
+                        }
+                    };
                 }
                 '\\' => {
                     buf.push(ch);
@@ -252,17 +256,7 @@ where
                 }
             }
         }
-        if !terminated {
-            Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf))
-        } else {
-            match error {
-                Some(kind) => Err((kind, format!(r#""{buf}""#))),
-                None => {
-                    let len = buf.len();
-                    Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
-                }
-            }
-        }
+        Err((LexicalErrorKind::UnterminatedString, '"'.to_string() + &buf))
     }
 }
 
