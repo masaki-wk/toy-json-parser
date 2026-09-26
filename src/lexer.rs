@@ -176,10 +176,10 @@ where
         let mut buf = firstchar.to_string();
         let mut error = None;
         {
-            let (integer_digits_len_rest, leading_zero_detected_rest) = self.read_digits(&mut buf);
-            if firstchar == '-' && integer_digits_len_rest == 0 {
+            let (len, leading_zero_detected) = self.read_digits(&mut buf);
+            if firstchar == '-' && len == 0 {
                 error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
-            } else if (firstchar == '0' && integer_digits_len_rest > 0) || (firstchar == '-' && leading_zero_detected_rest) {
+            } else if (firstchar == '0' && len > 0) || (firstchar == '-' && leading_zero_detected) {
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
         }
