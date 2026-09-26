@@ -231,12 +231,11 @@ where
                         '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                         'u' => {
                             for _ in 0..4 {
-                                if let Some(ch) = self.read_char_if(|ch| ch.is_ascii_hexdigit()) {
-                                    buf.push(ch);
-                                } else {
+                                let Some(ch) = self.read_char_if(|ch| ch.is_ascii_hexdigit()) else {
                                     error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
                                     break;
-                                }
+                                };
+                                buf.push(ch);
                             }
                         }
                         _ => {
