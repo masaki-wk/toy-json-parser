@@ -114,13 +114,13 @@ where
     where
         F: FnOnce(&char) -> bool,
     {
-        self.chars.next_if(|(_, ch)| pred(ch)).map(|(_, ch)| ch)
+        self.chars.next_if(|&(_, ch)| pred(&ch)).map(|(_, ch)| ch)
     }
 
     // Reads an unquoted string.
     fn read_unquoted_string(&mut self, firstchar: char) -> String {
         let mut buf = firstchar.to_string();
-        while let Some(ch) = self.read_char_if(|ch| ch.is_ascii_alphanumeric() || *ch == '_') {
+        while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_alphanumeric() || ch == '_') {
             buf.push(ch);
         }
         buf
@@ -158,7 +158,7 @@ where
         }
         let mut len: usize = 0;
         let mut state = State::Initial;
-        while let Some(ch) = self.read_char_if(|ch| ch.is_ascii_digit()) {
+        while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_digit()) {
             buf.push(ch);
             state = match state {
                 State::Initial if ch == '0' => State::FirstCharIsZero,
@@ -184,16 +184,16 @@ where
             }
             // `firstchar == '-'` is equivalent to `!firstchar.is_ascii_digit()` in this method
         }
-        if let Some(ch) = self.read_char_if(|ch| *ch == '.') {
+        if let Some(ch) = self.read_char_if(|&ch| ch == '.') {
             buf.push(ch);
             let (len, _) = self.read_digits(&mut buf);
             if len == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        if let Some(ch) = self.read_char_if(|ch| *ch == 'e' || *ch == 'E') {
+        if let Some(ch) = self.read_char_if(|&ch| ch == 'e' || ch == 'E') {
             buf.push(ch);
-            if let Some(ch) = self.read_char_if(|ch| *ch == '+' || *ch == '-') {
+            if let Some(ch) = self.read_char_if(|&ch| ch == '+' || ch == '-') {
                 buf.push(ch);
             }
             let (len, _) = self.read_digits(&mut buf);
@@ -235,7 +235,7 @@ where
                         '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                         'u' => {
                             for _ in 0..4 {
-                                let Some(ch) = self.read_char_if(|ch| ch.is_ascii_hexdigit()) else {
+                                let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_hexdigit()) else {
                                     error = Some(LexicalErrorKind::StringContainsInvalidUnicodeEscape);
                                     break;
                                 };
