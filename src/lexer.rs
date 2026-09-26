@@ -183,25 +183,15 @@ where
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
         }
-        let has_decimal_point = if let Some(ch) = self.read_char_if(|ch| *ch == '.') {
+        if let Some(ch) = self.read_char_if(|ch| *ch == '.') {
             buf.push(ch);
-            true
-        } else {
-            false
-        };
-        if has_decimal_point {
             let (len, _) = self.read_digits(&mut buf);
             if len == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
-        let has_exponent_letter = if let Some(ch) = self.read_char_if(|ch| *ch == 'e' || *ch == 'E') {
+        if let Some(ch) = self.read_char_if(|ch| *ch == 'e' || *ch == 'E') {
             buf.push(ch);
-            true
-        } else {
-            false
-        };
-        if has_exponent_letter {
             if let Some(ch) = self.read_char_if(|ch| *ch == '+' || *ch == '-') {
                 buf.push(ch);
             }
