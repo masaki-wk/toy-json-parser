@@ -182,6 +182,7 @@ where
             } else if (firstchar == '0' && len > 0) || (firstchar == '-' && leading_zero_detected) {
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
+            // `firstchar == '-'` is equivalent to `!firstchar.is_ascii_digit()` in this method
         }
         if let Some(ch) = self.read_char_if(|ch| *ch == '.') {
             buf.push(ch);
