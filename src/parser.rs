@@ -201,10 +201,12 @@ where
         let last_token_span = {
             let mut prev_token_span = begin_object_token_span;
             loop {
-                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
-                    object_start: *begin_object_token_span.start(),
-                    error_at: *prev_token_span.end(),
-                })?;
+                let Some(peeked_result_for_token) = self.lexer.peek() else {
+                    return Err(ParseError::UnclosedObject {
+                        object_start: *begin_object_token_span.start(),
+                        error_at: *prev_token_span.end(),
+                    });
+                };
                 let peeked_token = match peeked_result_for_token {
                     Ok(token) => token,
                     Err(e) => {
@@ -219,24 +221,20 @@ where
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token_span.start()))
-                        } else {
-                            prev_token_span = peeked_token_span;
-                            self.lexer.next();
-                            Ok(())
+                            return Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token_span.start()));
                         }
+                        prev_token_span = peeked_token_span;
+                        self.lexer.next();
                     }
                     _ => {
-                        if buf.is_empty() {
-                            Ok(())
-                        } else {
-                            Err(ParseError::ObjectMissingSeparator {
+                        if !buf.is_empty() {
+                            return Err(ParseError::ObjectMissingSeparator {
                                 object_start: *begin_object_token_span.start(),
                                 error_at: *prev_token_span.end(),
-                            })
+                            });
                         }
                     }
-                }?;
+                }
                 let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, prev_token_span)?;
                 buf.push((name_pair, Box::new(value)));
                 prev_token_span = last_token_span_of_item;
