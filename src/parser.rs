@@ -139,10 +139,12 @@ where
         let last_token_span = {
             let mut prev_token_span = begin_array_token_span;
             loop {
-                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedArray {
-                    array_start: *begin_array_token_span.start(),
-                    error_at: *prev_token_span.end(),
-                })?;
+                let Some(peeked_result_for_token) = self.lexer.peek() else {
+                    return Err(ParseError::UnclosedArray {
+                        array_start: *begin_array_token_span.start(),
+                        error_at: *prev_token_span.end(),
+                    });
+                };
                 let peeked_token = match peeked_result_for_token {
                     Ok(token) => token,
                     Err(e) => {
@@ -157,23 +159,19 @@ where
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span().start()))
-                        } else {
-                            self.lexer.next();
-                            Ok(())
+                            return Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span().start()));
                         }
+                        self.lexer.next();
                     }
                     _ => {
-                        if buf.is_empty() {
-                            Ok(())
-                        } else {
-                            Err(ParseError::ArrayMissingSeparator {
+                        if !buf.is_empty() {
+                            return Err(ParseError::ArrayMissingSeparator {
                                 array_start: *begin_array_token_span.start(),
                                 error_at: *prev_token_span.end(),
-                            })
+                            });
                         }
                     }
-                }?;
+                }
                 let (item, last_token_span_of_item) = self.parse_value(current_depth + 1).map_err(|e| match e {
                     ParseError::EmptyInput => ParseError::UnclosedArray {
                         array_start: *begin_array_token_span.start(),
