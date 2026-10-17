@@ -41,14 +41,10 @@ mod app {
                     Err(error) => Err(format!(r#"Error: {:?}, "{}", {}"#, error.kind, error.string, error.location)),
                 })
                 .collect::<Vec<_>>();
-            let token_lens = results
-                .iter()
-                .filter_map(|x| x.as_ref().ok())
-                .map(|(x, y, z)| (x.len(), y.len(), z.len()))
-                .collect::<Vec<_>>();
-            let width_raw = token_lens.iter().map(|(x, _, _)| *x).max().unwrap_or(0);
-            let width_kind = token_lens.iter().map(|(_, x, _)| *x).max().unwrap_or(0);
-            let width_span = token_lens.iter().map(|(_, _, x)| *x).max().unwrap_or(0);
+            let token_lens = results.iter().filter_map(|x| x.as_ref().ok()).map(|(x, y, z)| (x.len(), y.len(), z.len()));
+            let width_raw = token_lens.clone().map(|(x, _, _)| x).max().unwrap_or(0);
+            let width_kind = token_lens.clone().map(|(_, x, _)| x).max().unwrap_or(0);
+            let width_span = token_lens.clone().map(|(_, _, x)| x).max().unwrap_or(0);
             for x in results {
                 match x {
                     Ok((raw, kind, span)) => {
