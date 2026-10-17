@@ -35,18 +35,23 @@ mod app {
 
         let lexer = Lexer::new(reader.chars());
         if args.verbose {
-            for result in lexer {
-                match result {
-                    Ok(token) => {
-                        let kind = token.kind();
-                        let span = token.span();
-                        println!("{token}: {kind:?}, {span}")
+            let results = lexer
+                .map(|x| match x {
+                    Ok(token) => Ok((token.to_string(), format!("{:?}", token.kind()), token.span().start().to_string())),
+                    Err(error) => Err(format!(r#"Error: {:?}, "{}", {}"#, error.kind, error.string, error.location)),
+                })
+                .collect::<Vec<_>>();
+            let token_lens = results.iter().filter_map(|x| x.as_ref().ok()).map(|(x, y, z)| (x.len(), y.len(), z.len()));
+            let width_raw = token_lens.clone().map(|(x, _, _)| x).max().unwrap_or(0);
+            let width_kind = token_lens.clone().map(|(_, x, _)| x).max().unwrap_or(0);
+            let width_span = token_lens.clone().map(|(_, _, x)| x).max().unwrap_or(0);
+            for x in results {
+                match x {
+                    Ok((raw, kind, span)) => {
+                        println!("{raw:width_raw$} {kind:width_kind$} {span:width_span$}")
                     }
-                    Err(error) => {
-                        let kind = error.kind;
-                        let s = error.string;
-                        let loc = error.location;
-                        println!(r#"Error: {kind:?}, "{s}", {loc}"#)
+                    Err(s) => {
+                        println!("{s}")
                     }
                 }
             }
