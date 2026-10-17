@@ -37,7 +37,7 @@ mod app {
         if args.verbose {
             let results = lexer
                 .map(|x| match x {
-                    Ok(token) => Ok((token.to_string(), format!("{:?}", token.kind()), token.span().to_string())),
+                    Ok(token) => Ok((token.to_string(), format!("{:?}", token.kind()), token.span().start().to_string())),
                     Err(error) => Err(format!(r#"Error: {:?}, "{}", {}"#, error.kind, error.string, error.location)),
                 })
                 .collect::<Vec<_>>();
