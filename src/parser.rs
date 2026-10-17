@@ -139,10 +139,12 @@ where
         let last_token_span = {
             let mut prev_token_span = begin_array_token_span;
             loop {
-                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedArray {
-                    array_start: *begin_array_token_span.start(),
-                    error_at: *prev_token_span.end(),
-                })?;
+                let Some(peeked_result_for_token) = self.lexer.peek() else {
+                    return Err(ParseError::UnclosedArray {
+                        array_start: *begin_array_token_span.start(),
+                        error_at: *prev_token_span.end(),
+                    });
+                };
                 let peeked_token = match peeked_result_for_token {
                     Ok(token) => token,
                     Err(e) => {
@@ -157,23 +159,19 @@ where
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span().start()))
-                        } else {
-                            self.lexer.next();
-                            Ok(())
+                            return Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token.span().start()));
                         }
+                        self.lexer.next();
                     }
                     _ => {
-                        if buf.is_empty() {
-                            Ok(())
-                        } else {
-                            Err(ParseError::ArrayMissingSeparator {
+                        if !buf.is_empty() {
+                            return Err(ParseError::ArrayMissingSeparator {
                                 array_start: *begin_array_token_span.start(),
                                 error_at: *prev_token_span.end(),
-                            })
+                            });
                         }
                     }
-                }?;
+                }
                 let (item, last_token_span_of_item) = self.parse_value(current_depth + 1).map_err(|e| match e {
                     ParseError::EmptyInput => ParseError::UnclosedArray {
                         array_start: *begin_array_token_span.start(),
@@ -201,10 +199,12 @@ where
         let last_token_span = {
             let mut prev_token_span = begin_object_token_span;
             loop {
-                let peeked_result_for_token = self.lexer.peek().ok_or(ParseError::UnclosedObject {
-                    object_start: *begin_object_token_span.start(),
-                    error_at: *prev_token_span.end(),
-                })?;
+                let Some(peeked_result_for_token) = self.lexer.peek() else {
+                    return Err(ParseError::UnclosedObject {
+                        object_start: *begin_object_token_span.start(),
+                        error_at: *prev_token_span.end(),
+                    });
+                };
                 let peeked_token = match peeked_result_for_token {
                     Ok(token) => token,
                     Err(e) => {
@@ -219,24 +219,20 @@ where
                     }
                     TokenKind::Delimiter(Delimiter::Comma) => {
                         if buf.is_empty() {
-                            Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token_span.start()))
-                        } else {
-                            prev_token_span = peeked_token_span;
-                            self.lexer.next();
-                            Ok(())
+                            return Err(ParseError::UnexpectedDelimiter(Delimiter::Comma, *peeked_token_span.start()));
                         }
+                        prev_token_span = peeked_token_span;
+                        self.lexer.next();
                     }
                     _ => {
-                        if buf.is_empty() {
-                            Ok(())
-                        } else {
-                            Err(ParseError::ObjectMissingSeparator {
+                        if !buf.is_empty() {
+                            return Err(ParseError::ObjectMissingSeparator {
                                 object_start: *begin_object_token_span.start(),
                                 error_at: *prev_token_span.end(),
-                            })
+                            });
                         }
                     }
-                }?;
+                }
                 let (name_pair, value, last_token_span_of_item) = self.parse_pair_for_object(current_depth, begin_object_token_span, prev_token_span)?;
                 buf.push((name_pair, Box::new(value)));
                 prev_token_span = last_token_span_of_item;
@@ -255,10 +251,12 @@ where
         begin_object_token_span: CodeSpan,
         last_token_span: CodeSpan,
     ) -> Result<((String, CodeSpan), Value, CodeSpan), ParseError> {
-        let result_for_name = self.lexer.next().ok_or(ParseError::UnclosedObject {
-            object_start: *begin_object_token_span.start(),
-            error_at: *last_token_span.end(),
-        })?;
+        let Some(result_for_name) = self.lexer.next() else {
+            return Err(ParseError::UnclosedObject {
+                object_start: *begin_object_token_span.start(),
+                error_at: *last_token_span.end(),
+            });
+        };
         let token_for_name = result_for_name.map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
         let name = match token_for_name.kind() {
             TokenKind::Literal(Literal::String(s)) => Ok(s.clone()),
@@ -269,18 +267,19 @@ where
             }),
             TokenKind::Delimiter(delim) => Err(ParseError::UnexpectedDelimiter(delim.clone(), *token_for_name.span().start())),
         }?;
-        let result_for_colon = self.lexer.next().ok_or(ParseError::ObjectMemberMissingSeparator {
-            member_start: *token_for_name.span().start(),
-            error_at: *token_for_name.span().end(),
-        })?;
+        let Some(result_for_colon) = self.lexer.next() else {
+            return Err(ParseError::ObjectMemberMissingSeparator {
+                member_start: *token_for_name.span().start(),
+                error_at: *token_for_name.span().end(),
+            });
+        };
         let token_for_colon = result_for_colon.map_err(|e| ParseError::LexicalError(e.kind, e.string, e.location))?;
-        match token_for_colon.kind() {
-            TokenKind::Delimiter(Delimiter::Colon) => Ok(()),
-            _ => Err(ParseError::ObjectMemberMissingSeparator {
+        if !matches!(token_for_colon.kind(), TokenKind::Delimiter(Delimiter::Colon)) {
+            return Err(ParseError::ObjectMemberMissingSeparator {
                 member_start: *token_for_name.span().start(),
                 error_at: *token_for_colon.span().start(),
-            }),
-        }?;
+            });
+        }
         let (value, last_token_span) = self.parse_value(current_depth + 1).map_err(|e| match e {
             ParseError::EmptyInput => ParseError::ObjectMemberMissingValue {
                 member_start: *token_for_name.span().start(),
