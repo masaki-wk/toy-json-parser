@@ -1,4 +1,4 @@
-//! JSON parser.
+//! JSON formatter.
 
 fn main() -> anyhow::Result<()> {
     use clap::Parser as _;
@@ -10,7 +10,7 @@ mod app {
     use anyhow::Result;
     use clap::Parser;
 
-    /// JSON parser.
+    /// JSON formatter.
     #[derive(Parser, Debug)]
     pub struct Args {
         /// JSON file
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn test() -> Result<()> {
         let input = String::from("[0, 1]");
-        let mut child = Command::new("cargo").args(["run", "--example", "json-parse"]).stdin(Stdio::piped()).spawn()?;
+        let mut child = Command::new("cargo").args(["run", "--example", "json-format"]).stdin(Stdio::piped()).spawn()?;
         child.stdin.as_mut().unwrap().write_all(input.as_bytes())?;
         let status = child.wait()?;
         ensure!(status.success());
