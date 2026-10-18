@@ -18,7 +18,7 @@ mod app {
         file: String,
 
         /// Indent width
-        #[arg(short, long, default_value_t = 4)]
+        #[arg(short, long, default_value_t = 2)]
         indent: usize,
 
         /// Enable Verbose output
