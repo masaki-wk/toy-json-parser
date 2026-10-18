@@ -1,4 +1,4 @@
-//! JSON parser.
+//! JSON formatter.
 
 fn main() -> anyhow::Result<()> {
     use clap::Parser as _;
@@ -10,7 +10,7 @@ mod app {
     use anyhow::Result;
     use clap::Parser;
 
-    /// JSON parser.
+    /// JSON formatter.
     #[derive(Parser, Debug)]
     pub struct Args {
         /// JSON file
@@ -18,12 +18,12 @@ mod app {
         file: String,
 
         /// Indent width
-        #[arg(short, long, default_value_t = 4)]
-        indent_width: usize,
+        #[arg(short, long, default_value_t = 2)]
+        indent: usize,
 
-        /// Enable Verbose output
+        /// Enable compact output
         #[arg(short, long)]
-        verbose: bool,
+        compact: bool,
     }
 
     pub fn run(args: Args) -> Result<()> {
@@ -40,10 +40,10 @@ mod app {
         let lexer = Lexer::new(reader.chars());
         let mut parser = Parser::new(lexer);
         let value = parser.parse()?;
-        if args.verbose {
-            println!("{}", value.display(args.indent_width));
-        } else {
+        if args.compact {
             println!("{value}");
+        } else {
+            println!("{}", value.display(args.indent));
         }
         Ok(())
     }
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn test() -> Result<()> {
         let input = String::from("[0, 1]");
-        let mut child = Command::new("cargo").args(["run", "--example", "json-parse"]).stdin(Stdio::piped()).spawn()?;
+        let mut child = Command::new("cargo").args(["run", "--example", "json-format"]).stdin(Stdio::piped()).spawn()?;
         child.stdin.as_mut().unwrap().write_all(input.as_bytes())?;
         let status = child.wait()?;
         ensure!(status.success());
