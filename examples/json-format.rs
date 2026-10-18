@@ -21,9 +21,9 @@ mod app {
         #[arg(short, long, default_value_t = 2)]
         indent: usize,
 
-        /// Enable Verbose output
+        /// Enable compact output
         #[arg(short, long)]
-        verbose: bool,
+        compact: bool,
     }
 
     pub fn run(args: Args) -> Result<()> {
@@ -40,10 +40,10 @@ mod app {
         let lexer = Lexer::new(reader.chars());
         let mut parser = Parser::new(lexer);
         let value = parser.parse()?;
-        if args.verbose {
-            println!("{}", value.display(args.indent));
-        } else {
+        if args.compact {
             println!("{value}");
+        } else {
+            println!("{}", value.display(args.indent));
         }
         Ok(())
     }
