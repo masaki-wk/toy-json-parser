@@ -118,12 +118,14 @@ where
     }
 
     // Reads an unquoted string.
-    fn read_unquoted_string(&mut self, firstchar: char) -> String {
+    fn read_unquoted_string(&mut self, firstchar: char) -> (String, usize) {
         let mut buf = firstchar.to_string();
+        let mut buf_count = 1;
         while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_alphanumeric() || ch == '_') {
             buf.push(ch);
+            buf_count += 1;
         }
-        buf
+        (buf, buf_count)
     }
 
     // Reads a known unquoted string.
@@ -133,9 +135,9 @@ where
         expected_str: &str,
         firstchar: char,
     ) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
-        let s = self.read_unquoted_string(firstchar);
+        let (s, count) = self.read_unquoted_string(firstchar);
         if s == expected_str {
-            Ok((TokenKind::Literal(expected_literal), s.chars().count()))
+            Ok((TokenKind::Literal(expected_literal), count))
         } else {
             Err((LexicalErrorKind::UnquotedString, s))
         }
@@ -143,7 +145,7 @@ where
 
     // Reads an unknown unquoted string.
     fn read_unquoted_string_unknown(&mut self, firstchar: char) -> (LexicalErrorKind, String) {
-        let s = self.read_unquoted_string(firstchar);
+        let (s, _) = self.read_unquoted_string(firstchar);
         (LexicalErrorKind::UnquotedString, s)
     }
 
