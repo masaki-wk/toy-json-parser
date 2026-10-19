@@ -443,8 +443,14 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_string_without_escaped() {
+    fn tokenize_string_ascii_without_escaped() {
         let s = "foo";
+        take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
+    }
+
+    #[test]
+    fn tokenize_string_utf8_without_escaped() {
+        let s = "漢字";
         take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
