@@ -219,24 +219,24 @@ where
     // Reads a quoted string.
     fn read_quoted_string(&mut self) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = String::new();
+        let mut buf_count = 0;
         let mut error = None;
         while let Some((_, ch)) = self.chars.next() {
             match ch {
                 '"' => {
                     return match error {
                         Some(kind) => Err((kind, format!(r#""{buf}""#))),
-                        None => {
-                            let count = buf.chars().count();
-                            Ok((TokenKind::Literal(Literal::String(buf)), count + 2))
-                        }
+                        None => Ok((TokenKind::Literal(Literal::String(buf)), buf_count + 2)),
                     };
                 }
                 '\\' => {
                     buf.push(ch);
+                    buf_count += 1;
                     let Some((_, ch)) = self.chars.next() else {
                         break;
                     };
                     buf.push(ch);
+                    buf_count += 1;
                     match ch {
                         '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                         'u' => {
@@ -246,6 +246,7 @@ where
                                     break;
                                 };
                                 buf.push(ch);
+                                buf_count += 1;
                             }
                         }
                         _ => {
@@ -255,10 +256,12 @@ where
                 }
                 '\0'..'\x1f' => {
                     buf.push(ch);
+                    buf_count += 1;
                     error = Some(LexicalErrorKind::StringContainsUnescapedControlChar);
                 }
                 _ => {
                     buf.push(ch);
+                    buf_count += 1;
                 }
             }
         }
