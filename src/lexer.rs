@@ -176,6 +176,7 @@ where
     // Reads a number.
     fn read_number(&mut self, firstchar: char) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = firstchar.to_string();
+        let mut buf_count = 1;
         let mut error = None;
         {
             let (count, leading_zero_detected) = self.read_digits(&mut buf);
@@ -185,30 +186,33 @@ where
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
             // `firstchar == '-'` is equivalent to `!firstchar.is_ascii_digit()` in this method
+            buf_count += count;
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == '.') {
             buf.push(ch);
+            buf_count += 1;
             let (count, _) = self.read_digits(&mut buf);
             if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
+            buf_count += count;
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == 'e' || ch == 'E') {
             buf.push(ch);
+            buf_count += 1;
             if let Some(ch) = self.read_char_if(|&ch| ch == '+' || ch == '-') {
                 buf.push(ch);
+                buf_count += 1;
             }
             let (count, _) = self.read_digits(&mut buf);
             if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
+            buf_count += count;
         }
         match error {
             Some(kind) => Err((kind, buf)),
-            None => {
-                let count = buf.chars().count();
-                Ok((TokenKind::Literal(Literal::Number(buf)), count))
-            }
+            None => Ok((TokenKind::Literal(Literal::Number(buf)), buf_count)),
         }
     }
 
