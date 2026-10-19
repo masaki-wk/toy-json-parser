@@ -101,8 +101,8 @@ where
             TokenCategory::Invalid => Err((LexicalErrorKind::UnexpectedChar, firstchar.to_string())),
         };
         match result {
-            Ok((kind, len)) => {
-                let loc_end = CodeLocation::new(loc_start.line, loc_start.column + len);
+            Ok((kind, count)) => {
+                let loc_end = CodeLocation::new(loc_start.line, loc_start.column + count);
                 Some(Ok(Token::new(kind, CodeSpan::new(loc_start, loc_end))))
             }
             Err((kind, s)) => Some(Err(LexicalError::new(kind, s, loc_start))),
@@ -135,7 +135,7 @@ where
     ) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let s = self.read_unquoted_string(firstchar);
         if s == expected_str {
-            Ok((TokenKind::Literal(expected_literal), s.len()))
+            Ok((TokenKind::Literal(expected_literal), s.chars().count()))
         } else {
             Err((LexicalErrorKind::UnquotedString, s))
         }
@@ -156,7 +156,7 @@ where
             LeadingZeroDetected,
             LeadingZeroNotDetected,
         }
-        let mut len: usize = 0;
+        let mut count: usize = 0;
         let mut state = State::Initial;
         while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_digit()) {
             buf.push(ch);
@@ -166,9 +166,9 @@ where
                 State::FirstCharIsZero => State::LeadingZeroDetected,
                 _ => state,
             };
-            len += 1;
+            count += 1;
         }
-        (len, state == State::LeadingZeroDetected)
+        (count, state == State::LeadingZeroDetected)
     }
 
     // Reads a number.
@@ -176,18 +176,18 @@ where
         let mut buf = firstchar.to_string();
         let mut error = None;
         {
-            let (len, leading_zero_detected) = self.read_digits(&mut buf);
-            if firstchar == '-' && len == 0 {
+            let (count, leading_zero_detected) = self.read_digits(&mut buf);
+            if firstchar == '-' && count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
-            } else if (firstchar == '0' && len > 0) || (firstchar == '-' && leading_zero_detected) {
+            } else if (firstchar == '0' && count > 0) || (firstchar == '-' && leading_zero_detected) {
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
             // `firstchar == '-'` is equivalent to `!firstchar.is_ascii_digit()` in this method
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == '.') {
             buf.push(ch);
-            let (len, _) = self.read_digits(&mut buf);
-            if len == 0 {
+            let (count, _) = self.read_digits(&mut buf);
+            if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
         }
@@ -196,16 +196,16 @@ where
             if let Some(ch) = self.read_char_if(|&ch| ch == '+' || ch == '-') {
                 buf.push(ch);
             }
-            let (len, _) = self.read_digits(&mut buf);
-            if len == 0 {
+            let (count, _) = self.read_digits(&mut buf);
+            if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
         }
         match error {
             Some(kind) => Err((kind, buf)),
             None => {
-                let len = buf.len();
-                Ok((TokenKind::Literal(Literal::Number(buf)), len))
+                let count = buf.chars().count();
+                Ok((TokenKind::Literal(Literal::Number(buf)), count))
             }
         }
     }
@@ -220,8 +220,8 @@ where
                     return match error {
                         Some(kind) => Err((kind, format!(r#""{buf}""#))),
                         None => {
-                            let len = buf.len();
-                            Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
+                            let count = buf.chars().count();
+                            Ok((TokenKind::Literal(Literal::String(buf)), count + 2))
                         }
                     };
                 }
