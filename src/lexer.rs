@@ -101,8 +101,8 @@ where
             TokenCategory::Invalid => Err((LexicalErrorKind::UnexpectedChar, firstchar.to_string())),
         };
         match result {
-            Ok((kind, len)) => {
-                let loc_end = CodeLocation::new(loc_start.line, loc_start.column + len);
+            Ok((kind, count)) => {
+                let loc_end = CodeLocation::new(loc_start.line, loc_start.column + count);
                 Some(Ok(Token::new(kind, CodeSpan::new(loc_start, loc_end))))
             }
             Err((kind, s)) => Some(Err(LexicalError::new(kind, s, loc_start))),
@@ -118,12 +118,14 @@ where
     }
 
     // Reads an unquoted string.
-    fn read_unquoted_string(&mut self, firstchar: char) -> String {
+    fn read_unquoted_string(&mut self, firstchar: char) -> (String, usize) {
         let mut buf = firstchar.to_string();
+        let mut buf_count = 1;
         while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_alphanumeric() || ch == '_') {
             buf.push(ch);
+            buf_count += 1;
         }
-        buf
+        (buf, buf_count)
     }
 
     // Reads a known unquoted string.
@@ -133,9 +135,9 @@ where
         expected_str: &str,
         firstchar: char,
     ) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
-        let s = self.read_unquoted_string(firstchar);
+        let (s, count) = self.read_unquoted_string(firstchar);
         if s == expected_str {
-            Ok((TokenKind::Literal(expected_literal), s.len()))
+            Ok((TokenKind::Literal(expected_literal), count))
         } else {
             Err((LexicalErrorKind::UnquotedString, s))
         }
@@ -143,7 +145,7 @@ where
 
     // Reads an unknown unquoted string.
     fn read_unquoted_string_unknown(&mut self, firstchar: char) -> (LexicalErrorKind, String) {
-        let s = self.read_unquoted_string(firstchar);
+        let (s, _) = self.read_unquoted_string(firstchar);
         (LexicalErrorKind::UnquotedString, s)
     }
 
@@ -156,7 +158,7 @@ where
             LeadingZeroDetected,
             LeadingZeroNotDetected,
         }
-        let mut len: usize = 0;
+        let mut count: usize = 0;
         let mut state = State::Initial;
         while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_digit()) {
             buf.push(ch);
@@ -166,71 +168,75 @@ where
                 State::FirstCharIsZero => State::LeadingZeroDetected,
                 _ => state,
             };
-            len += 1;
+            count += 1;
         }
-        (len, state == State::LeadingZeroDetected)
+        (count, state == State::LeadingZeroDetected)
     }
 
     // Reads a number.
     fn read_number(&mut self, firstchar: char) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = firstchar.to_string();
+        let mut buf_count = 1;
         let mut error = None;
         {
-            let (len, leading_zero_detected) = self.read_digits(&mut buf);
-            if firstchar == '-' && len == 0 {
+            let (count, leading_zero_detected) = self.read_digits(&mut buf);
+            if firstchar == '-' && count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
-            } else if (firstchar == '0' && len > 0) || (firstchar == '-' && leading_zero_detected) {
+            } else if (firstchar == '0' && count > 0) || (firstchar == '-' && leading_zero_detected) {
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
             // `firstchar == '-'` is equivalent to `!firstchar.is_ascii_digit()` in this method
+            buf_count += count;
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == '.') {
             buf.push(ch);
-            let (len, _) = self.read_digits(&mut buf);
-            if len == 0 {
+            buf_count += 1;
+            let (count, _) = self.read_digits(&mut buf);
+            if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
+            buf_count += count;
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == 'e' || ch == 'E') {
             buf.push(ch);
+            buf_count += 1;
             if let Some(ch) = self.read_char_if(|&ch| ch == '+' || ch == '-') {
                 buf.push(ch);
+                buf_count += 1;
             }
-            let (len, _) = self.read_digits(&mut buf);
-            if len == 0 {
+            let (count, _) = self.read_digits(&mut buf);
+            if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
+            buf_count += count;
         }
         match error {
             Some(kind) => Err((kind, buf)),
-            None => {
-                let len = buf.len();
-                Ok((TokenKind::Literal(Literal::Number(buf)), len))
-            }
+            None => Ok((TokenKind::Literal(Literal::Number(buf)), buf_count)),
         }
     }
 
     // Reads a quoted string.
     fn read_quoted_string(&mut self) -> Result<(TokenKind, usize), (LexicalErrorKind, String)> {
         let mut buf = String::new();
+        let mut buf_count = 0;
         let mut error = None;
         while let Some((_, ch)) = self.chars.next() {
             match ch {
                 '"' => {
                     return match error {
                         Some(kind) => Err((kind, format!(r#""{buf}""#))),
-                        None => {
-                            let len = buf.len();
-                            Ok((TokenKind::Literal(Literal::String(buf)), len + 2))
-                        }
+                        None => Ok((TokenKind::Literal(Literal::String(buf)), buf_count + 2)),
                     };
                 }
                 '\\' => {
                     buf.push(ch);
+                    buf_count += 1;
                     let Some((_, ch)) = self.chars.next() else {
                         break;
                     };
                     buf.push(ch);
+                    buf_count += 1;
                     match ch {
                         '"' | '\\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {}
                         'u' => {
@@ -240,6 +246,7 @@ where
                                     break;
                                 };
                                 buf.push(ch);
+                                buf_count += 1;
                             }
                         }
                         _ => {
@@ -249,10 +256,12 @@ where
                 }
                 '\0'..'\x1f' => {
                     buf.push(ch);
+                    buf_count += 1;
                     error = Some(LexicalErrorKind::StringContainsUnescapedControlChar);
                 }
                 _ => {
                     buf.push(ch);
+                    buf_count += 1;
                 }
             }
         }
@@ -443,8 +452,14 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_string_without_escaped() {
+    fn tokenize_string_ascii_without_escaped() {
         let s = "foo";
+        take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
+    }
+
+    #[test]
+    fn tokenize_string_utf8_without_escaped() {
+        let s = "漢字";
         take_single_valid_token(&format!(r#""{s}""#), TokenKind::Literal(Literal::String(s.to_string())))
     }
 
