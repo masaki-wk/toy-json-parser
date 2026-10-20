@@ -158,7 +158,7 @@ where
             LeadingZeroDetected,
             LeadingZeroNotDetected,
         }
-        let mut count: usize = 0;
+        let mut count = 0;
         let mut state = State::Initial;
         while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_digit()) {
             buf.push(ch);
