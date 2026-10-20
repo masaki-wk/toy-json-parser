@@ -162,13 +162,13 @@ where
         let mut state = State::Initial;
         while let Some(ch) = self.read_char_if(|&ch| ch.is_ascii_digit()) {
             buf.push(ch);
+            count += 1;
             state = match state {
                 State::Initial if ch == '0' => State::FirstCharIsZero,
                 State::Initial => State::LeadingZeroNotDetected,
                 State::FirstCharIsZero => State::LeadingZeroDetected,
                 _ => state,
             };
-            count += 1;
         }
         (count, state == State::LeadingZeroDetected)
     }
@@ -180,22 +180,22 @@ where
         let mut error = None;
         {
             let (count, leading_zero_detected) = self.read_digits(&mut buf);
+            buf_count += count;
             if firstchar == '-' && count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingIntegerDigits);
             } else if (firstchar == '0' && count > 0) || (firstchar == '-' && leading_zero_detected) {
                 error = Some(LexicalErrorKind::NumberContainsLeadingZero);
             }
             // `firstchar == '-'` is equivalent to `!firstchar.is_ascii_digit()` in this method
-            buf_count += count;
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == '.') {
             buf.push(ch);
             buf_count += 1;
             let (count, _) = self.read_digits(&mut buf);
+            buf_count += count;
             if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingFractionDigits);
             }
-            buf_count += count;
         }
         if let Some(ch) = self.read_char_if(|&ch| ch == 'e' || ch == 'E') {
             buf.push(ch);
@@ -205,10 +205,10 @@ where
                 buf_count += 1;
             }
             let (count, _) = self.read_digits(&mut buf);
+            buf_count += count;
             if count == 0 {
                 error = Some(LexicalErrorKind::NumberMissingExponentDigits);
             }
-            buf_count += count;
         }
         match error {
             Some(kind) => Err((kind, buf)),
